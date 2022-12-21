@@ -233,7 +233,9 @@ def qtl_plot(argv):
     print(arg)
     df, arg = test_plot(arg)
     print(arg)
-    #plot_ED(df,arg)
+    if arg['--euclidean-distance']:
+        plot_ED(df,arg)
+        plot_G(df, arg)
     if arg['--pvalue'] == True:
         pval_mono_graph(df, arg)
         if arg['--multi-chrom'] == True:    

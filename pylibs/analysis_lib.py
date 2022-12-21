@@ -136,8 +136,14 @@ def Gstatic(a,b,c,d):
 	n2 = (row1*col2)/tot
 	n3 = (row2*col1)/tot
 	n4 = (row2*col2)/tot
-	g = 2*(a*log(a/n1)+b*log(b/n2)+c*log(c/n3)+d*log(d/n4))
+	counts = [a,b,c,d]
+	nx = [n1,n2,n3,n4]
+	g = 0
+	for i in range(len(counts)):
+		if counts[i] > 0:
+			g += 2*(counts[i]*log(counts[i]/nx[i]))
 	return g
+	
 def pvalor(a,b,c,d):
 	table = np.array([[a, b], [c, d]])
 	oddsr, pvalue = fisher_exact(table, alternative='two-sided')

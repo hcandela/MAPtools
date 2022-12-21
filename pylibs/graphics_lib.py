@@ -27,7 +27,7 @@ pd.options.mode.chained_assignment = None
 # ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','PVALUE','log10PVALUE']
 # ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','SNPidx1','SNPidx2','DELTA','PVALUE','log10PVALUE']
 fields = {'#CHROM': str, 'POS': int, 'REF': str, 'ALT': str, 'DPref_1': int, 'DPalt_1': int, 'DPref_2': int, 'DPalt_2': int, 'SNPidx1': float,
-          'SNPidx2': float, 'DELTA': float, 'MAX_SNPidx2': float, 'PVALUE': float, 'log10PVALUE': float, 'FISHER': float, 'BOOST': float, 'CI99': float, 'CI95': float}
+          'SNPidx2': float, 'DELTA': float, 'MAX_SNPidx2': float, 'PVALUE': float, 'log10PVALUE': float, 'FISHER': float, 'BOOST': float, 'ED': float, 'G':float, 'CI95': float}
 
 
 def test_plot(arg):
@@ -184,6 +184,8 @@ def check_mbs_opts(arg):
             arg['--combine'] = True
         if len(arg['--chromosomes']) > 1:
             arg['--multi-chrom'] = True
+        if 'ED' in arg['--fields']:
+            arg['--euclidean-distance'] = True
         if 'MAX_SNPidx2' in arg['--fields'] and 'SNPidx1' not in arg['--fields'] and 'SNPindx2' not in arg['--fields']:
             arg['--max-allele-freq2'] = True
         else:
@@ -194,6 +196,9 @@ def check_mbs_opts(arg):
             sys.exit()
         if arg['--pvalue'] == True and 'log10PVALUE' not in arg['--fields']:
             print('Error: is not possible make P-VALUE graphics with your input data')
+            sys.exit()
+        if arg['--euclidean-distance'] == True and 'ED' not in arg['--fields']:
+            print('Error: is not possible make Euclidean Distance graphics with your input data')
             sys.exit()
         if arg['--allele-freq-1'] == True and 'SNPidx1' not in arg['--fields']:
             print('Error: is not possible make phased Allele Frequency graphics with your input data. Please use -M or -a option')
@@ -360,6 +365,12 @@ def grouped_by(df, arg):
                 if 'DELTA' in arg['--fields']:
                     rDELTA = rSNPidx2 - rSNPidx1
                     res += [rDELTA]
+                if 'G' in arg['--fields'] and 'ED' in arg['--fields']:
+                    v1 = (rCt/(rCt + rDt), rDt/(rCt + rDt))
+                    v2 = (rAt/(rAt + rBt), rBt/(rAt + rBt))
+                    ed = distance.euclidean(v1,v2)
+                    g = Gstatic(rAt, rBt, rCt, rDt)
+                    res += [ed,g]
                 pval, log10pval = pvalor2(rAt, rBt, rCt, rDt)
                 res += [pval, log10pval]
             else:
@@ -380,7 +391,6 @@ def grouped_by(df, arg):
 
 def get_ED100_4(df, arg, rang):
     chrom = arg['--chromosomes']
-    typ = arg['--fileformat']
     ED100 = np.array([])
     for ch in range(len(chrom)):
         d = df[df['#CHROM'] == chrom[ch]]
@@ -438,6 +448,35 @@ def plot_ED(df, arg):
         plt.savefig(arg['--outdir']+filename)
         plt.close()
 
+def plot_G(df, arg):
+    chrom = arg['--chromosomes']
+    typ = arg['--fileformat']
+    min_y, max_y =min(df['G']), max(df['G'])
+    for ch in range(len(chrom)):
+        d = df[df['#CHROM'] == chrom[ch]]
+        max_x = max(d['POS'])
+        x = d[['POS']]
+        y = d[['G']]
+        fig, ax = plt.subplots(figsize=(10, 4.2))
+        ax.scatter(x, y, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+        ax.set(xlim=(0, max_x), ylim=(min_y, max_y))
+        ax.set_xticks(ticks=np.arange(0, max_x, 5e6))
+        ax.set_xticklabels(labels=np.arange(0, max_x, 5e6),fontsize=8)
+        ax.xaxis.set_major_formatter(ScalarFormatter())
+        ax.ticklabel_format(axis='x', style='scientific',scilimits=(6, 6), useMathText=True)
+        ax.set_xlabel(xlabel='Chromosomal position (pb)', fontsize=15)
+        ax.set_ylabel(ylabel='G-statistic', fontsize=12, rotation=90, labelpad=15)
+        #ax.set_yticks(ticks=[0, 0.5, 1, 1.5])
+        #ax.set_yticklabels(labels=[0, 0.5, 1, 1.5], fontsize=8)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        if arg['--moving-avg'] != False:
+            plot_avg(d, arg, ax, 'G')
+
+        filename = 'G_chr{}'.format(chrom[ch]) + typ
+        filename = check_save(arg, filename)
+        plt.savefig(arg['--outdir']+filename)
+        plt.close()
 
 def pval_multi_graph(df, arg):
     t, rt = arg['titles'][1]
@@ -1254,6 +1293,9 @@ def plot_avg(d, arg, ax, field):
     elif field == 'DELTA':
         d['DP']=d['DPref_1']+d['DPalt_1']+d['DPref_2']+d['DPalt_2']
         c_=arg['--palette']['DELTA']
+    elif field == 'G':
+        d['DP']=d['DPref_1']+d['DPalt_1']+d['DPref_2']+d['DPalt_2']
+        c_=arg['--palette']['mvg']
     d['prody']=d[field] * d['DP']
     d['avgy']=(d['prody'].rolling(arg['--moving-avg']).sum() / \
                d['DP'].rolling(arg['--moving-avg']).sum())
