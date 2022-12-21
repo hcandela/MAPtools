@@ -394,7 +394,7 @@ def get_ED100_4(df, arg, rang):
         for i in range(n-int(rang/2), n):
             ED100c[i] = d['ED'].iloc[n-int(rang/2):n].sum()
         ED100 = np.concatenate([ED100, ED100c])
-    df['ED100_4'] = ED100**4
+    df['ED100_4'] = pd.Series(ED100**4)
     return df
 
 
@@ -407,36 +407,33 @@ def plot_ED(df, arg):
     for ch in range(len(chrom)):
         d = df[df['#CHROM'] == chrom[ch]]
         d.index = np.arange(len(d))
-        first, max_x = min(d['POS']), max(d['POS'])
+        max_x = max(d['POS'])
         x = d[['POS']]
-        y = d['SNPidx1'] - d['SNPidx2']
-        fig, ax = plt.subplots(figsize=(10, 4))
-        ax.scatter(x, y, s=0.5, c=arg['--palette']
-                   ['dots'], alpha=arg['--alpha'])
-        ax.set(xlim=(0, max_x), ylim=(-1, 1))
+        y = d[['ED']]
+        fig, ax = plt.subplots(figsize=(10, 4.2))
+        ax.scatter(x, y, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+        ax.set(xlim=(0, max_x), ylim=(0, 1.5))
         ax.set_xticks(ticks=np.arange(0, max_x, 5e6))
-        ax.set_xticklabels(labels=np.arange(0, max_x, 5e6),
-                           fontdict={'family': 'arial', 'size': '8'})
+        ax.set_xticklabels(labels=np.arange(0, max_x, 5e6),fontsize=8)
         ax.xaxis.set_major_formatter(ScalarFormatter())
-        ax.ticklabel_format(axis='x', style='scientific',
-                            scilimits=(6, 6), useMathText=True)
-        ax.set_xlabel(xlabel='Chromosomal position (chr {})'.format(
-            chrom[ch]), fontdict={'family': 'arial', 'size': '12'})
-        ax.set_ylabel(ylabel='DELTA', fontdict={
-                      'family': 'arial', 'size': '12'}, rotation=270, labelpad=15)
+        ax.ticklabel_format(axis='x', style='scientific',scilimits=(6, 6), useMathText=True)
+        ax.set_xlabel(xlabel='Chromosomal position (pb)', fontsize=15)
+        ax.set_ylabel(ylabel='EDm', fontsize=12, rotation=90, labelpad=15)
+        ax.set_yticks(ticks=[0, 0.5, 1, 1.5])
+        ax.set_yticklabels(labels=[0, 0.5, 1, 1.5], fontsize=8)
         ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax2 = ax.twinx()
-        c_ = arg['--palette']['boost']
-        ax2.set(xlim=(0, max_x), ylim=(0, max_y))
-        # ax2.set_yticks(ticks = [0,0.25,0.5,0.75,1])
-        # ax2.set_yticklabels(labels = [0,0.25,0.5,0.75,1], fontdict={'family': 'serif', 'size': '8'})
-        ax2.set_ylabel(ylabel='ED100_4', fontdict={
-                       'family': 'arial', 'size': '12'}, rotation=270, labelpad=15)
-        ax2.plot(d['POS'], d['ED100_4'], c='tomato', lw=0.75)
+        if arg['--moving-avg'] != False:
+            ax2 = ax.twinx()
+            c_ = arg['--palette']['mvg']
+            ax2.set(xlim=(0, max_x), ylim=(0, max_y))
+            ax2.tick_params(axis='y', which='major', labelsize=8)
+            ax2.yaxis.set_major_formatter(ScalarFormatter())
+            ax2.ticklabel_format(axis='y', style='scientific', scilimits=(7,8), useMathText=True)
+            ax2.set_ylabel(ylabel='ED$\mathregular{100^4}$', fontsize=12, rotation=90, labelpad=15)
+            ax2.plot(d['POS'], d['ED100_4'], c=c_, lw=1.25)
+            ax2.spines['top'].set_visible(False)
 
-        # mov_avg.to_csv(path_or_buf='./mov_avg_pvalue.txt',sep='\t', header=True)
-        filename = 'chr_{}_{}'.format(chrom[ch], 'ED100_4') + typ
+        filename = 'ED_chr{}_{}'.format(chrom[ch], 'ED100_4' if arg['--moving-avg'] != False else '') + typ
         filename = check_save(arg, filename)
         plt.savefig(arg['--outdir']+filename)
         plt.close()
