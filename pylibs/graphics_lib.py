@@ -9,6 +9,7 @@ import logging
 import scipy.stats as st
 import sys
 import os
+import re
 from math import log
 import errno
 from docopt import docopt
@@ -61,6 +62,8 @@ def test_plot(arg):
             os.makedirs(arg['captions_dir'])
         except FileExistsError:
             pass
+    inp = inp_f.split('/')[-1]
+    match = re.search('/"w/d+w"/',inp)
 
     chroms = df['#CHROM'].unique()
     if arg['--chromosomes'] == 'all':
@@ -130,7 +133,7 @@ def test_merge(arg):
         sys.exit()
     if arg['--output'] != None:
         arg['--fileformat'] = '.'+arg['--fileformat']
-        arg['--output'] = str(arg['--window'])+'w_'+arg['--output'] + arg['--fileformat']
+        arg['--output'] = 'w'+str(arg['--window'])+'w_'+arg['--output'] + arg['--fileformat']
         arg['--output'] = check_save_an(arg, arg['--output'])
     else:
         arg['--output'] = None
@@ -414,6 +417,7 @@ def plot_ED(df, arg):
     chrom = arg['--chromosomes']
     typ = arg['--fileformat']
     max_y = max(df['ED100_4'])
+    t,rt,_=arg['titles'][10]
     for ch in range(len(chrom)):
         d = df[df['#CHROM'] == chrom[ch]]
         d.index = np.arange(len(d))
@@ -428,7 +432,7 @@ def plot_ED(df, arg):
         ax.xaxis.set_major_formatter(ScalarFormatter())
         ax.ticklabel_format(axis='x', style='scientific',scilimits=(6, 6), useMathText=True)
         ax.set_xlabel(xlabel='Chromosomal position (pb)', fontsize=15)
-        ax.set_ylabel(ylabel='EDm', fontsize=12, rotation=90, labelpad=15)
+        ax.set_ylabel(ylabel='Euclidean distance', fontsize=12, rotation=90, labelpad=15)
         ax.set_yticks(ticks=[0, 0.5, 1, 1.5])
         ax.set_yticklabels(labels=[0, 0.5, 1, 1.5], fontsize=8)
         ax.spines['top'].set_visible(False)
@@ -439,19 +443,31 @@ def plot_ED(df, arg):
             ax2.tick_params(axis='y', which='major', labelsize=8)
             ax2.yaxis.set_major_formatter(ScalarFormatter())
             ax2.ticklabel_format(axis='y', style='scientific', scilimits=(7,8), useMathText=True)
-            ax2.set_ylabel(ylabel='ED$\mathregular{100^4}$', fontsize=12, rotation=90, labelpad=15)
+            ax2.set_ylabel(ylabel='Euclidean distance $\mathregular{100^4}$', fontsize=12, rotation=90, labelpad=15)
             ax2.plot(d['POS'], d['ED100_4'], c=c_, lw=1.25)
             ax2.spines['top'].set_visible(False)
 
-        filename = 'ED_chr{}_{}'.format(chrom[ch], 'ED100_4' if arg['--moving-avg'] != False else '') + typ
+        rtch = rt.format(chrom[ch], 'ED100_4' if arg['--moving-avg'] != False else '')
+        filename = rtch + typ
         filename = check_save(arg, filename)
         plt.savefig(arg['--outdir']+filename)
         plt.close()
+
+        cap = list()
+        if arg['--captions']:
+            f = create_caption(arg, rtch)
+            cap.append(filename)
+            cap.append(t)
+            cap.append(arg['lines'][9].format(arg['color_names']['dots']))
+            if arg['--moving-avg'] != False:
+                cap.append(arg['lines'][10].format(arg['color_names']['mvg']))
+            write_caption(f,cap)
 
 def plot_G(df, arg):
     chrom = arg['--chromosomes']
     typ = arg['--fileformat']
     min_y, max_y =min(df['G']), max(df['G'])
+    t,rt,_ = arg['titles'][12]
     for ch in range(len(chrom)):
         d = df[df['#CHROM'] == chrom[ch]]
         max_x = max(d['POS'])
@@ -473,10 +489,21 @@ def plot_G(df, arg):
         if arg['--moving-avg'] != False:
             plot_avg(d, arg, ax, 'G')
 
-        filename = 'G_chr{}'.format(chrom[ch]) + typ
+        rtch = rt.format(chrom[ch])
+        filename = rtch + typ
         filename = check_save(arg, filename)
         plt.savefig(arg['--outdir']+filename)
         plt.close()
+        cap = list()
+
+        if arg['--captions']:
+            f = create_caption(arg, rtch)
+            cap.append(filename)
+            cap.append(t)
+            cap.append(arg['lines'][11].format(arg['color_names']['dots']))
+            if arg['--moving-avg'] != False:
+                cap.append(arg['lines'][12].format(arg['color_names']['mvg'], str(arg['--moving-avg'])))
+            write_caption(f,cap)
 
 def pval_multi_graph(df, arg):
     t, rt = arg['titles'][1]
@@ -856,6 +883,124 @@ def pval_multi_Vertical_graph(df, arg):
         write_caption(f,cap)
 
 
+def ED_multi_Vertical_graph(df, arg):
+    rang = 100
+    df = get_ED100_4(df, arg, rang)
+    typ=arg['--fileformat']
+    max_y = min(df['ED100_4'])
+    max_x = max(df['POS'])
+    t,_,rt = arg['titles'][10]
+    labs_list = list()
+    f_name = list()
+    for chrom_list in arg['chrom_lists']:
+        chrom = chrom_list
+        if len(chrom) > 1:
+            fig,ax=plt.subplots(len(chrom), 1, figsize=(10, 2.5*len(chrom)))
+        if len(chrom) == 1:
+            fig, ax=plt.subplots(2,1,figsize=(10, 2.5*2))
+        for i in range(len(chrom)):
+            d=df[df['#CHROM'] == chrom[i]]
+            x=d[['POS']]
+            y=d[['ED']]
+            ax[i].scatter(x, y, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+            ax[i].set(xlim=(0, max_x), ylim=(0, 1.5))
+            ax[i].set_xticks(ticks=np.arange(0, max_x, 5e6))
+            ax[i].tick_params(labelbottom=False)
+            ax[i].set_ylabel(ylabel='Euclidean distance', fontsize=12, rotation=90, labelpad=15)
+            ax[i].set_title('({})'.format(arg['labs'][chrom[i]]), fontsize=18, rotation=0, x=-0.14, y=0.85)
+            labs_list.append('({}) Chromosome {}.'.format(arg['labs'][chrom[i]],chrom[i]))
+            ax[i].tick_params(axis='y', which='major', labelsize=8)
+            ax[i].spines['top'].set_visible(False)
+            if arg['--moving-avg'] != False:
+                ax2 = ax[i].twinx()
+                c_ = arg['--palette']['mvg']
+                ax2[i].set(xlim=(0, max_x), ylim=(0, max_y))
+                ax2[i].tick_params(axis='y', which='major', labelsize=8)
+                ax2[i].yaxis.set_major_formatter(ScalarFormatter())
+                ax2[i].ticklabel_format(axis='y', style='scientific', scilimits=(7,8), useMathText=True)
+                ax2[i].set_ylabel(ylabel='Euclidean distance $\mathregular{100^4}$', fontsize=12, rotation=90, labelpad=15)
+                ax2[i].plot(d['POS'], d['ED100_4'], c=c_, lw=1.25)
+                ax2[i].spines['top'].set_visible(False)
+            if len(chrom) == 1:
+                ax[1].remove()
+            if i == len(chrom)-1 or len(chrom) == 1:
+                ax[i].tick_params(labelbottom=True)
+                ax[i].set_xticklabels(labels=np.arange(0, max_x, 5e6), fontsize=8, color='black')
+                ax[i].xaxis.set_major_formatter(ScalarFormatter())
+                ax[i].ticklabel_format(axis='x', style='scientific', scilimits=(6, 6), useMathText=True)
+                ax[i].set_xlabel(xlabel='Chromosomal position (bp)', fontsize=15)
+
+        fig.subplots_adjust(hspace=0.1)
+        filename= rt + typ
+        filename=check_save(arg, filename)
+        f_name.append(filename)
+        plt.savefig(arg['--outdir']+filename)
+        plt.close()
+    cap = list()
+    if arg['--captions']:
+        f = create_caption(arg,rt)
+        cap.append(', '.join(f_name))
+        cap.append(t)
+        cap = cap + labs_list
+        cap.append(arg['lines'][9].format(arg['color_names']['dots']))
+        if arg['--moving-avg'] != False:
+            cap.append(arg['lines'][10].format(arg['color_names']['mvg']))
+        write_caption(f,cap)
+
+def G_multi_Vertical_graph(df, arg):
+    typ=arg['--fileformat']
+    min_y, max_y = min(df['G']), max(df['G'])
+    max_x = max(d['POS'])
+    t,_,rt = arg['titles'][12]
+    labs_list = list()
+    f_name = list()
+    for chrom_list in arg['chrom_lists']:
+        chrom = chrom_list
+        if len(chrom) > 1:
+            fig,ax=plt.subplots(len(chrom), 1, figsize=(10, 2.5*len(chrom)))
+        if len(chrom) == 1:
+            fig, ax=plt.subplots(2,1,figsize=(10, 2.5*2))
+        for i in range(len(chrom)):
+            d=df[df['#CHROM'] == chrom[i]]
+            x=d[['POS']]
+            y=d[['G']]
+            ax[i].scatter(x, y, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+            ax[i].set(xlim=(0, max_x), ylim=(min_y, max_y))
+            ax[i].set_xticks(ticks=np.arange(0, max_x, 5e6))
+            ax[i].tick_params(labelbottom=False)
+            ax[i].set_ylabel(ylabel='G-statistic', fontsize=12, rotation=90, labelpad=15)
+            ax[i].set_title('({})'.format(arg['labs'][chrom[i]]), fontsize=18, rotation=0, x=-0.14, y=0.85)
+            labs_list.append('({}) Chromosome {}.'.format(arg['labs'][chrom[i]],chrom[i]))
+            ax[i].tick_params(axis='y', which='major', labelsize=8)
+            ax[i].spines['top'].set_visible(False)
+            ax[i].spines['right'].set_visible(False)
+            if arg['--moving-avg'] != False:
+                plot_avg(d, arg, ax[i], 'G')
+            if len(chrom) == 1:
+                ax[1].remove()
+            if i == len(chrom)-1 or len(chrom) == 1:
+                ax[i].tick_params(labelbottom=True)
+                ax[i].set_xticklabels(labels=np.arange(0, max_x, 5e6), fontsize=8, color='black')
+                ax[i].xaxis.set_major_formatter(ScalarFormatter())
+                ax[i].ticklabel_format(axis='x', style='scientific', scilimits=(6, 6), useMathText=True)
+                ax[i].set_xlabel(xlabel='Chromosomal position (bp)', fontsize=15)
+
+        fig.subplots_adjust(hspace=0.1)
+        filename= rt + typ
+        filename=check_save(arg, filename)
+        f_name.append(filename)
+        plt.savefig(arg['--outdir']+filename)
+        plt.close()
+    cap = list()
+    if arg['--captions']:
+        f = create_caption(arg,rt)
+        cap.append(', '.join(f_name))
+        cap.append(t)
+        cap = cap + labs_list
+        cap.append(arg['lines'][11].format(arg['color_names']['dots']))
+        if arg['--moving-avg'] != False:
+            cap.append(arg['lines'][12].format(arg['color_names']['mvg'], str(arg['--moving-avg'])))
+        write_caption(f,cap)
 
 def AF_multi_Vertical_graph(df, arg, g_type):
     typ=arg['--fileformat']
