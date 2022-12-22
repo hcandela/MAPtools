@@ -32,7 +32,8 @@ titles_qtl = {1:('p-values of two-tailed Fisher\'s exact tests along the chromos
           7:('Frequency of alleles in the pool of plants exhibiting the high phenotype.', 'AF1&2_multiV','AF1_multiV'),
           8:('Frequency of alleles in the pool of plants exhibiting the low phenotype.', 'AF2&1_multiV','AF2_multiV'),
           9:('$\Delta$ SNP-index plot with data from both pools.','Delta_multiV'),
-          11:('Single nucleotide polymorphism (SNP)-index plots of chromosome {}','SNPidx_chr{}')
+          11:('Single nucleotide polymorphism (SNP)-index plots of chromosome {}','SNPidx_chr{}'),
+          10:('Euclidean Distance between frequencies in both pools', 'ED_chr{}_{}')
 }
 
 lines_mbs = {-3:'Each {} dot indicates the  maximum allele frequency of a biallelic SNP segregating in the population, as determined for the pool of mutants.',
