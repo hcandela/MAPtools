@@ -479,7 +479,6 @@ def plot_G(df, arg):
         plt.close()
 
 def pval_multi_graph(df, arg):
-    print ("p_valor_multigrafico")
     t, rt = arg['titles'][1]
     if arg['--captions']:
         f = create_caption(arg, rt)
