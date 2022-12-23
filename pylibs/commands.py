@@ -231,7 +231,7 @@ def qtl_plot(argv):
 
   """
     arg = docopt(qtlplot_doc, argv=None, help=True,version='qtl_plot qtl version=0.1')
-    print(arg)
+    #print(arg)
     df, arg = test_plot(arg)
     print(arg)
     if arg['--euclidean-distance']:
