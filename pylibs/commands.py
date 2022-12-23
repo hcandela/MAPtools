@@ -235,11 +235,14 @@ def qtl_plot(argv):
     df, arg = test_plot(arg)
     print(arg)
     if arg['--euclidean-distance']:
+        df = get_ED100_4(df, arg, RANG)
         plot_ED(df,arg)
         if arg['--multi-chrom'] == True:
             ED_multi_Vertical_graph(df, arg)
     if arg['--g-statistic'] == True:
         plot_G(df, arg)
+        if arg['--multi-chrom'] == True:
+            G_multi_Vertical_graph(df, arg)
     if arg['--pvalue'] == True:
         pval_mono_graph(df, arg)
         if arg['--multi-chrom'] == True:    

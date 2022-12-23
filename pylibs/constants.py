@@ -1,4 +1,5 @@
-blind_mbs = {'dots':('#000000','black'), 'MAX_SNPidx2':('#f781bf','pink'),'log10PVALUE':(),'SNPidx1':('#00ffff','light blue'),'SNPidx2':('#ff9a31','orange'),'BOOST':('#00ffff','light blue')}
+RANG = 100
+blind_mbs = {'dots':('#000000','black'), 'MAX_SNPidx2':('#f781bf','pink'),'log10PVALUE':('#f0e442','yellow'),'SNPidx1':('#00ffff','light blue'),'SNPidx2':('#ff9a31','orange'),'BOOST':('#00ffff','light blue')}
 norm_mbs = {'dots':('royalblue','blue'), 'MAX_SNPidx2':('#f781bf','pink'),'log10PVALUE':('tomato','red'),'SNPidx1':('limegreen','green'),'SNPidx2':('#FF33F9' ,'pink'),'BOOST':('limegreen','green')}
 
 palettes_mbs = {'1':blind_mbs,'2':norm_mbs}
@@ -33,7 +34,7 @@ titles_qtl = {1:('p-values of two-tailed Fisher\'s exact tests along the chromos
           8:('Frequency of alleles in the pool of plants exhibiting the low phenotype.', 'AF2&1_multiV','AF2_multiV'),
           9:('$\Delta$ SNP-index plot with data from both pools.','Delta_multiV'),
           11:('Single nucleotide polymorphism (SNP)-index plots of chromosome {}','SNPidx_chr{}'),
-          10:('Euclidean Distance between frequencies in both pools', 'ED_chr{}_{}','ED_multiV_{}'),
+          10:('Euclidean Distance between frequencies in both pools', 'ED_chr{}','ED_multiV'),
           12:('G-statistic of the two-phase sampling inherent to both pools, calculated using the procedure used in (Magwene, et al. 2011) .','G_chr{}','G_multiV')
 }
 

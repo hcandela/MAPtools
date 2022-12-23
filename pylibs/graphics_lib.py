@@ -171,6 +171,7 @@ def check_mbs_opts(arg):
             sys.exit()
     arg['titles'] = titles_mbs
     arg['lines'] = lines_mbs
+    print(arg['--palette'])
     palette = palettes_mbs[arg['--palette']]
     arg['--palette'] = {k: v[0] for k, v in palette.items()}
     arg['color_names'] = {k: v[1] for k, v in palette.items()}
@@ -187,9 +188,7 @@ def check_mbs_opts(arg):
             arg['--combine'] = True
         if len(arg['--chromosomes']) > 1:
             arg['--multi-chrom'] = True
-        if 'ED' in arg['--fields']:
-            arg['--euclidean-distance'] = True
-        if 'MAX_SNPidx2' in arg['--fields'] and 'SNPidx1' not in arg['--fields'] and 'SNPindx2' not in arg['--fields']:
+        if 'MAX_SNPidx2' in arg['--fields']:
             arg['--max-allele-freq2'] = True
         else:
             arg['--max-allele-freq2'] = False
@@ -199,9 +198,6 @@ def check_mbs_opts(arg):
             sys.exit()
         if arg['--pvalue'] == True and 'log10PVALUE' not in arg['--fields']:
             print('Error: is not possible make P-VALUE graphics with your input data')
-            sys.exit()
-        if arg['--euclidean-distance'] == True and 'ED' not in arg['--fields']:
-            print('Error: is not possible make Euclidean Distance graphics with your input data')
             sys.exit()
         if arg['--allele-freq-1'] == True and 'SNPidx1' not in arg['--fields']:
             print('Error: is not possible make phased Allele Frequency graphics with your input data. Please use -M or -a option')
@@ -237,17 +233,26 @@ def check_qtl_opts(arg):
             arg['--ci95'] = True
         if len(arg['--chromosomes']) > 1:
             arg['--multi-chrom'] = True
+        if 'ED' in arg['--fields']:
+            arg['--euclidean-distance'] = True
+        if 'G' in arg['--fields']:
+            arg['--g-statistic'] = True
 
     else:
         if arg['--pvalue'] == True and 'log10PVALUE' not in arg['--fields']:
             print('Error: is not possible make P-VALUE graphics with your input data')
             sys.exit()
         if arg['--delta'] == True and 'DELTA' not in arg['--fields']:
-            print(
-                'Error: is not possible make phased SNP-idx graphics with your input data. Please use -a.')
+            print('Error: is not possible make phased SNP-idx graphics with your input data. Please use -a.')
             sys.exit()
         if arg['--ci95'] == True and 'DELTA' not in arg['--fields']:
             print('Error: is not possible to calculate confidense interval without DELTA field. Please use -a.')
+            sys.exit()
+        if arg['--euclidean-distance'] == True and 'ED' not in arg['--fields']:
+            print('Error: is not possible make Euclidean Distance graphics with your input data')
+            sys.exit()
+        if arg['--g-statistc'] == True and 'G' not in arg['--fields']:
+            print('Error: is not possible make G-statistic graphics with your input data')
             sys.exit()
         if ('SNPidx1' not in arg['--fields'] or 'SNPidx2' not in arg['--fields']) and (arg['--allele-freq-H'] == True or arg['--allele-freq-L'] == True):
             print('Error: is not possible make phased SNP-idx graphics with your input data. Please use -a or -p.')
@@ -412,8 +417,6 @@ def get_ED100_4(df, arg, rang):
 
 
 def plot_ED(df, arg):
-    rang = 100
-    df = get_ED100_4(df, arg, rang)
     chrom = arg['--chromosomes']
     typ = arg['--fileformat']
     max_y = max(df['ED100_4'])
@@ -436,18 +439,9 @@ def plot_ED(df, arg):
         ax.set_yticks(ticks=[0, 0.5, 1, 1.5])
         ax.set_yticklabels(labels=[0, 0.5, 1, 1.5], fontsize=8)
         ax.spines['top'].set_visible(False)
-        if arg['--moving-avg'] != False:
-            ax2 = ax.twinx()
-            c_ = arg['--palette']['mvg']
-            ax2.set(xlim=(0, max_x), ylim=(0, max_y))
-            ax2.tick_params(axis='y', which='major', labelsize=8)
-            ax2.yaxis.set_major_formatter(ScalarFormatter())
-            ax2.ticklabel_format(axis='y', style='scientific', scilimits=(7,8), useMathText=True)
-            ax2.set_ylabel(ylabel='Euclidean distance $\mathregular{100^4}$', fontsize=12, rotation=90, labelpad=15)
-            ax2.plot(d['POS'], d['ED100_4'], c=c_, lw=1.25)
-            ax2.spines['top'].set_visible(False)
+        plot_ED100_4(d, arg, ax, max_x, max_y)
 
-        rtch = rt.format(chrom[ch], 'ED100_4' if arg['--moving-avg'] != False else '')
+        rtch = rt.format(chrom[ch])
         filename = rtch + typ
         filename = check_save(arg, filename)
         plt.savefig(arg['--outdir']+filename)
@@ -459,8 +453,7 @@ def plot_ED(df, arg):
             cap.append(filename)
             cap.append(t)
             cap.append(arg['lines'][9].format(arg['color_names']['dots']))
-            if arg['--moving-avg'] != False:
-                cap.append(arg['lines'][10].format(arg['color_names']['mvg']))
+            cap.append(arg['lines'][10].format(arg['color_names']['mvg']))
             write_caption(f,cap)
 
 def plot_G(df, arg):
@@ -884,10 +877,8 @@ def pval_multi_Vertical_graph(df, arg):
 
 
 def ED_multi_Vertical_graph(df, arg):
-    rang = 100
-    df = get_ED100_4(df, arg, rang)
     typ=arg['--fileformat']
-    max_y = min(df['ED100_4'])
+    max_y = max(df['ED100_4'])
     max_x = max(df['POS'])
     t,_,rt = arg['titles'][10]
     labs_list = list()
@@ -907,20 +898,13 @@ def ED_multi_Vertical_graph(df, arg):
             ax[i].set_xticks(ticks=np.arange(0, max_x, 5e6))
             ax[i].tick_params(labelbottom=False)
             ax[i].set_ylabel(ylabel='Euclidean distance', fontsize=12, rotation=90, labelpad=15)
+            ax[i].set_yticks(ticks=[0,0.5,1,1.5])
+            ax[i].set_yticklabels(labels=[0,0.5,1,1.5], fontsize=8)
             ax[i].set_title('({})'.format(arg['labs'][chrom[i]]), fontsize=18, rotation=0, x=-0.14, y=0.85)
             labs_list.append('({}) Chromosome {}.'.format(arg['labs'][chrom[i]],chrom[i]))
             ax[i].tick_params(axis='y', which='major', labelsize=8)
             ax[i].spines['top'].set_visible(False)
-            if arg['--moving-avg'] != False:
-                ax2 = ax[i].twinx()
-                c_ = arg['--palette']['mvg']
-                ax2[i].set(xlim=(0, max_x), ylim=(0, max_y))
-                ax2[i].tick_params(axis='y', which='major', labelsize=8)
-                ax2[i].yaxis.set_major_formatter(ScalarFormatter())
-                ax2[i].ticklabel_format(axis='y', style='scientific', scilimits=(7,8), useMathText=True)
-                ax2[i].set_ylabel(ylabel='Euclidean distance $\mathregular{100^4}$', fontsize=12, rotation=90, labelpad=15)
-                ax2[i].plot(d['POS'], d['ED100_4'], c=c_, lw=1.25)
-                ax2[i].spines['top'].set_visible(False)
+            plot_ED100_4(d, arg, ax[i], max_x, max_y)
             if len(chrom) == 1:
                 ax[1].remove()
             if i == len(chrom)-1 or len(chrom) == 1:
@@ -930,7 +914,7 @@ def ED_multi_Vertical_graph(df, arg):
                 ax[i].ticklabel_format(axis='x', style='scientific', scilimits=(6, 6), useMathText=True)
                 ax[i].set_xlabel(xlabel='Chromosomal position (bp)', fontsize=15)
 
-        fig.subplots_adjust(hspace=0.1)
+        fig.subplots_adjust(hspace=0.2)
         filename= rt + typ
         filename=check_save(arg, filename)
         f_name.append(filename)
@@ -943,14 +927,13 @@ def ED_multi_Vertical_graph(df, arg):
         cap.append(t)
         cap = cap + labs_list
         cap.append(arg['lines'][9].format(arg['color_names']['dots']))
-        if arg['--moving-avg'] != False:
-            cap.append(arg['lines'][10].format(arg['color_names']['mvg']))
+        cap.append(arg['lines'][10].format(arg['color_names']['mvg']))
         write_caption(f,cap)
 
 def G_multi_Vertical_graph(df, arg):
     typ=arg['--fileformat']
     min_y, max_y = min(df['G']), max(df['G'])
-    max_x = max(d['POS'])
+    max_x = max(df['POS'])
     t,_,rt = arg['titles'][12]
     labs_list = list()
     f_name = list()
@@ -1486,11 +1469,22 @@ def plot_boost(d, arg, ax, max_x):
     ax2=ax.twinx()
     ax2.spines['top'].set_visible(False)
     c_=arg['--palette']['BOOST']
-    ax2.plot(d['medboostx'], d['medboost'], c=c_, lw=1.25, linestyle='dashed')
+    ax2.plot(d['medboostx'], d['medboost'], c=c_, lw=1.00, linestyle='dashed')
     ax2.set(xlim=(0, max_x), ylim=(0, 1))
     ax2.set_yticks(ticks=[0, 0.25, 0.5, 0.75, 1])
     ax2.set_yticklabels(labels=[0, 0.25, 0.5, 0.75, 1], fontsize=8)
     ax2.set_ylabel(ylabel='Boost', fontsize=12, rotation=90, labelpad=15)
+
+def plot_ED100_4(d, arg, ax, max_x, max_y):
+    ax2 = ax.twinx()
+    c_ = arg['--palette']['mvg']
+    ax2.set(xlim=(0, max_x), ylim=(0, max_y))
+    ax2.tick_params(axis='y', which='major', labelsize=8)
+    ax2.yaxis.set_major_formatter(ScalarFormatter())
+    ax2.ticklabel_format(axis='y', style='scientific', scilimits=(7,8), useMathText=True)
+    ax2.set_ylabel(ylabel='Euclidean distance $\mathregular{100^4}$', fontsize=10, rotation=90, labelpad=15)
+    ax2.plot(d['POS'], d['ED100_4'], c=c_, lw=1.25)
+    ax2.spines['top'].set_visible(False)
 
 def create_caption(arg, res_tit):
     f=open(arg['captions_dir'] + res_tit + '.txt', 'a')
