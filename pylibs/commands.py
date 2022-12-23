@@ -218,6 +218,7 @@ def qtl_plot(argv):
     --allele-freq-L, -L        Generates the allele frecuency graphics for the pool of low phenotype.
     --combine, -C              Combined multi-graphics with high and low lines. Use it together with --moving-avg.
     --euclidean-distance, -E   Generates graphics with Euclidean distance between individual SNPs and in groups of 100 adjacent markers.
+    --g-statistic, -G          Generates graphics with G-statistic for individual SNPs.
     --all, -a                  Generates all possible graphics.
     --moving-avg, -A=<int>     Selects the number of adjacent markers for the construction of moving average curves for allele frequncy and p-value.
     --palette, -P=<int>        Select the colour palette for your graphics (1 for colour blidness) [default: 1].
@@ -235,6 +236,9 @@ def qtl_plot(argv):
     print(arg)
     if arg['--euclidean-distance']:
         plot_ED(df,arg)
+        if arg['--multi-chrom'] == True:
+            ED_multi_Vertical_graph(df, arg)
+    if arg['--g-statistic'] == True:
         plot_G(df, arg)
     if arg['--pvalue'] == True:
         pval_mono_graph(df, arg)
