@@ -237,7 +237,8 @@ def check_qtl_opts(arg):
             arg['--euclidean-distance'] = True
         if 'G' in arg['--fields']:
             arg['--g-statistic'] = True
-
+        if arg['--pvalue'] and arg['--delta'] and arg['--euclidean-distance'] and arg['--g-statistic']:
+            arg['--qtl-seq'] = True
     else:
         if arg['--pvalue'] == True and 'log10PVALUE' not in arg['--fields']:
             print('Error: is not possible make P-VALUE graphics with your input data')
@@ -398,7 +399,7 @@ def grouped_by(df, arg):
 
 
 def get_ED100_4(df, arg, rang):
-    chrom = arg['--chromosomes']
+    chrom = df['#CHROM'].unique()
     ED100 = np.array([])
     for ch in range(len(chrom)):
         d = df[df['#CHROM'] == chrom[ch]]
@@ -412,7 +413,7 @@ def get_ED100_4(df, arg, rang):
         for i in range(n-int(rang/2), n):
             ED100c[i] = d['ED'].iloc[n-int(rang/2):n].sum()
         ED100 = np.concatenate([ED100, ED100c])
-    df['ED100_4'] = pd.Series(ED100**4)
+    df['ED100_4'] = pd.Series(ED100**4)/(10**8)
     return df
 
 
@@ -1295,6 +1296,108 @@ def AF1_AF2_pval_mono(df, arg):
                 cap.append(arg['lines'][2].format(str(arg['n_markers'])))
             write_caption(f,cap)
 
+def qtl_mixed_plot(df, arg):
+    global fields
+    chrom=arg['--chromosomes']
+    typ=arg['--fileformat']
+    t,rt = arg['titles'][13]
+    for i in range(len(chrom)):
+        fig, ax=plt.subplots(4, 1, figsize=(8.5, 8.5))#(7,9)paper
+        d=df[df['#CHROM'] == chrom[i]]
+        max_x = max(d['POS'])
+        x=d[['POS']]
+        y1=d['G']
+        y2=d['ED']
+        y3=d['DELTA']
+        y4=d['log10PVALUE']
+        # G-statistic
+        ax[0].scatter(x, y1, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+        ax[0].set(xlim=(0, max_x), ylim=(min(df['G']), max(df['G'])))
+        ax[0].set_xticks(ticks=np.arange(0, max_x, 5e6))
+        ax[0].tick_params(labelbottom=False)
+        ax[0].set_ylabel(ylabel='G-statistic', fontsize=12, rotation=90, labelpad=15)
+        ax[0].tick_params(axis='y', which='major', labelsize=8)
+        ax[0].set_title('(a)', fontsize=17, rotation=0, x = -0.14, y=0.85)
+        
+        if arg['--moving-avg'] != False:
+            plot_avg(d, arg, ax[0], 'G' )
+        ax[0].spines['top'].set_visible(False)
+        ax[0].spines['right'].set_visible(False)
+
+        # ED
+        ax[1].scatter(x, y2, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+        ax[1].set(xlim=(0, max_x), ylim=(0, 1.5))
+        ax[1].set_xticks(ticks=np.arange(0, max_x, 5e6))
+        ax[1].tick_params(labelbottom=False)
+        ax[1].set_ylabel(ylabel='Euclidean distance', fontsize=12, rotation=90, labelpad=15)
+        ax[1].set_title('(b)', fontsize=17, rotation=0, x = -0.14, y=0.85)
+        ax[1].set_yticks(ticks=[0, 0.5, 1, 1.5])
+        ax[1].set_yticklabels(labels=[0, 0.5, 1, 1.5], fontsize=8)
+        plot_ED100_4(d, arg, ax[1], max_x, max(df['ED100_4']))
+        ax[1].spines['top'].set_visible(False)
+        ax[1].spines['right'].set_visible(False)
+
+        # DELTA
+        if arg['--ci95']:
+            lim_y = (-1.3, 1.3)
+        else:
+            lim_y = (-1, 1)
+        ax[2].scatter(x, y3, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+        ax[2].set(xlim=(0, max_x), ylim=lim_y)
+        ax[2].set_xticks(ticks=np.arange(0, max_x, 5e6))
+        ax[2].tick_params(labelbottom=False)
+        ax[2].set_ylabel(ylabel='$\Delta$'+' (SNP-index)',fontsize=12, labelpad=15)
+        ax[2].set_title('(c)', fontsize=17, rotation=0, x = -0.14, y=0.85)
+        ax[2].set_yticks(ticks=[-1,0,1])
+        ax[2].set_yticklabels(labels=[-1,0,1], fontsize=8)
+        if arg['--moving-avg'] != False:
+            plot_avg(d, arg, ax[2], 'DELTA')
+        if arg['--ci95']:
+            calc_ci(d, arg, ax[2])
+            ax[2].axhline(y=0, color = 'black', linestyle='dashed', linewidth=0.75)
+        ax[2].spines['top'].set_visible(False)
+        ax[2].spines['right'].set_visible(False)
+
+        # log10PVALUE
+        ax[3].scatter(x, y4, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+        ax[3].set(xlim=(0, max_x), ylim=(min(df['log10PVALUE'])*1.05, 0))
+        ax[3].set_xticks(ticks=np.arange(0, max_x, 5e6))
+        ax[3].set_xticklabels(labels=np.arange(0, max_x, 5e6),fontsize=8)
+        ax[3].set_ylabel(ylabel='log'+r'$_{10}$'+'(p-value)',fontsize=12, labelpad=15)
+        ax[3].set_title('(d)', fontsize=17, rotation=0, x = -0.14, y=0.85)
+        ax[3].tick_params(axis='y', which='major', labelsize=8)
+        if arg['--moving-avg'] != False:
+            plot_avg(d, arg, ax[3], 'log10PVALUE')
+        if arg['--bonferroni']:
+            threshold=log(0.05/len(df.axes[0]))/log(10)
+            max_x_ch=(max(d['POS'])/max_x)
+            ax[3].axhline(y=threshold, color='black', xmin=0,xmax=max_x_ch, linestyle='dashed', linewidth=0.75)
+        ax[3].xaxis.set_major_formatter(ScalarFormatter())
+        ax[3].ticklabel_format(axis='x', style='scientific',scilimits=(6, 6), useMathText=True)
+        ax[3].set_xlabel(xlabel='Chromosomal position (bp)',fontsize=15)
+        ax[3].spines['top'].set_visible(False)
+        ax[3].spines['right'].set_visible(False)
+
+        # Save file
+        fig.subplots_adjust(hspace=0.1)
+        rtch = rt.format(chrom[i])
+        filename=rtch + typ
+        filename=check_save(arg, filename)
+        plt.savefig(arg['--outdir']+filename)
+        plt.close()
+        cap = list()
+
+        if arg['--captions']:
+            f = create_caption(arg, rtch)
+            cap.append(filename)
+            cap.append(t.format(chrom[i]))
+            cap.append(arg['lines'][13])
+            #if arg['--moving-avg'] != False:
+            #    cap.append(arg['lines'][3].format(arg['color_names']['SNPidx1'], str(arg['--moving-avg'])))
+            #    cap.append(arg['lines'][4].format(arg['color_names']['SNPidx2'], str(arg['--moving-avg'])))
+            if arg['--bonferroni']:
+                cap.append(arg['lines'][2].format(str(arg['n_markers'])))
+            write_caption(f,cap)
 
 def snp_index_graph(df, arg):
     global fields
@@ -1338,8 +1441,12 @@ def snp_index_graph(df, arg):
         ax[1].spines['right'].set_visible(False)
 
         # D-SNPidx
+        if arg['--ci95']:
+            lim_y = (-1.3, 1.3)
+        else:
+            lim_y = (-1, 1)
         ax[2].scatter(x, y3, s=0.5, c=arg['--palette']['DELTA'], alpha=arg['--alpha'])
-        ax[2].set(xlim=(0, max_x), ylim=(-1.5, 1.5))
+        ax[2].set(xlim=(0, max_x), ylim=lim_y)
         ax[2].set_yticks(ticks=[-1, 0, 1])
         ax[2].tick_params(labelbottom=True)
         ax[2].set_xticks(ticks=np.arange(0,max_x,5e6))
@@ -1480,9 +1587,7 @@ def plot_ED100_4(d, arg, ax, max_x, max_y):
     c_ = arg['--palette']['mvg']
     ax2.set(xlim=(0, max_x), ylim=(0, max_y))
     ax2.tick_params(axis='y', which='major', labelsize=8)
-    ax2.yaxis.set_major_formatter(ScalarFormatter())
-    ax2.ticklabel_format(axis='y', style='scientific', scilimits=(7,8), useMathText=True)
-    ax2.set_ylabel(ylabel='Euclidean distance $\mathregular{100^4}$', fontsize=10, rotation=90, labelpad=15)
+    ax2.set_ylabel(ylabel='ED $\mathregular{100^4}$  $\mathregular{x10^8}$ ', fontsize=10, rotation=90, labelpad=15)
     ax2.plot(d['POS'], d['ED100_4'], c=c_, lw=1.25)
     ax2.spines['top'].set_visible(False)
 

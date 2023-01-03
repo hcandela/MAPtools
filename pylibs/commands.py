@@ -253,7 +253,9 @@ def qtl_plot(argv):
         AF_mono_graph(df, arg, 'DELTA')
         if arg['--multi-chrom'] == True:
             AF_multi_Vertical_graph(df, arg, 'DELTA')
-        
+    
+    if arg['--qtl-seq'] == True:
+      qtl_mixed_plot(df, arg)
     if arg['--allele-freq-H'] == True and arg['--allele-freq-L'] == True:
         if arg['--combine'] and arg['--moving-avg'] != False:
             AF1_AF2_mono_graph(df, arg)

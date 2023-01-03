@@ -35,7 +35,8 @@ titles_qtl = {1:('p-values of two-tailed Fisher\'s exact tests along the chromos
           9:('$\Delta$ SNP-index plot with data from both pools.','Delta_multiV'),
           11:('Single nucleotide polymorphism (SNP)-index plots of chromosome {}','SNPidx_chr{}'),
           10:('Euclidean Distance between frequencies in both pools', 'ED_chr{}','ED_multiV'),
-          12:('G-statistic of the two-phase sampling inherent to both pools, calculated using the procedure used in (Magwene, et al. 2011) .','G_chr{}','G_multiV')
+          12:('G-statistic of the two-phase sampling inherent to both pools, calculated using the procedure used in (Magwene, et al. 2011) .','G_chr{}','G_multiV'),
+          13:('QTL-Seq comparison plot of chromosome {}.', 'QTL-Seq_chr{}')
 }
 
 lines_mbs = {-3:'Each {} dot indicates the  maximum allele frequency of a biallelic SNP segregating in the population, as determined for the pool of mutants.',
@@ -70,7 +71,10 @@ lines_qtl = {-3:'Each {} dot was calculated substracting the SNP-index value of 
          9:'Each {} dot represents the Euclidean distance for each individual marker',
          10:'The {} line is the smoothed statistic ED100^4 for Euclidean distance, calculated by summing of 100 individual markers raised to the fourth power as described in (de la Fuente Cantó, et al. 2022).',
          11:'Each {} dot represents the G-statistic for each individual marker',
-         12:'The {} line indicates the weighted moving average of the G-statistic at {} adjacent SNPs.'
+         12:'The {} line indicates the weighted moving average of the G-statistic at {} adjacent SNPs.',
+         13:'(a) G-statistic for each individual SNP. (b) Euclidean distance for each individual SNP and the smoothed statistic ED100^4.'\
+            '(c) $\Delta$ SNP-index plot, substracting the SNP-index value of the low pool from the high pool.'\
+               '(d) p-values of two-tailed Fisher\'s exact tests.\n'
         
          
 }
