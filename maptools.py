@@ -21,6 +21,7 @@ Avalaible commands:
    qtl
    qtlplot
    merge
+   annotate
 """
 
 from docopt import docopt
@@ -42,5 +43,7 @@ if __name__ == '__main__':
         qtl_plot(argv)
     elif args['<command>'] == 'merge':
         merge(argv)
+    elif args['<command>'] == 'annotate':
+        annotate(argv)
     else:
         sys.exit('%r is not a maptools command. See \'maptools --help\'.'% args['<command>'])

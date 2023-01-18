@@ -270,3 +270,43 @@ def qtl_plot(argv):
     if arg['--allele-freq-L'] == True:
         AF_mono_graph(df, arg, 'SNPidx2')   
         
+def annotate(argv):
+  annotate_doc="""Annotate variants
+Usage:
+   maptools.py annotate [options]
+   maptools.py annotate --version
+   maptools.py annotate -h
+
+Options:
+   --help -h                     Show this screen.
+   --version                     Show the version.
+   --input, -i=<file>            VCF input file. If the input come from a pipe, don't use this option.
+Input Options:
+   --data, -d=<opt>              Code of genotypes ordered according VCF input file [default: D,R].
+   --ref, -r=<opt>               Which parental houses the reference [default: D].
+   --no-ref                      Don't normalize data.
+   --mutagen, -M=<opt>           Type of mutagen used [defult: EMS].
+   --region, -R=<region>         Region of the genome to explore (... -R chrName:Spos-Fpos)
+Output Options:
+   --output, -o=<file>           Output file.
+   --outdir, -O=<dir>            Output directory [default: results].           
+  """
+  arg = docopt(annotate_doc, argv=None, help=True, version='Annotate variants version: 0.1')
+  arg['pipe'] = sys.stdin.isatty()
+  arg = test_arg_ann(annotate_doc, arg)
+  output = arg['--output']
+  fsal = False
+  if output != None:
+    fsal = open(arg['--outdir']+arg['--output'], 'w')
+  first = True
+  if arg['--input']:
+    inp = open(arg['--input'], 'r')
+  else:
+    inp = sys.stdin
+  flag = True
+  for line in inp:
+    if not line.startswith('#'):
+      line = filter_region(line, arg)
+      
+
+  print(arg)

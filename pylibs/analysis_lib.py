@@ -419,3 +419,114 @@ def normalize(pools, REF, arg, r_min=0.03):
 				c = rec[p_al[1]]
 				d = rec[p_al[0]]
 				return[p_al[1], p_al[0], a, b, c, d]
+
+def test_arg_ann(__doc__,arg):
+	if arg['--input'] == None and arg['pipe'] == True:
+		print(__doc__,end='')
+		sys.exit()
+	if arg['--input'] != None:
+		inp_f = arg['--input']
+		try:
+			f = open(inp_f, 'r')
+		except FileNotFoundError:
+			print('Error: The input file {} does not exit'.format(inp_f))
+			sys.exit()
+	wd = os.getcwd()
+	try:
+		os.makedirs(wd+'/'+arg['--outdir'])
+	except FileExistsError:
+		print('#Warning: the output directory already exists')
+		pass
+	
+	arg['--outdir'] = wd+'/'+arg['--outdir']+'/'
+	if arg['--output'] != None:
+		arg['--fileformat'] = '.txt'
+		arg['--output'] = arg['--output'] + arg['--fileformat']
+		arg['--output'] = check_save_an(arg, arg['--output'])
+	else:
+		arg['--output'] = None
+	
+	Tchrom,Treg = arg['--region'].split(':')
+	arg['--region'] = [Tchrom,int(Treg[0]),int(Treg[1])]
+	data = arg['--data'].split(',')
+	if not 'R' in data:
+		print('Error: You should include the recessive pool (--data')
+
+def filter_region(line, arg):
+	z = line.split('\t')
+	chrom = z[0]
+	pos = int(z[1])
+	if chrom == arg['--region'][0] and pos >= arg['--region'][1] and pos <= arg['--region'][2]:
+		return line
+	
+def vcf_ann_parser(line, arg):
+	'''
+	This script reads the output from the bcftools call line by line and processes it
+	The line is splitted into list z[]. Values of the matrix are:
+		z[0] = chromosome
+		z[1] = positionarguments
+		z[2] = ID
+		z[3] = Reference allele
+		z[4] = Variant allele
+		z[5] = Quality
+		z[6] = Filter
+		z[7] = Info line. Read Bcftools documentation for more information
+		z[8] = Format. Contains the description of the format for the nexts fields
+		z[9] to z[x] = Genotype and allele count for bam 1, 2, 3...x
+	'''
+	z = line.split('\t')
+	alt = z[4] #alternative allele
+	if alt == '.':
+		#if the alternative allele is '.' indicates that there is no variation in the aligned sequences, so that position is discarded
+		return 0,0
+	else:
+		form = z[8].split(':')
+		GT_index = form.index('GT')
+		AD_index = form.index('AD')
+		data = arg['--data'].split(',')
+		res = dict()
+		inf = dict()
+		c = 9
+		for i in range(len(data)):
+			inf[data[i]] = c
+			c += 1
+		inf_s = set(data)
+		if len(inf_s) == 1:
+			data1 = z[9].split(':')
+			pool = dict()
+			#GT1 = data1[GT_index].split('/')
+			AD = data1[AD_index].split(',')
+			ref = z[3]
+			alt = z[4].split(',')
+			pool[ref] = int(AD[0])
+			for i in range(len(alt)):
+				pool[alt[i]] = int(AD[i+1])
+			res[data[0]] = pool
+			# #contains all the genotypes of the line
+		elif len(inf_s) >= 2:
+			if inf_s == {'D','R'} or inf_s == {'D','R','Pr'} or inf_s == {'D','R','Pd'}:
+				data1 = z[inf['D']].split(':')
+				data2 = z[inf['R']].split(':')
+				GT1 = data1[GT_index].split('/')
+				GT2 = data2[GT_index].split('/')
+				gt = set(GT1+GT2)
+				if len(gt) == 1 or '.' in gt: #if all the genotypes are equal the line is discarded
+					return 0,0
+				for p,c in inf.items():
+					ref = z[3]
+					alt = z[4].split(',')
+					AD = z[c].split(':')[AD_index].split(',')
+					pool = {ref:int(AD[0])}
+					for i in range(len(alt)):
+						pool[alt[i]] = int(AD[i+1])
+					res[p] = pool
+			elif inf_s == {'R','Pr'} or inf_s == {'R','Pd'}:
+				ref = z[3]
+				alt = z[4].split(',')
+				for p,c in inf.items():
+					AD = z[c].split(':')[AD_index].split(',')
+					pool = {ref:int(AD[0])}
+					for i in range(len(alt)):
+						pool[alt[i]] = int(AD[i+1])
+					res[p] = pool
+		return [z[0], z[1], z[3]],res #returns chromosome, position, reference allele, and the data for each bam)
