@@ -297,39 +297,37 @@ def vcf_line_parser2(line, arg):
 		res = dict()
 		inf = dict()
 		c = 9
-		for i in range(len(data)):
-			inf[data[i]] = c
+		for i in range(len(data)):		#dict inf contain the name of the pool and the column where is it in input 
+			inf[data[i]] = c			#{'R': 9, 'D':10, 'Pr':11}
 			c += 1
 		inf_s = set(data)
 		if len(inf_s) == 1:
-			data1 = z[9].split(':')
+			data1 = z[9].split(':')			#split data from R pool
 			pool = dict()
-			#GT1 = data1[GT_index].split('/')
-			AD = data1[AD_index].split(',')
+			AD = data1[AD_index].split(',') #obtain AD data from R pool
 			ref = z[3]
-			alt = z[4].split(',')
-			pool[ref] = int(AD[0])
+			alt = z[4].split(',')			#alt could be more than one nt
+			pool[ref] = int(AD[0])			#generete a dict for the pool {'nt':AD1, 'nt':AD2 }
 			for i in range(len(alt)):
 				pool[alt[i]] = int(AD[i+1])
-			res[data[0]] = pool
-			# #contains all the genotypes of the line
+			res[data[0]] = pool				#Save the pool dict naming the pool {'R':{'nt1':AD1, 'nt2':AD2 }}
 		elif len(inf_s) >= 2:
 			if inf_s == {'D','R'} or inf_s == {'D','R','Pr'} or inf_s == {'D','R','Pd'}:
-				data1 = z[inf['D']].split(':')
+				data1 = z[inf['D']].split(':')	#save info from each pool
 				data2 = z[inf['R']].split(':')
 				GT1 = data1[GT_index].split('/')
 				GT2 = data2[GT_index].split('/')
-				gt = set(GT1+GT2)
+				gt = set(GT1+GT2)				#compare the genotypes
 				if len(gt) == 1 or '.' in gt: #if all the genotypes are equal the line is discarded
 					return 0,0
-				for p,c in inf.items():
+				for p,c in inf.items():		#for each pool and column
 					ref = z[3]
 					alt = z[4].split(',')
 					AD = z[c].split(':')[AD_index].split(',')
 					pool = {ref:int(AD[0])}
 					for i in range(len(alt)):
 						pool[alt[i]] = int(AD[i+1])
-					res[p] = pool
+					res[p] = pool	#{'R':{'nt1':AD1, 'nt2':AD2 }, 'D':{'nt1':AD1, 'nt2':AD2}...}
 			elif inf_s == {'R','Pr'} or inf_s == {'R','Pd'}:
 				ref = z[3]
 				alt = z[4].split(',')
@@ -447,10 +445,16 @@ def test_arg_ann(__doc__,arg):
 		arg['--output'] = None
 	
 	Tchrom,Treg = arg['--region'].split(':')
+	Treg = Treg.split('-')
 	arg['--region'] = [Tchrom,int(Treg[0]),int(Treg[1])]
 	data = arg['--data'].split(',')
+	arg['spacer'] = '\t'
+	arg['mbs'] = True
+	arg['lim'] = 1e-90
 	if not 'R' in data:
 		print('Error: You should include the recessive pool (--data')
+		sys.exit()
+	return arg
 
 def filter_region(line, arg):
 	z = line.split('\t')
@@ -458,75 +462,51 @@ def filter_region(line, arg):
 	pos = int(z[1])
 	if chrom == arg['--region'][0] and pos >= arg['--region'][1] and pos <= arg['--region'][2]:
 		return line
-	
-def vcf_ann_parser(line, arg):
-	'''
-	This script reads the output from the bcftools call line by line and processes it
-	The line is splitted into list z[]. Values of the matrix are:
-		z[0] = chromosome
-		z[1] = positionarguments
-		z[2] = ID
-		z[3] = Reference allele
-		z[4] = Variant allele
-		z[5] = Quality
-		z[6] = Filter
-		z[7] = Info line. Read Bcftools documentation for more information
-		z[8] = Format. Contains the description of the format for the nexts fields
-		z[9] to z[x] = Genotype and allele count for bam 1, 2, 3...x
-	'''
-	z = line.split('\t')
-	alt = z[4] #alternative allele
-	if alt == '.':
-		#if the alternative allele is '.' indicates that there is no variation in the aligned sequences, so that position is discarded
-		return 0,0
 	else:
-		form = z[8].split(':')
-		GT_index = form.index('GT')
-		AD_index = form.index('AD')
-		data = arg['--data'].split(',')
-		res = dict()
-		inf = dict()
-		c = 9
-		for i in range(len(data)):
-			inf[data[i]] = c
-			c += 1
-		inf_s = set(data)
-		if len(inf_s) == 1:
-			data1 = z[9].split(':')
-			pool = dict()
-			#GT1 = data1[GT_index].split('/')
-			AD = data1[AD_index].split(',')
-			ref = z[3]
-			alt = z[4].split(',')
-			pool[ref] = int(AD[0])
-			for i in range(len(alt)):
-				pool[alt[i]] = int(AD[i+1])
-			res[data[0]] = pool
-			# #contains all the genotypes of the line
-		elif len(inf_s) >= 2:
-			if inf_s == {'D','R'} or inf_s == {'D','R','Pr'} or inf_s == {'D','R','Pd'}:
-				data1 = z[inf['D']].split(':')
-				data2 = z[inf['R']].split(':')
-				GT1 = data1[GT_index].split('/')
-				GT2 = data2[GT_index].split('/')
-				gt = set(GT1+GT2)
-				if len(gt) == 1 or '.' in gt: #if all the genotypes are equal the line is discarded
-					return 0,0
-				for p,c in inf.items():
-					ref = z[3]
-					alt = z[4].split(',')
-					AD = z[c].split(':')[AD_index].split(',')
-					pool = {ref:int(AD[0])}
-					for i in range(len(alt)):
-						pool[alt[i]] = int(AD[i+1])
-					res[p] = pool
-			elif inf_s == {'R','Pr'} or inf_s == {'R','Pd'}:
-				ref = z[3]
-				alt = z[4].split(',')
-				for p,c in inf.items():
-					AD = z[c].split(':')[AD_index].split(',')
-					pool = {ref:int(AD[0])}
-					for i in range(len(alt)):
-						pool[alt[i]] = int(AD[i+1])
-					res[p] = pool
-		return [z[0], z[1], z[3]],res #returns chromosome, position, reference allele, and the data for each bam)
+		return
+
+
+def ann_calc(inp, arg):
+	'''
+	Takes the allele count and filter thresholds for:
+		max and min coverage (max_dp, min_dp)
+		max and min ratios to consider a position heterozigous (max_ratio, min_ratio)
+	Performs the necessary calcs for representation
+	Returns a list of the calcs with:
+		[
+		LogFisher of the allele count
+		Function that generates a peak in the maximum of the representation
+		p-value
+		log10 of p-value
+		]
+	'''
+	data = arg['--data'].split(',')
+	inf_s = set(data)
+	if len(inf_s) == 1 and arg['--no-ref'] == True:
+		a, b = inp[0], inp[1]
+		if a != 0 or b != 0:
+			ratio3 = max(a,b)/(a+b)
+			boost = 1/(arg['lim'] + abs(1 - 1/ratio3))
+			return [ratio3, boost]
+	elif (len(inf_s) == 1 and arg['--no-ref'] == False) or (len(inf_s) == 2 and 'D' not in inf_s):
+		a, b = inp[0], inp[1]
+		if a != 0 or b != 0:
+			ratio1 = b/(a+b)
+			boost = 1/(arg['lim'] + abs(1 - 1/max(ratio1, 1-ratio1)))
+			return [ratio1, boost]
+	elif 'D' in inf_s and 'R' in inf_s:
+		a, b, c, d = inp[0], inp[1], inp[2], inp[3]
+		dom = a + b #allele count of the dominant pool
+		rec = c + d #allele count of the recesive pool
+		ratio3 = max(c,d)/(c+d)
+		resultado = LogFisher(a,b,c,d)
+		pva = pvalor(a,b,c,d)
+		pva10 = (log(pva)/log(10))
+		if arg['--no-ref'] == True:
+			boost = 1/(arg['lim'] + abs(1 - 1/ratio3))
+			return [ratio3,resultado,boost,pva,pva10]
+		else:
+			ratio1 = b/(a+b)
+			ratio2 = d/(c+d)
+			boost = 1/(arg['lim'] + abs(1 - 1/ratio3))
+			return [ratio1,ratio2,ratio3,resultado,boost,pva,pva10]

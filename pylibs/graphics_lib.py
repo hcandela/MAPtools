@@ -252,7 +252,7 @@ def check_qtl_opts(arg):
         if arg['--euclidean-distance'] == True and 'ED' not in arg['--fields']:
             print('Error: is not possible make Euclidean Distance graphics with your input data')
             sys.exit()
-        if arg['--g-statistc'] == True and 'G' not in arg['--fields']:
+        if arg['--g-statistic'] == True and 'G' not in arg['--fields']:
             print('Error: is not possible make G-statistic graphics with your input data')
             sys.exit()
         if ('SNPidx1' not in arg['--fields'] or 'SNPidx2' not in arg['--fields']) and (arg['--allele-freq-H'] == True or arg['--allele-freq-L'] == True):
@@ -562,6 +562,11 @@ def pval_mono_graph(df, arg):
     for i in range(len(chrom)):
         d=df[df['#CHROM'] == chrom[i]]
         max_x=max(d['POS'])
+        #DMAX = d[d.DELTA == d.DELTA.max()]
+        #DMAX = DMAX[DMAX.log10PVALUE == DMAX.log10PVALUE.min()]
+        #print('DELTA__MAX', DMAX)
+        #DMIN = d[d.DELTA == d.DELTA.min()]
+        #print('DELTA__MIN', DMIN)
         t, rt = arg['titles'][2]
         cap = list()
         # TODO - Save the moving average values

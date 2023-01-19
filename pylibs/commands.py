@@ -219,6 +219,7 @@ def qtl_plot(argv):
     --combine, -C              Combined multi-graphics with high and low lines. Use it together with --moving-avg.
     --euclidean-distance, -E   Generates graphics with Euclidean distance between individual SNPs and in groups of 100 adjacent markers.
     --g-statistic, -G          Generates graphics with G-statistic for individual SNPs.
+    --qtl-seq, -Q              Generate muti-graphic with ED, G, DELTA and p-value graphics for each chromosome.
     --all, -a                  Generates all possible graphics.
     --moving-avg, -A=<int>     Selects the number of adjacent markers for the construction of moving average curves for allele frequncy and p-value.
     --palette, -P=<int>        Select the colour palette for your graphics (1 for colour blidness) [default: 1].
@@ -293,7 +294,9 @@ Output Options:
   """
   arg = docopt(annotate_doc, argv=None, help=True, version='Annotate variants version: 0.1')
   arg['pipe'] = sys.stdin.isatty()
+  print(arg)
   arg = test_arg_ann(annotate_doc, arg)
+  print(arg)
   output = arg['--output']
   fsal = False
   if output != None:
@@ -303,10 +306,15 @@ Output Options:
     inp = open(arg['--input'], 'r')
   else:
     inp = sys.stdin
-  flag = True
   for line in inp:
     if not line.startswith('#'):
       line = filter_region(line, arg)
-      
-
-  print(arg)
+      if line != None:
+        fields, pools = vcf_line_parser2(line, arg)
+        if (fields, pools) != (0,0):
+          REF = fields[2]
+          all_count = normalize(pools, REF, arg)
+          if all_count != None:
+            calcs = ann_calc(all_count[2:], arg)
+            if calcs != None:
+              first = new_line(fsal,arg,first,fields[:2], all_count, calcs)
