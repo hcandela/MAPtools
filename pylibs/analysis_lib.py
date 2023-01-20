@@ -1,4 +1,5 @@
 from logging import exception
+from pylibs.constants import *
 import re
 import sys
 import os
@@ -7,6 +8,7 @@ import numpy as np
 from scipy.stats import fisher_exact
 from scipy.stats import hypergeom
 from scipy.spatial import distance
+import pandas as pd
 #from docopt import docopt
 
 def cmHH(command_line):
@@ -451,6 +453,8 @@ def test_arg_ann(__doc__,arg):
 	arg['spacer'] = '\t'
 	arg['mbs'] = True
 	arg['lim'] = 1e-90
+	if arg['--mutagen'] == None:
+		arg['--mutagen'] = 'EMS'
 	if not 'R' in data:
 		print('Error: You should include the recessive pool (--data')
 		sys.exit()
@@ -465,6 +469,18 @@ def filter_region(line, arg):
 	else:
 		return
 
+def filter_mut(arg, al):
+	REF = al[0]
+	ALT = al[1]
+	if arg['--mutagen'] == 'EMS':
+		if (REF == 'G' and ALT == 'A') or (REF == 'C' and ALT == 'T'):
+			if REF == 'G' and ALT == 'A':
+				arg['GA'] += 1
+			if (REF == 'C' and ALT == 'T'):
+				arg['CT'] += 1
+			return True
+		else:
+			return False
 
 def ann_calc(inp, arg):
 	'''
@@ -510,3 +526,28 @@ def ann_calc(inp, arg):
 			ratio2 = d/(c+d)
 			boost = 1/(arg['lim'] + abs(1 - 1/ratio3))
 			return [ratio1,ratio2,ratio3,resultado,boost,pva,pva10]
+
+def create_df(arg):
+	data = arg['--data'].split(',')
+	inf_s = set(data)
+	if len(inf_s) == 1 or 'D' not in inf_s:
+		if arg['--no-ref'] == True:
+			header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','MAX_SNPidx2','BOOST']
+		else:
+			header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','SNPidx1','BOOST']
+	elif 'D' in inf_s and 'R' in inf_s and arg['--no-ref'] == False:
+		header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','SNPidx1','SNPidx2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE']
+	elif 'D' in inf_s and 'R' in inf_s and arg['--no-ref'] == True:
+		header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE']
+	arg['header'] = header
+	df = pd.DataFrame(columns=header)
+	return df
+
+def new_line(df, arg, fields, al_count, calcs):
+	data = arg['--data'].split(',')
+	inf_s = set(data)
+	res = fields + al_count + calcs
+	n_line = {arg['header'][i]:res[i] for i in range(len(res))}
+	df_nline = pd.DataFrame.from_records([n_line])
+	df = pd.concat([df, df_nline])
+	return df

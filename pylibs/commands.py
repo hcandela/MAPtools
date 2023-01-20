@@ -297,11 +297,14 @@ Output Options:
   print(arg)
   arg = test_arg_ann(annotate_doc, arg)
   print(arg)
+  df = create_df(arg)
   output = arg['--output']
+  arg['GA'] = 0
+  arg['CT'] = 0
   fsal = False
   if output != None:
     fsal = open(arg['--outdir']+arg['--output'], 'w')
-  first = True
+  
   if arg['--input']:
     inp = open(arg['--input'], 'r')
   else:
@@ -315,6 +318,12 @@ Output Options:
           REF = fields[2]
           all_count = normalize(pools, REF, arg)
           if all_count != None:
-            calcs = ann_calc(all_count[2:], arg)
-            if calcs != None:
-              first = new_line(fsal,arg,first,fields[:2], all_count, calcs)
+            flag = filter_mut(arg, all_count[:2])
+            if flag:
+              calcs = ann_calc(all_count[2:], arg)
+              if calcs != None:
+                df = new_line(df,arg,fields[:2], all_count, calcs)
+  df.to_csv('../hector.txt',sep='\t')
+  print(df)
+  print('GA= ',arg['GA'])
+  print('CT= ',arg['CT'])

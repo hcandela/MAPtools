@@ -1,4 +1,7 @@
+fields = {'#CHROM': str, 'POS': int, 'REF': str, 'ALT': str, 'DPref_1': int, 'DPalt_1': int, 'DPref_2': int, 'DPalt_2': int, 'SNPidx1': float,
+          'SNPidx2': float, 'DELTA': float, 'MAX_SNPidx2': float, 'PVALUE': float, 'log10PVALUE': float, 'FISHER': float, 'BOOST': float, 'ED': float, 'G':float, 'CI95': float}
 RANG = 100
+MUT = 'EMS'
 blind_mbs = {'dots':('#000000','black'), 'MAX_SNPidx2':('#f781bf','pink'),'log10PVALUE':('#f0e442','yellow'),'SNPidx1':('#00ffff','light blue'),'SNPidx2':('#ff9a31','orange'),'BOOST':('#00ffff','light blue')}
 norm_mbs = {'dots':('royalblue','blue'), 'MAX_SNPidx2':('#f781bf','pink'),'log10PVALUE':('tomato','red'),'SNPidx1':('limegreen','green'),'SNPidx2':('#FF33F9' ,'pink'),'BOOST':('limegreen','green')}
 

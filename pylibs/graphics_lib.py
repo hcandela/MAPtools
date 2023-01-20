@@ -27,8 +27,7 @@ pd.options.mode.chained_assignment = None
 # ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE']
 # ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','PVALUE','log10PVALUE']
 # ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','SNPidx1','SNPidx2','DELTA','PVALUE','log10PVALUE']
-fields = {'#CHROM': str, 'POS': int, 'REF': str, 'ALT': str, 'DPref_1': int, 'DPalt_1': int, 'DPref_2': int, 'DPalt_2': int, 'SNPidx1': float,
-          'SNPidx2': float, 'DELTA': float, 'MAX_SNPidx2': float, 'PVALUE': float, 'log10PVALUE': float, 'FISHER': float, 'BOOST': float, 'ED': float, 'G':float, 'CI95': float}
+
 
 
 def test_plot(arg):
@@ -62,8 +61,6 @@ def test_plot(arg):
             os.makedirs(arg['captions_dir'])
         except FileExistsError:
             pass
-    inp = inp_f.split('/')[-1]
-    match = re.search('/"w/d+w"/',inp)
 
     chroms = df['#CHROM'].unique()
     if arg['--chromosomes'] == 'all':
