@@ -9,6 +9,7 @@ from scipy.stats import fisher_exact
 from scipy.stats import hypergeom
 from scipy.spatial import distance
 import pandas as pd
+import gffpandas.gffpandas as gffpd
 #from docopt import docopt
 
 def cmHH(command_line):
@@ -437,6 +438,11 @@ def test_arg_ann(__doc__,arg):
 	except FileExistsError:
 		print('#Warning: the output directory already exists')
 		pass
+	try:
+		annotation = gffpd.read_gff3(wd+'/'+arg['--gff'])
+	except FileNotFoundError:
+		print('The gff file does not exist.')
+		sys.exit()
 	
 	arg['--outdir'] = wd+'/'+arg['--outdir']+'/'
 	if arg['--output'] != None:
@@ -453,6 +459,12 @@ def test_arg_ann(__doc__,arg):
 	arg['spacer'] = '\t'
 	arg['mbs'] = True
 	arg['lim'] = 1e-90
+	gff = annotation.df
+	chroms = gff['seq_id'].unique()
+	gff_chrom = chroms[int(Tchrom) - 1]
+	arg['gff'] = gff[gff['seq_id'] == gff_chrom]
+	arg['gff'].info(memory_usage="deep")
+	print(arg['gff'])
 	if arg['--mutagen'] == None:
 		arg['--mutagen'] = 'EMS'
 	if not 'R' in data:

@@ -282,6 +282,7 @@ Options:
    --help -h                     Show this screen.
    --version                     Show the version.
    --input, -i=<file>            VCF input file. If the input come from a pipe, don't use this option.
+   --gff, -g=<file>              GFF3 input file.
 Input Options:
    --data, -d=<opt>              Code of genotypes ordered according VCF input file [default: D,R].
    --ref, -r=<opt>               Which parental houses the reference [default: D].
@@ -323,7 +324,3 @@ Output Options:
               calcs = ann_calc(all_count[2:], arg)
               if calcs != None:
                 df = new_line(df,arg,fields[:2], all_count, calcs)
-  df.to_csv('../hector.txt',sep='\t')
-  print(df)
-  print('GA= ',arg['GA'])
-  print('CT= ',arg['CT'])
