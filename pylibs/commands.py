@@ -324,3 +324,6 @@ Output Options:
               calcs = ann_calc(all_count[2:], arg)
               if calcs != None:
                 df = new_line(df,arg,fields[:2], all_count, calcs)
+  df = df.reset_index()
+  
+  ##

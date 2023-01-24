@@ -462,9 +462,10 @@ def test_arg_ann(__doc__,arg):
 	gff = annotation.df
 	chroms = gff['seq_id'].unique()
 	gff_chrom = chroms[int(Tchrom) - 1]
-	arg['gff'] = gff[gff['seq_id'] == gff_chrom]
+	arg['gff'] = annotation
+	arg['gff_chrom'] = gff_chrom
 	arg['gff'].info(memory_usage="deep")
-	print(arg['gff'])
+	
 	if arg['--mutagen'] == None:
 		arg['--mutagen'] = 'EMS'
 	if not 'R' in data:
@@ -563,3 +564,71 @@ def new_line(df, arg, fields, al_count, calcs):
 	df_nline = pd.DataFrame.from_records([n_line])
 	df = pd.concat([df, df_nline])
 	return df
+
+def check_mutation(df, arg):
+	for index, row in df.iterrows():
+		pos = row['POS']
+		overl=arg['gff'].overlaps_with(seq_id=arg['gff_chrom'], start=pos)
+		d = overl.df
+		if (d['type'].eq('gene')).any():
+			print('is genic')
+			gene = d[d['type'] == 'gene']
+			gID = gene['attributes'].loc[gene.index[0]].split(';')[0]
+			print(gID)
+			if (d['type'].eq('mRNA')).any():
+				print('is mRNA')
+				if (d['type'].eq('exon')).any():
+					print('is exon')
+					if (d['type'].eq('CDS')).any():
+						print('is coding')
+						cds = d[d['type'] == 'CDS']
+						for i2, r2 in cds.iterrows():
+							b,e = codon_coords(pos, r2['start'], r2['end'], r2['strand'], r2['phase'])
+							if b < r2['start']:
+								print("  Codon is truncated at exon/intron boundary at: ",r2['start'])
+								print("  Possible splice site mutation. Check adjacent exon for a possible aa substitution")
+							elif e > r2['end']:
+								print("  Codon is truncated at exon/intron boundary at: ",r2['end'])
+								print("  Possible splice site mutation. Check adjacent exon for a possible aa substitution")
+							else:
+								print(' Codon fully contained exon')
+					else:
+						print('is UTR')
+						if (d['type'].eq('five_prime_UTR')).any():
+							print('is 5\'UTR')
+							fprime = d[d['type'] == 'five_prime_UTR']
+							for i5, r5 in fprime.iterrows():
+								if r5['strand'] == '+':
+									dist5 = r5['end'] - pos
+									print('Distance to the 5\'UTR end:', dist5)
+								elif r5['strand'] == '-':
+									dist5 = r5['start'] - pos
+									print('Distance to the 5\'UTR end:', dist5)
+						if (d['type'].eq('five_prime_UTR')).any():
+							print('is 3\'UTR')
+				else:
+					print('is intron')
+
+				
+			if (d['type'].eq('rRNA')).any():
+				print('is miRNA')
+			if (d['type'].eq('rRNA')).any():
+				print('is tRNA')
+
+
+
+		else:
+			print('intergenic')
+			###
+		#pos b c d e
+def codon_coords(pos, start, end, strand, phase):
+   if strand == '+' :
+       rest = (pos - start - phase) % 3
+       #print("Hebra: + Posicion: "+str(pos))
+       #print("Start: "+str(pos-resto), "End: "+str(pos-resto+2))
+       return (pos-rest, pos-rest+2)
+   elif strand == '-' :
+       rest = (end - pos - phase) % 3
+       #print("Hebra: - Posicion: "+str(pos))
+       #print("Start: "+str(pos+resto-2), "End: "+str(pos+resto))
+       return (pos+rest-2, pos+rest)
