@@ -1,6 +1,7 @@
 from docopt import docopt
 import sys
 import os
+import time
 # sys.path.append(os.getcwd())
 from pylibs.analysis_lib import *
 from pylibs.graphics_lib import *
@@ -283,6 +284,7 @@ Options:
    --version                     Show the version.
    --input, -i=<file>            VCF input file. If the input come from a pipe, don't use this option.
    --gff, -g=<file>              GFF3 input file.
+   --reference, -f=<file>        FASTA reference file (The same used to align the reads).
 Input Options:
    --data, -d=<opt>              Code of genotypes ordered according VCF input file [default: D,R].
    --ref, -r=<opt>               Which parental houses the reference [default: D].
@@ -300,8 +302,6 @@ Output Options:
   print(arg)
   df = create_df(arg)
   output = arg['--output']
-  arg['GA'] = 0
-  arg['CT'] = 0
   fsal = False
   if output != None:
     fsal = open(arg['--outdir']+arg['--output'], 'w')
@@ -324,6 +324,11 @@ Output Options:
               calcs = ann_calc(all_count[2:], arg)
               if calcs != None:
                 df = new_line(df,arg,fields[:2], all_count, calcs)
+  load_reference(df,arg)
   df = df.reset_index()
-  
+  start = time.perf_counter()
+  for idx, row in df.iterrows():
+    check_mutation(idx,row,arg)
+  finish = time.perf_counter()
+  print(f'Variant annotation finished in {round(finish-start, 2)} second(s)')
   ##

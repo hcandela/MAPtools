@@ -10,6 +10,8 @@ from scipy.stats import hypergeom
 from scipy.spatial import distance
 import pandas as pd
 import gffpandas.gffpandas as gffpd
+from Bio import SeqIO
+from Bio.Seq import Seq
 #from docopt import docopt
 
 def cmHH(command_line):
@@ -438,11 +440,7 @@ def test_arg_ann(__doc__,arg):
 	except FileExistsError:
 		print('#Warning: the output directory already exists')
 		pass
-	try:
-		annotation = gffpd.read_gff3(wd+'/'+arg['--gff'])
-	except FileNotFoundError:
-		print('The gff file does not exist.')
-		sys.exit()
+
 	
 	arg['--outdir'] = wd+'/'+arg['--outdir']+'/'
 	if arg['--output'] != None:
@@ -451,6 +449,19 @@ def test_arg_ann(__doc__,arg):
 		arg['--output'] = check_save_an(arg, arg['--output'])
 	else:
 		arg['--output'] = None
+	try:
+		annotation = gffpd.read_gff3(wd+'/'+arg['--gff'])
+	except FileNotFoundError:
+		print('The gff file does not exist.')
+		sys.exit()
+
+	try:
+		ref = open(wd+'/'+arg['--reference'])
+		ref.close()
+		arg['--reference'] = wd+'/'+arg['--reference']
+	except FileNotFoundError:
+		print('The reference file does not exist.')
+		sys.exit()
 	
 	Tchrom,Treg = arg['--region'].split(':')
 	Treg = Treg.split('-')
@@ -464,7 +475,6 @@ def test_arg_ann(__doc__,arg):
 	gff_chrom = chroms[int(Tchrom) - 1]
 	arg['gff'] = annotation
 	arg['gff_chrom'] = gff_chrom
-	arg['gff'].info(memory_usage="deep")
 	
 	if arg['--mutagen'] == None:
 		arg['--mutagen'] = 'EMS'
@@ -481,6 +491,21 @@ def filter_region(line, arg):
 		return line
 	else:
 		return
+
+def load_reference(df,arg):
+	chrom = df['#CHROM'].unique()[0]
+	flag = True
+	for sequ in SeqIO.parse(arg['--reference'], 'fasta'):
+		if sequ.id == chrom:
+			arg['ref'] = sequ
+			flag = False
+			break
+	if flag == True:
+		print('Chromosome not found in FASTA file.')
+		sys.exit()
+
+
+
 
 def filter_mut(arg, al):
 	REF = al[0]
@@ -565,64 +590,71 @@ def new_line(df, arg, fields, al_count, calcs):
 	df = pd.concat([df, df_nline])
 	return df
 
-def check_mutation(df, arg):
-	for index, row in df.iterrows():
-		pos = row['POS']
-		overl=arg['gff'].overlaps_with(seq_id=arg['gff_chrom'], start=pos)
-		d = overl.df
-		if (d['type'].eq('gene')).any():
-			print('is genic')
-			gene = d[d['type'] == 'gene']
-			gID = gene['attributes'].loc[gene.index[0]].split(';')[0]
-			print(gID)
-			if (d['type'].eq('mRNA')).any():
-				print('is mRNA')
-				if (d['type'].eq('exon')).any():
-					print('is exon')
-					if (d['type'].eq('CDS')).any():
-						print('is coding')
-						cds = d[d['type'] == 'CDS']
-						for i2, r2 in cds.iterrows():
-							b,e = codon_coords(pos, r2['start'], r2['end'], r2['strand'], r2['phase'])
-							if b < r2['start']:
-								print("  Codon is truncated at exon/intron boundary at: ",r2['start'])
-								print("  Possible splice site mutation. Check adjacent exon for a possible aa substitution")
-							elif e > r2['end']:
-								print("  Codon is truncated at exon/intron boundary at: ",r2['end'])
-								print("  Possible splice site mutation. Check adjacent exon for a possible aa substitution")
-							else:
-								print(' Codon fully contained exon')
-					else:
-						print('is UTR')
-						if (d['type'].eq('five_prime_UTR')).any():
-							print('is 5\'UTR')
-							fprime = d[d['type'] == 'five_prime_UTR']
-							for i5, r5 in fprime.iterrows():
-								if r5['strand'] == '+':
-									dist5 = r5['end'] - pos
-									print('Distance to the 5\'UTR end:', dist5)
-								elif r5['strand'] == '-':
-									dist5 = r5['start'] - pos
-									print('Distance to the 5\'UTR end:', dist5)
-						if (d['type'].eq('five_prime_UTR')).any():
-							print('is 3\'UTR')
+def check_mutation(idx,row, arg):
+	pos = int(row['POS'])
+	chromosome = str(arg['gff_chrom'])
+	overl=arg['gff'].overlaps_with(seq_id=chromosome, start=pos)
+	d = overl.df
+	if (d['type'].eq('gene')).any():
+		#print('is genic')
+		gene = d[d['type'] == 'gene']
+		gID = gene['attributes'].loc[gene.index[0]].split(';')[0]
+		print(gID)
+		if (d['type'].eq('mRNA')).any():
+			print('is mRNA')
+			if (d['type'].eq('exon')).any():
+				print('is exon')
+				if (d['type'].eq('CDS')).any():
+					print('is coding')
+					cds = d[d['type'] == 'CDS']
+					for i2, r2 in cds.iterrows():
+						b,e = codon_coords(pos, int(r2['start']), int(r2['end']), r2['strand'], int(r2['phase']))
+						
+						if b < r2['start']:
+							print("  Codon is truncated at exon/intron boundary at: ",r2['start'])
+							print("  Possible splice site mutation. Check adjacent exon for a possible aa substitution")
+						elif e > r2['end']:
+							print("  Codon is truncated at exon/intron boundary at: ",r2['end'])
+							print("  Possible splice site mutation. Check adjacent exon for a possible aa substitution")
+						else:
+							print(' Codon fully contained exon')
+							codon = arg['ref'].seq[b-1:e]
+							before = codon[:pos-b]+row['REF']+codon[pos-b+1:]
+							after = codon[:pos-b]+row['ALT']+codon[pos-b+1:]
+							print(before, after)
+							find_effect(before,after,r2['strand'])
 				else:
-					print('is intron')
+					print('is UTR')
+					if (d['type'].eq('five_prime_UTR')).any():
+						print('is 5\'UTR')
+						fprime = d[d['type'] == 'five_prime_UTR']
+						for i5, r5 in fprime.iterrows():
+							if r5['strand'] == '+':
+								dist5 = int(r5['end']) - pos
+								print('Distance to the 5\'UTR end:', dist5)
+							elif r5['strand'] == '-':
+								dist5 = int(r5['start']) - pos
+								print('Distance to the 5\'UTR end:', dist5)
+					if (d['type'].eq('five_prime_UTR')).any():
+						print('is 3\'UTR')
+			else:
+				print('is intron')
+				d_left,lab_left,d_right,lab_right = get_nearest(arg, pos, 'exon')
+				print(d_left,' bases a la izquierda del exon',lab_left,d_right,'bases a la derecha del exon', lab_right)
+			
+		if (d['type'].eq('rRNA')).any():
+			print('is miRNA')
+		if (d['type'].eq('rRNA')).any():
+			print('is tRNA')
+	else:
+		print('is intergenic')
+		d_left,lab_left,d_right,lab_right = get_nearest(arg, pos, 'gene')
+		print(d_left,' bases a la izquierda del gen',lab_left,d_right,'bases a la derecha del gen', lab_right)
+		###
+	#pos b c d e
 
-				
-			if (d['type'].eq('rRNA')).any():
-				print('is miRNA')
-			if (d['type'].eq('rRNA')).any():
-				print('is tRNA')
-
-
-
-		else:
-			print('intergenic')
-			###
-		#pos b c d e
 def codon_coords(pos, start, end, strand, phase):
-   if strand == '+' :
+   if strand == '+':
        rest = (pos - start - phase) % 3
        #print("Hebra: + Posicion: "+str(pos))
        #print("Start: "+str(pos-resto), "End: "+str(pos-resto+2))
@@ -632,3 +664,48 @@ def codon_coords(pos, start, end, strand, phase):
        #print("Hebra: - Posicion: "+str(pos))
        #print("Start: "+str(pos+resto-2), "End: "+str(pos+resto))
        return (pos+rest-2, pos+rest)
+
+def get_nearest(arg, pos, type_):
+	d = arg['gff'].df
+	df_ch = d[d['seq_id'] == arg['gff_chrom']]
+	df_ty = df_ch[df_ch['type'] == type_]
+
+	#Nearest object at left of the mutation
+	ty_ends = df_ty[(df_ty['end'] <= pos)]
+	left_ty = ty_ends.iloc[(ty_ends['end']-pos).abs().argsort().iloc[:1]]
+	left = left_ty['end'].loc[left_ty.index[0]]
+	lab_left = left_ty['attributes'].loc[left_ty.index[0]].split(';')[0]
+
+	#Nearest object at right to the mutation
+	ty_starts = df_ty[(df_ty['start'] >= pos)]# & (exons['strand'] == '+')]
+	right_ty = ty_starts.iloc[(ty_starts['start']-pos).abs().argsort().iloc[:1]]
+	right = right_ty['start'].loc[right_ty.index[0]]
+	lab_right = right_ty['attributes'].loc[right_ty.index[0]].split(';')[0]
+
+	return [pos-left,lab_left,right-pos,lab_right]
+
+def find_effect(before,after,strand):
+	before = Seq(before)
+	after = Seq(after)
+	if strand == '-':
+		before = before.reverse_complement()
+		after = after.reverse_complement()
+	before = before.translate(table=1)
+	after = after.translate(table=1)
+	
+	if (before == after):
+		print("Synonymous",before,after)
+	elif (before != after):
+		if (after == "*"):
+			print("Nonsynonymous - nonsense mutation",before,after)
+		elif (before == "*"):
+			print("Nonsynonymous - nonstop mutation",before,after)
+		else:
+			print("Nonsynonymous - missense mutation",before,after)
+
+#first = False
+#n_head = spacer.join(header)+'\n'
+#write_line(n_head, fsal)
+
+#CHROM	POS		REF		ALT		DPr		DPalt		cRef	cAlt	type	      strand		ID		LEFT	RIGHT	Ldist   Rdist 
+# 1    1456654   C		T		1         18	ATG(Met)   CTG(Ser) Nonsynonymous   +          ATG10809 ATG..    ATG..  1500    156
