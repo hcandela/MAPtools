@@ -512,10 +512,6 @@ def filter_mut(arg, al):
 	ALT = al[1]
 	if arg['--mutagen'] == 'EMS':
 		if (REF == 'G' and ALT == 'A') or (REF == 'C' and ALT == 'T'):
-			if REF == 'G' and ALT == 'A':
-				arg['GA'] += 1
-			if (REF == 'C' and ALT == 'T'):
-				arg['CT'] += 1
 			return True
 		else:
 			return False
@@ -595,6 +591,13 @@ def check_mutation(idx,row, arg):
 	chromosome = str(arg['gff_chrom'])
 	overl=arg['gff'].overlaps_with(seq_id=chromosome, start=pos)
 	d = overl.df
+	#df = arg['gff'].df
+	#types = df['type'].unique()
+	#print(types)
+	#for t in types:
+	#	print(t)
+	#	print(df[df['type']==t])
+	#sys.exit()
 	if (d['type'].eq('gene')).any():
 		#print('is genic')
 		gene = d[d['type'] == 'gene']
@@ -642,10 +645,23 @@ def check_mutation(idx,row, arg):
 				d_left,lab_left,d_right,lab_right = get_nearest(arg, pos, 'exon')
 				print(d_left,' bases a la izquierda del exon',lab_left,d_right,'bases a la derecha del exon', lab_right)
 			
-		if (d['type'].eq('rRNA')).any():
-			print('is miRNA')
-		if (d['type'].eq('rRNA')).any():
-			print('is tRNA')
+	elif (d['type'].eq('ncRNA_gene').any()):
+		nc_gene = d[d['type'] == 'ncRNA_gne']
+		ncgID = nc_gene['attributes'].loc[nc_gene.index[0]].split(';')[0]
+		if (d['type'].eq('ncRNA').any()):
+			print('is ncRNA')
+		elif (d['type'].eq('lncRNA').any()):
+			print('is lncRNA')
+		elif (d['type'].eq('snoRNA').any()):
+			print('is lncRNA')
+		elif (d['type'].eq('snRNA').any()):
+			print('is lncRNA')
+		elif (d['type'].eq('rRNA').any()):
+			print('is lncRNA')
+		elif (d['type'].eq('miRNA').any()):
+			print('is lncRNA')
+		elif (d['type'].eq('tRNA').any()):
+			print('is lncRNA')
 	else:
 		print('is intergenic')
 		d_left,lab_left,d_right,lab_right = get_nearest(arg, pos, 'gene')
