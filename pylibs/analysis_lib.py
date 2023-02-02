@@ -597,12 +597,12 @@ def check_mutation(idx,row, arg):
 	#for t in types:
 	#	print(t)
 	#	print(df[df['type']==t])
+	print(d)
 	#sys.exit()
 	if (d['type'].eq('gene')).any():
-		#print('is genic')
+		print('is genic')
 		gene = d[d['type'] == 'gene']
-		gID = gene['attributes'].loc[gene.index[0]].split(';')[0]
-		print(gID)
+		ID_gene = gene['attributes'].loc[gene.index[0]].split(';')[0].split(':')[1]
 		if (d['type'].eq('mRNA')).any():
 			print('is mRNA')
 			if (d['type'].eq('exon')).any():
@@ -639,7 +639,7 @@ def check_mutation(idx,row, arg):
 								dist5 = int(r5['start']) - pos
 								print('Distance to the 5\'UTR end:', dist5)
 					if (d['type'].eq('five_prime_UTR')).any():
-						print('is 3\'UTR')
+						print('is 3\'UR')
 			else:
 				print('is intron')
 				d_left,lab_left,d_right,lab_right = get_nearest(arg, pos, 'exon')
