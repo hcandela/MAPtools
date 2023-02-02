@@ -323,12 +323,14 @@ Output Options:
             if flag:
               calcs = ann_calc(all_count[2:], arg)
               if calcs != None:
-                df = new_line(df,arg,fields[:2], all_count, calcs)
+                df = new_df_line(df,arg,fields[:2], all_count, calcs)
   load_reference(df,arg)
   df = df.reset_index()
   start = time.perf_counter()
+  load_gff(arg)
   for idx, row in df.iterrows():
-    check_mutation(idx,row,arg)
+    check_mutation2(row,arg)
+    print('------------')
   finish = time.perf_counter()
   print(f'Variant annotation finished in {round(finish-start, 2)} second(s)')
   ##

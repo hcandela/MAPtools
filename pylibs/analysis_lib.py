@@ -450,7 +450,9 @@ def test_arg_ann(__doc__,arg):
 	else:
 		arg['--output'] = None
 	try:
-		annotation = gffpd.read_gff3(wd+'/'+arg['--gff'])
+		gff = open(wd+'/'+arg['--gff'])
+		gff.close()
+		arg['--gff'] = wd+'/'+arg['--gff']
 	except FileNotFoundError:
 		print('The gff file does not exist.')
 		sys.exit()
@@ -470,11 +472,9 @@ def test_arg_ann(__doc__,arg):
 	arg['spacer'] = '\t'
 	arg['mbs'] = True
 	arg['lim'] = 1e-90
-	gff = annotation.df
-	chroms = gff['seq_id'].unique()
-	gff_chrom = chroms[int(Tchrom) - 1]
-	arg['gff'] = annotation
-	arg['gff_chrom'] = gff_chrom
+	#chroms = gff['seq_id'].unique()
+	#gff_chrom = chroms[int(Tchrom) - 1]
+	#arg['gff_chrom'] = gff_chrom
 	
 	if arg['--mutagen'] == None:
 		arg['--mutagen'] = 'EMS'
@@ -491,6 +491,108 @@ def filter_region(line, arg):
 		return line
 	else:
 		return
+def load_gff(arg):
+	gff_path = arg['--gff']
+	gff = {'gene': [], 'mRNA':[], 'five_prime_UTR':[], 'exon':[], 'CDS':[], 'three_prime_UTR':[],\
+		 'miRNA':[], 'tRNA':[], 'ncRNA':[], 'ncRNA_gene':[], 'lnc_RNA':[], 'snoRNA':[], 'snRNA':[],\
+		 'rRNA':[], 'pseudogene':[], 'pseudogenic_transcript':[], 'pre_miRNA':[], 'SRP_RNA':[]}
+	with open(gff_path, 'r') as handle:
+		for line in handle:
+			if line.startswith('#'):
+				continue
+			else:
+				line = line.rstrip()
+				data = line.split('\t')
+				seqid = data[0]
+				if seqid == arg['--region'][0]: #TODO Complete condition to cath only structures in our region
+					type_ = data[2]
+					start = data[3]
+					end = data[4]
+					strand = data[6]
+					phase = data[7]
+					attributes = data[8].split(';')
+					dict_att = {att.split('=')[0]:att.split('=')[1] for att in attributes}
+					if type_ == 'gene':
+						id = dict_att['ID']
+						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])
+					if type_ == 'mRNA':
+						id = dict_att['ID']
+						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])						
+					if type_ == 'five_prime_UTR':
+						id = dict_att['Parent']
+						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])
+					if type_ == 'exon':
+						id = dict_att['Name']
+						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])
+					if type_ == 'CDS':
+						id = dict_att['ID']
+						gff[type_].append([seqid, type_, int(start), int(end), strand, int(phase), id])
+					if type_ == 'three_prime_UTR':
+						id = dict_att['Parent']
+						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])
+					if type_ == 'miRNA':
+						id = dict_att['ID']
+						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])
+					if type_ == 'ncRNA':
+						id = dict_att['ID']
+						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])
+					if type_ == 'tRNA':
+						id = dict_att['ID']
+						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])
+					if type_ == 'ncRNA_gene':
+						id = dict_att['ID']
+						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])
+					if type_ == 'lnc_RNA':
+						id = dict_att['ID']
+						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])
+					if type_ == 'snoRNA':
+						id = dict_att['ID']
+						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])
+					if type_ == 'snRNA':
+						id = dict_att['ID']
+						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])
+					if type_ == 'rRNA':
+						id = dict_att['ID']
+						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])
+					if type_ == 'pseudogene':
+						id = dict_att['ID']
+						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])
+					if type_ == 'pseudogenic_transcript':
+						id = dict_att['ID']
+						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])
+					if type_ == 'pre_miRNA':
+						id = dict_att['ID']
+						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])
+					if type_ == 'SRP_RNA':
+						id = dict_att['ID']
+						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])
+				else:
+					continue
+	for type_,rows in gff.items():
+		gff[type_].sort(key=lambda row:row[2])
+	arg['gff'] = gff
+
+				
+def  find_row(rows, pos):
+	right = 0
+	current = len(rows)
+	while right < current:
+		m = (right + current)//2
+		beg = rows[m][2]
+		#end = rows[m][3]
+		if pos < beg: current = m
+		else:
+			right = m + 1
+	
+	left = 0
+	current = len(rows)
+	while left < current:
+		m = (left + current)//2
+		end = rows[m][3]
+		if pos > end: left = m + 1
+		else:
+			current = m
+	return left, right-1
 
 def load_reference(df,arg):
 	chrom = df['#CHROM'].unique()[0]
@@ -503,8 +605,6 @@ def load_reference(df,arg):
 	if flag == True:
 		print('Chromosome not found in FASTA file.')
 		sys.exit()
-
-
 
 
 def filter_mut(arg, al):
@@ -577,7 +677,7 @@ def create_df(arg):
 	df = pd.DataFrame(columns=header)
 	return df
 
-def new_line(df, arg, fields, al_count, calcs):
+def new_df_line(df, arg, fields, al_count, calcs):
 	data = arg['--data'].split(',')
 	inf_s = set(data)
 	res = fields + al_count + calcs
@@ -586,88 +686,179 @@ def new_line(df, arg, fields, al_count, calcs):
 	df = pd.concat([df, df_nline])
 	return df
 
-def check_mutation(idx,row, arg):
+
+def check_mutation2(row, arg):
 	pos = int(row['POS'])
-	chromosome = str(arg['gff_chrom'])
-	overl=arg['gff'].overlaps_with(seq_id=chromosome, start=pos)
-	d = overl.df
-	#df = arg['gff'].df
-	#types = df['type'].unique()
-	#print(types)
-	#for t in types:
-	#	print(t)
-	#	print(df[df['type']==t])
-	print(d)
-	#sys.exit()
-	if (d['type'].eq('gene')).any():
+	print(pos)
+	gff = arg['gff']
+	b,e = find_row(gff['gene'], pos)
+	b15,e15 = find_row(gff['ncRNA_gene'], pos)
+	b6,e6 = find_row(gff['ncRNA'], pos)
+	b7,e7 = find_row(gff['lnc_RNA'], pos)
+	b8,e8 = find_row(gff['snoRNA'], pos)
+	b9,e9 = find_row(gff['snRNA'], pos)
+	b10,e10 = find_row(gff['rRNA'], pos)
+	b11,e11 = find_row(gff['pseudogene'], pos)
+	b12,e12 = find_row(gff['pseudogenic_transcript'], pos)
+	b13,e13 = find_row(gff['pre_miRNA'], pos)
+	b14,e14 = find_row(gff['SRP_RNA'], pos)
+	if gff['gene'][b:e+1]:
 		print('is genic')
-		gene = d[d['type'] == 'gene']
-		ID_gene = gene['attributes'].loc[gene.index[0]].split(';')[0].split(':')[1]
-		if (d['type'].eq('mRNA')).any():
-			print('is mRNA')
-			if (d['type'].eq('exon')).any():
-				print('is exon')
-				if (d['type'].eq('CDS')).any():
-					print('is coding')
-					cds = d[d['type'] == 'CDS']
-					for i2, r2 in cds.iterrows():
-						b,e = codon_coords(pos, int(r2['start']), int(r2['end']), r2['strand'], int(r2['phase']))
-						
-						if b < r2['start']:
-							print("  Codon is truncated at exon/intron boundary at: ",r2['start'])
-							print("  Possible splice site mutation. Check adjacent exon for a possible aa substitution")
-						elif e > r2['end']:
-							print("  Codon is truncated at exon/intron boundary at: ",r2['end'])
-							print("  Possible splice site mutation. Check adjacent exon for a possible aa substitution")
+		for gene in gff['gene'][b:e+1]:
+			b1,e1 = find_row(gff['mRNA'], pos)
+			if gff['mRNA'][b1:e1+1]:
+				print('is mRNA')
+				print(gff['mRNA'][b1:e1+1])
+				for mRNA in gff['mRNA'][b1:e1+1]:
+					
+					print(mRNA)
+					b2,e2 = find_row(gff['exon'], pos)
+					if gff['exon'][b2:e2+1]:
+						print('is exon')
+						b3,e3 = find_row(gff['CDS'], pos)
+						if gff['CDS'][b3:e3+1]:
+							print('is CDS')
+							for cds in gff['CDS'][b3:e3+1]:
+								beg, end = codon_coords(pos,cds[2],cds[3],cds[4],cds[5]) #target pos, cds start, cds end, cds strand, cds phase
+								if beg < cds[2]:
+									print("  Codon is truncated at exon/intron boundary at: ",cds[2])
+									print("  Possible splice site mutation. Check adjacent exon for a possible aa substitution")
+								elif end > cds[3]:
+									print("  Codon is truncated at exon/intron boundary at: ",cds[3])
+									print("  Possible splice site mutation. Check adjacent exon for a possible aa substitution")
+								else:
+									print(' Codon fully contained exon')
+									codon = arg['ref'].seq[beg-1:end]
+									before = codon[:pos-beg]+row['REF']+codon[pos-beg+1:]
+									after = codon[:pos-beg]+row['ALT']+codon[pos-beg+1:]
+									print(before, after)
+									find_effect(before,after,cds[4])
 						else:
-							print(' Codon fully contained exon')
-							codon = arg['ref'].seq[b-1:e]
-							before = codon[:pos-b]+row['REF']+codon[pos-b+1:]
-							after = codon[:pos-b]+row['ALT']+codon[pos-b+1:]
-							print(before, after)
-							find_effect(before,after,r2['strand'])
-				else:
-					print('is UTR')
-					if (d['type'].eq('five_prime_UTR')).any():
-						print('is 5\'UTR')
-						fprime = d[d['type'] == 'five_prime_UTR']
-						for i5, r5 in fprime.iterrows():
-							if r5['strand'] == '+':
-								dist5 = int(r5['end']) - pos
-								print('Distance to the 5\'UTR end:', dist5)
-							elif r5['strand'] == '-':
-								dist5 = int(r5['start']) - pos
-								print('Distance to the 5\'UTR end:', dist5)
-					if (d['type'].eq('five_prime_UTR')).any():
-						print('is 3\'UR')
-			else:
-				print('is intron')
-				d_left,lab_left,d_right,lab_right = get_nearest(arg, pos, 'exon')
-				print(d_left,' bases a la izquierda del exon',lab_left,d_right,'bases a la derecha del exon', lab_right)
-			
-	elif (d['type'].eq('ncRNA_gene').any()):
-		nc_gene = d[d['type'] == 'ncRNA_gne']
-		ncgID = nc_gene['attributes'].loc[nc_gene.index[0]].split(';')[0]
-		if (d['type'].eq('ncRNA').any()):
-			print('is ncRNA')
-		elif (d['type'].eq('lncRNA').any()):
-			print('is lncRNA')
-		elif (d['type'].eq('snoRNA').any()):
-			print('is lncRNA')
-		elif (d['type'].eq('snRNA').any()):
-			print('is lncRNA')
-		elif (d['type'].eq('rRNA').any()):
-			print('is lncRNA')
-		elif (d['type'].eq('miRNA').any()):
-			print('is lncRNA')
-		elif (d['type'].eq('tRNA').any()):
-			print('is lncRNA')
+							b4,e4 = find_row(gff['five_prime_UTR'], pos)
+							b5,e5 = find_row(gff['three_prime_UTR'], pos) 
+							if gff['five_prime_UTR'][b4:e4+1]:
+								print('is 5 UTR')
+								for five in gff['five_prime_UTR'][b4:e4+1]:
+									if five[4] == '+':
+										distfive1 = five[3] - pos
+										print(' Dist:', distfive1)
+									elif five[4] == '-':
+										distfive1 = pos - five[2]
+										print(' Dist:', distfive1)
+							if gff['three_prime_UTR'][b5:e5+1]:
+								print(' is 3 UTR')
+					else:
+						print('is intron')
+						b3,e3 = find_row(gff['CDS'], pos)
+						dis1 = gff['exon'][b2][2] - pos
+						dis2 = pos - gff['exon'][e2][3]
+						print('located at ' + str(dis2) + ' bp of closest flanking exon on the left side (' + gff['CDS'][e3][6] + ') and ' + str(dis1) + 'bp of the closest flanking exon on the right side (' + gff['CDS'][b3][6] +')' )
+	elif gff['ncRNA_gene'][b15:e15+1]:
+		print('is non coding gene')
+	elif gff['ncRNA'][b6:e6+1]:
+		print('is non coding RNA')
+	elif gff['lnc_RNA'][b7:e7+1]:
+		print('is a long non coding RNA')
+	elif gff['snoRNA'][b8:e8+1]:
+		print('is sno RNA')
+	elif gff['snRNA'][b9:e9+1]:
+		print('is sn RNA')
+	elif gff['rRNA'][b10:e10+1]:
+		print('is ribosomic RNA')
+	elif gff['pseudogene'][b11:e11+1]:
+		print('is a pseudogene')
+	elif gff['pseudogenic_transcript'][b12:e12+1]:
+		print('is pseudogenic transcript')
+	elif gff['pre_miRNA'][b13:e13+1]:
+		print('is a precursor of miRNA')
+	elif gff['SRP_RNA'][b14:e14+1]:
+		print('is a SRP_RNA')
+
 	else:
 		print('is intergenic')
-		d_left,lab_left,d_right,lab_right = get_nearest(arg, pos, 'gene')
-		print(d_left,' bases a la izquierda del gen',lab_left,d_right,'bases a la derecha del gen', lab_right)
-		###
-	#pos b c d e
+		print(gff['gene'][b])
+		print(gff['gene'][e])
+		dis1 = gff['gene'][b][2] - pos
+		dis2 = pos - gff['gene'][e][3]
+		print('located at ' + str(dis2) + ' bp of closest flanking gene on the left side (' + gff['gene'][e][6] + ') and ' + str(dis1) + 'bp of the closest flanking exon on the right side (' + gff['gene'][b][6] +')' )
+
+#def check_mutation2(idx,row, arg):
+#	pos = int(row['POS'])
+#	gff = arg['gff']
+#	b,e = find_row(gff['gene'], pos)
+#	if gff['gene'][b:e+1]:
+#		for row in gff['gene'][b:e+1]:
+#			b1,e1 = find_row(gff['mRNA'], pos)
+#			if gff['mRNA'][b1:e1+1]:
+#
+#		print('is genic')
+#		gene = d[d['type'] == 'gene']
+#		ID_gene = gene['attributes'].loc[gene.index[0]].split(';')[0].split(':')[1]
+#		if (d['type'].eq('mRNA')).any():
+#			print('is mRNA')
+#			if (d['type'].eq('exon')).any():
+#				print('is exon')
+#				if (d['type'].eq('CDS')).any():
+#					print('is coding')
+#					cds = d[d['type'] == 'CDS']
+#					for i2, r2 in cds.iterrows():
+#						b,e = codon_coords(pos, int(r2['start']), int(r2['end']), r2['strand'], int(r2['phase']))
+#						
+#						if b < r2['start']:
+#							print("  Codon is truncated at exon/intron boundary at: ",r2['start'])
+#							print("  Possible splice site mutation. Check adjacent exon for a possible aa substitution")
+#						elif e > r2['end']:
+#							print("  Codon is truncated at exon/intron boundary at: ",r2['end'])
+#							print("  Possible splice site mutation. Check adjacent exon for a possible aa substitution")
+#						else:
+#							print(' Codon fully contained exon')
+#							codon = arg['ref'].seq[b-1:e]
+#							before = codon[:pos-b]+row['REF']+codon[pos-b+1:]
+#							after = codon[:pos-b]+row['ALT']+codon[pos-b+1:]
+#							print(before, after)
+#							find_effect(before,after,r2['strand'])
+#				else:
+#					print('is UTR')
+#					if (d['type'].eq('five_prime_UTR')).any():
+#						print('is 5\'UTR')
+#						fprime = d[d['type'] == 'five_prime_UTR']
+#						for i5, r5 in fprime.iterrows():
+#							if r5['strand'] == '+':
+#								dist5 = int(r5['end']) - pos
+#								print('Distance to the 5\'UTR end:', dist5)
+#							elif r5['strand'] == '-':
+#								dist5 = int(r5['start']) - pos
+#								print('Distance to the 5\'UTR end:', dist5)
+#					if (d['type'].eq('five_prime_UTR')).any():
+#						print('is 3\'UR')
+#			else:
+#				print('is intron')
+#				d_left,lab_left,d_right,lab_right = get_nearest(arg, pos, 'exon')
+#				print(d_left,' bases a la izquierda del exon',lab_left,d_right,'bases a la derecha del exon', lab_right)
+#			
+#	elif (d['type'].eq('ncRNA_gene').any()):
+#		nc_gene = d[d['type'] == 'ncRNA_gne']
+#		ncgID = nc_gene['attributes'].loc[nc_gene.index[0]].split(';')[0]
+#		if (d['type'].eq('ncRNA').any()):
+#			print('is ncRNA')
+#		elif (d['type'].eq('lncRNA').any()):
+#			print('is lncRNA')
+#		elif (d['type'].eq('snoRNA').any()):
+#			print('is lncRNA')
+#		elif (d['type'].eq('snRNA').any()):
+#			print('is lncRNA')
+#		elif (d['type'].eq('rRNA').any()):
+#			print('is lncRNA')
+#		elif (d['type'].eq('miRNA').any()):
+#			print('is lncRNA')
+#		elif (d['type'].eq('tRNA').any()):
+#			print('is lncRNA')
+#	else:
+#		print('is intergenic')
+#		d_left,lab_left,d_right,lab_right = get_nearest(arg, pos, 'gene')
+#		print(d_left,' bases a la izquierda del gen',lab_left,d_right,'bases a la derecha del gen', lab_right)
+#		###
+#	#pos b c d e
 
 def codon_coords(pos, start, end, strand, phase):
    if strand == '+':
