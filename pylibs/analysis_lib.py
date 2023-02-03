@@ -570,6 +570,8 @@ def load_gff(arg):
 					continue
 	for type_,rows in gff.items():
 		gff[type_].sort(key=lambda row:row[2])
+		if type_ == 'CDS' or type_ == 'mRNA' or type == 'gene':
+			gff[type_].sort(key=lambda row:(row[2],row[6]))
 	arg['gff'] = gff
 
 				
@@ -752,7 +754,7 @@ def check_mutation2(row, arg):
 						b3,e3 = find_row(gff['CDS'], pos)
 						dis1 = gff['exon'][b2][2] - pos
 						dis2 = pos - gff['exon'][e2][3]
-						print('located at ' + str(dis2) + ' bp of closest flanking exon on the left side (' + gff['CDS'][e3][6] + ') and ' + str(dis1) + 'bp of the closest flanking exon on the right side (' + gff['CDS'][b3][6] +')' )
+						print('located at ' + str(dis2) + ' bp of closest flanking exon on the left side (' + gff['gene'][e2][6] + ') and ' + str(dis1) + 'bp of the closest flanking exon on the right side (' + gff['gene'][b2][6] +')' )
 	elif gff['ncRNA_gene'][b15:e15+1]:
 		print('is non coding gene')
 	elif gff['ncRNA'][b6:e6+1]:
