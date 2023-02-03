@@ -493,7 +493,7 @@ def filter_region(line, arg):
 		return
 def load_gff(arg):
 	gff_path = arg['--gff']
-	gff = {'gene': [], 'mRNA':[], 'five_prime_UTR':[], 'exon':[], 'CDS':[], 'three_prime_UTR':[],\
+	gff = {'chromosome':[],'gene': [], 'mRNA':[], 'five_prime_UTR':[], 'exon':[], 'CDS':[], 'three_prime_UTR':[],\
 		 'miRNA':[], 'tRNA':[], 'ncRNA':[], 'ncRNA_gene':[], 'lnc_RNA':[], 'snoRNA':[], 'snRNA':[],\
 		 'rRNA':[], 'pseudogene':[], 'pseudogenic_transcript':[], 'pre_miRNA':[], 'SRP_RNA':[]}
 	with open(gff_path, 'r') as handle:
@@ -511,76 +511,54 @@ def load_gff(arg):
 					strand = data[6]
 					phase = data[7]
 					attributes = data[8].split(';')
-					dict_att = {att.split('=')[0]:att.split('=')[1] for att in attributes}
-					if type_ == 'gene':
-						id = dict_att['ID']
-						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])
-					if type_ == 'mRNA':
-						id = dict_att['ID']
-						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])						
-					if type_ == 'five_prime_UTR':
-						id = dict_att['Parent']
-						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])
-					if type_ == 'exon':
-						id = dict_att['Name']
-						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])
-					if type_ == 'CDS':
-						id = dict_att['ID']
-						gff[type_].append([seqid, type_, int(start), int(end), strand, int(phase), id])
-					if type_ == 'three_prime_UTR':
-						id = dict_att['Parent']
-						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])
-					if type_ == 'miRNA':
-						id = dict_att['ID']
-						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])
-					if type_ == 'ncRNA':
-						id = dict_att['ID']
-						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])
-					if type_ == 'tRNA':
-						id = dict_att['ID']
-						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])
-					if type_ == 'ncRNA_gene':
-						id = dict_att['ID']
-						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])
-					if type_ == 'lnc_RNA':
-						id = dict_att['ID']
-						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])
-					if type_ == 'snoRNA':
-						id = dict_att['ID']
-						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])
-					if type_ == 'snRNA':
-						id = dict_att['ID']
-						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])
-					if type_ == 'rRNA':
-						id = dict_att['ID']
-						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])
-					if type_ == 'pseudogene':
-						id = dict_att['ID']
-						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])
-					if type_ == 'pseudogenic_transcript':
-						id = dict_att['ID']
-						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])
-					if type_ == 'pre_miRNA':
-						id = dict_att['ID']
-						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])
-					if type_ == 'SRP_RNA':
-						id = dict_att['ID']
-						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, id])
-				else:
-					continue
-	for type_,rows in gff.items():
-		gff[type_].sort(key=lambda row:row[2])
-		if type_ == 'CDS' or type_ == 'mRNA' or type == 'gene':
-			gff[type_].sort(key=lambda row:(row[2],row[6]))
+					dict_att = {'ID':'.','Parent':'.','Name':'.'}
+					for att in attributes:
+						dict_att[att.split('=')[0]] = att.split('=')[1]
+					#dict_att = {dict_att[att.split('=')[0]] :att.split('=')[1] for att in attributes}
+					if type_ in gff.keys():
+
+						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, dict_att['ID'], dict_att['Parent'], dict_att['Name']])
+		gff['gene'] = gff['gene'] + gff['ncRNA_gene'] + gff['pseudogene']
+		gff['gene'].sort(key=lambda row:row[2])
+		gff['mRNA'].sort(key=lambda row:(row[6], row[2]))
+		gff['exon'].sort(key=lambda row:(row[7], row[2]))
+		gff['CDS'].sort(key=lambda row:(row[7], row[2]))
+		gff['five_prime_UTR'].sort(key=lambda row:(row[7], row[2]))
+		gff['three_prime_UTR'].sort(key=lambda row:(row[7], row[2]))
+		ordered = ['gene', 'mRNA', 'exon', 'CDS', 'five_prime_UTR', 'three_prime_UTR']
+		for type_ in gff:
+			if type_ not in ordered:
+				gff[type_].sort(key=lambda row:row[2])
 	arg['gff'] = gff
 
 				
-def  find_row(rows, pos):
+def  find_row(rows, pos, start, end):
+	right = start
+	current = end
+	while right < current:
+		m = (right + current)//2
+		beg = rows[m][2]
+		#end = rows[m][3]
+		if pos < beg: current = m
+		else:
+			right = m + 1
+	
+	left = start
+	current = end
+	while left < current:
+		m = (left + current)//2
+		end = rows[m][3]
+		if pos > end: left = m + 1
+		else:
+			current = m
+	return left, right-1
+
+def  find_row_name(rows, pos, key):
 	right = 0
 	current = len(rows)
 	while right < current:
 		m = (right + current)//2
-		beg = rows[m][2]
+		beg = rows[m][key]
 		#end = rows[m][3]
 		if pos < beg: current = m
 		else:
@@ -590,7 +568,7 @@ def  find_row(rows, pos):
 	current = len(rows)
 	while left < current:
 		m = (left + current)//2
-		end = rows[m][3]
+		end = rows[m][key]
 		if pos > end: left = m + 1
 		else:
 			current = m
@@ -690,6 +668,80 @@ def new_df_line(df, arg, fields, al_count, calcs):
 
 
 def check_mutation2(row, arg):
+	gff = arg['gff']
+	pos = int(row['POS'])
+	b,e = find_row(gff['gene'], pos, 0, len(gff['gene']))
+	if gff['gene'][b:e+1]:
+		print(pos,'is genic')
+		for gene in gff['gene'][b:e+1]:
+			gene_id = gene[6]
+			b1,e1 = find_row_name(gff['mRNA'], gene_id, 7)
+			b2,e2 = find_row(gff['mRNA'], pos, b1, e1+1)
+			for mRNA in gff['mRNA'][b2:e2+1]:
+				print(mRNA)
+				mRNA_id = mRNA[6]
+				b3,e3 = find_row_name(gff['exon'], mRNA_id, 7)
+				b4,e4 = find_row(gff['exon'], pos, b3, e3+1)
+				if gff['exon'][b4:e4+1]:
+					#for exon in gff['exon'][b4:e4+1]:
+					#	print(exon)
+					b5,e5 = find_row_name(gff['CDS'], mRNA_id, 7)
+					b6,e6 = find_row(gff['CDS'], pos, b5, e5+1)
+					if gff['CDS'][b6:e6+1]:
+						for cds in gff['CDS'][b6:e6+1]:
+							print(cds)
+							beg, end = codon_coords(pos,cds[2],cds[3],cds[4],int(cds[5])) #target pos, cds start, cds end, cds strand, cds phase
+							if beg < cds[2]:
+								print("  Codon is truncated at exon/intron boundary at: ",cds[2])
+								print("  Possible splice site mutation. Check adjacent exon for a possible aa substitution")
+							elif end > cds[3]:
+								print("  Codon is truncated at exon/intron boundary at: ",cds[3])
+								print("  Possible splice site mutation. Check adjacent exon for a possible aa substitution")
+							else:
+								print(' Codon fully contained exon')
+								codon = arg['ref'].seq[beg-1:end]
+								before = codon[:pos-beg]+row['REF']+codon[pos-beg+1:]
+								after = codon[:pos-beg]+row['ALT']+codon[pos-beg+1:]
+								print(before, after)
+								find_effect(before,after,cds[4])
+
+					b7,e7 = find_row_name(gff['five_prime_UTR'], mRNA_id, 7)
+					b8,e8 = find_row(gff['five_prime_UTR'], pos, b7, e7+1)
+					b9,e9 = find_row_name(gff['three_prime_UTR'], mRNA_id, 7)
+					b10,e10 = find_row(gff['three_prime_UTR'], pos, b9, e9+1)
+					if gff['five_prime_UTR'][b8:e8+1]:
+						five =  gff['five_prime_UTR'][b8:e8+1][0]
+						print('is 5\' UTR')
+						print(five)
+						if five[4] == '+':
+							distfive1 = five[3] - pos
+							print(' Dist:', distfive1)
+						elif five[4] == '-':
+							distfive1 = pos - five[2]
+							print(' Dist:', distfive1)
+					elif gff['three_prime_UTR'][b10:e10+1]:
+						three =  gff['three_prime_UTR'][b10:e10+1][0]
+						print('is 3\' UTR')
+						print(three)
+		
+				else:
+					print('is intron')
+					print(gff['exon'][b4])
+					print(gff['exon'][e4])
+					dis1 = gff['exon'][b4][2] - pos
+					dis2 = pos - gff['exon'][e4][3]
+					print('located at ' + str(dis2) + ' bp of closest flanking exon on the left side (' + gff['exon'][e4][8] + ') and ' + str(dis1) + 'bp of the closest flanking exon on the right side (' + gff['exon'][b4][8] +')' )
+
+	else:
+		print(pos, 'is intergenic')
+		#print('is intergenic')
+		#print(gff['gene'][b])
+		#print(gff['gene'][e])
+		#dis1 = gff['gene'][b][2] - pos
+		#dis2 = pos - gff['gene'][e][3]
+		#print('located at ' + str(dis2) + ' bp of closest flanking gene on the left side (' + gff['gene'][e][6] + ') and ' + str(dis1) + 'bp of the closest flanking exon on the right side (' + gff['gene'][b][6] +')' )
+
+def check_mutation3(row, arg):
 	pos = int(row['POS'])
 	print(pos)
 	gff = arg['gff']
@@ -718,9 +770,12 @@ def check_mutation2(row, arg):
 					if gff['exon'][b2:e2+1]:
 						print('is exon')
 						b3,e3 = find_row(gff['CDS'], pos)
+						print(gff['CDS'][b3:e3+1])
 						if gff['CDS'][b3:e3+1]:
 							print('is CDS')
+
 							for cds in gff['CDS'][b3:e3+1]:
+								
 								beg, end = codon_coords(pos,cds[2],cds[3],cds[4],cds[5]) #target pos, cds start, cds end, cds strand, cds phase
 								if beg < cds[2]:
 									print("  Codon is truncated at exon/intron boundary at: ",cds[2])
@@ -741,6 +796,7 @@ def check_mutation2(row, arg):
 							if gff['five_prime_UTR'][b4:e4+1]:
 								print('is 5 UTR')
 								for five in gff['five_prime_UTR'][b4:e4+1]:
+
 									if five[4] == '+':
 										distfive1 = five[3] - pos
 										print(' Dist:', distfive1)
@@ -754,7 +810,7 @@ def check_mutation2(row, arg):
 						b3,e3 = find_row(gff['CDS'], pos)
 						dis1 = gff['exon'][b2][2] - pos
 						dis2 = pos - gff['exon'][e2][3]
-						print('located at ' + str(dis2) + ' bp of closest flanking exon on the left side (' + gff['gene'][e2][6] + ') and ' + str(dis1) + 'bp of the closest flanking exon on the right side (' + gff['gene'][b2][6] +')' )
+						print('located at ' + str(dis2) + ' bp of closest flanking exon on the left side (' + gff['exon'][e2][6] + ') and ' + str(dis1) + 'bp of the closest flanking exon on the right side (' + gff['exon'][b2][6] +')' )
 	elif gff['ncRNA_gene'][b15:e15+1]:
 		print('is non coding gene')
 	elif gff['ncRNA'][b6:e6+1]:
@@ -783,7 +839,6 @@ def check_mutation2(row, arg):
 		dis1 = gff['gene'][b][2] - pos
 		dis2 = pos - gff['gene'][e][3]
 		print('located at ' + str(dis2) + ' bp of closest flanking gene on the left side (' + gff['gene'][e][6] + ') and ' + str(dis1) + 'bp of the closest flanking exon on the right side (' + gff['gene'][b][6] +')' )
-
 #def check_mutation2(idx,row, arg):
 #	pos = int(row['POS'])
 #	gff = arg['gff']
