@@ -328,10 +328,11 @@ Output Options:
   df = df.reset_index()
   start = time.perf_counter()
   load_gff(arg)
-  arg['results'] = list()
+  results = list()
   for idx, row in df.iterrows():
-    check_mutation2(row,arg)
+    check_mutation2(row,arg,results)
     print('------------')
   finish = time.perf_counter()
   print(f'Variant annotation finished in {round(finish-start, 2)} second(s)')
+  write_annotate_results(arg, results, fsal)
   ##

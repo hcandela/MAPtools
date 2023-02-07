@@ -605,6 +605,20 @@ def find_effect(before,after,strand):
 		after = after.reverse_complement()
 	before = before.translate(table=1)
 	after = after.translate(table=1)
+	if (before == after):
+		print("Synonymous",before,after)
+		change = 'Synonymous'
+	elif (before != after):
+		if (after == "*"):
+			print("Nonsynonymous - nonsense mutation",before,after)
+			change = 'Nonsynonymous - nonsense mutation'
+		elif (before == "*"):
+			print("Nonsynonymous - nonstop mutation",before,after)
+			change = 'Nonsynonymous - nonstop mutation'
+		else:
+			print("Nonsynonymous - missense mutation",before,after)
+			change = 'Nonsynonymous - missense mutation'
+	return [before, after,change]
 
 def filter_mut(arg, al):
 	REF = al[0]
@@ -691,7 +705,7 @@ def find_new_ATG(arg, pos, five, row):
 		c1 = arg['ref'].seq[pos-3:pos-1]+row['ALT']
 		c2 = arg['ref'].seq[pos-2:pos-1]+row['ALT']+arg['ref'].seq[pos:pos+1]
 		c3 = row['ALT']+arg['ref'].seq[pos:pos+2]
-		print('hola',c1,c2,c3)
+		print(c1,c2,c3)
 		if c1 == 'ATG' or c2 == 'ATG' or c3 == 'ATG':
 			if c1 == 'ATG':
 				lag = -2
@@ -708,8 +722,14 @@ def find_new_ATG(arg, pos, five, row):
 				print(Seq('ATG') + arg['ref'].seq[five[3]-dist_to_cds+3:five[3]])
 				if '*' in codon:
 					print('Truncated protein. Stop codon generation after new ATG codon')
+					return ['New ATG', 'Stop codon']
 				else:
 					print('No stop codon generation. Elonged protein')
+					return ['New ATG', 'Elonged protein']
+			else:
+				return ['New ATG','Non phased']
+		else:
+			return ['Not new ATG']
 	if five[4] == '-':
 		c1 = arg['ref'].seq[pos-3:pos-1]+row['ALT']
 		c2 = arg['ref'].seq[pos-2]+row['ALT']+arg['ref'].seq[pos:pos+1]
@@ -732,10 +752,16 @@ def find_new_ATG(arg, pos, five, row):
 				print(str(prot.seq))
 				if '*' in prot:
 					print('Truncated protein. Stop codon generation after new CAT codon')
+					return ['New ATG','Stop codon']
 				else:
 					print('No stop codon generation. Elonged protein')
+					return ['New ATG', 'Elonged protein']
+			else:
+				return ['New ATG','Non phased']
+		else:
+			return ['Not new ATG']
 
-def check_nc_gene(arg,gff,type_, b, e, pos):
+def check_nc_gene(arg,gff,type_, b, e, pos,results,result):
 	if gff[type_][b:e+1]:
 		for ncRNA in gff[type_][b:e+1]:
 			ncRNA_id = ncRNA[6]
@@ -744,13 +770,18 @@ def check_nc_gene(arg,gff,type_, b, e, pos):
 			b2,e2 = find_row(gff['exon'], pos, b1, e1+1)
 			if gff['exon'][b2:e2+1]:
 				print(gff['exon'][b2:e2+1])
-				print('exonic, non-coding',type_,ncRNA_id)
-				return [type_,'exonic',ncRNA_id]
+				print('Exonic, non-coding',type_,ncRNA_id)
+				result['ID'],result['Parent'],result['TYPE'],result['strand'] = ncRNA_id,ncRNA[7],type_,ncRNA[4]
+				result['attributes'].append('Exonic, non-coding')
 			else:
 				print('intronic, non-coding',type_,ncRNA_id)
-				return [type_,'exonic',ncRNA_id]
+				result['ID'],result['Parent'],result['TYPE'],result['strand'] = ncRNA_id,ncRNA[7],type_,ncRNA[4]
+				result['attributes'].append('Intronic, non-coding')
 
-def check_mutation2(row, arg):
+def check_mutation2(row, arg, results):
+	result = {'#CHROM':row['#CHROM'],'POS':row['POS'],'REF':row['REF'],'ALT':row['ALT'], 'DPref_1':row['DPref_1'],\
+	'DPalt_1':row['DPalt_1'], 'DPref_2':row['DPref_2'], 'DPalt_2':row['DPalt_2'], 'TYPE':'.', 'ID':'.','Parent':'.','strand':'.',\
+		'phase':'.','codon_ref':'.','codon_alt':'.','aa_ref':'.','aa_alt':'.','aa_change':'.','attributes':[]}
 	gff = arg['gff']
 	pos = int(row['POS'])
 	b,e = find_row(gff['gene'], pos, 0, len(gff['gene']))
@@ -764,6 +795,7 @@ def check_mutation2(row, arg):
 				for mRNA in gff['mRNA'][b2:e2+1]:
 					print(mRNA)
 					mRNA_id = mRNA[6]
+					result['strand'] = mRNA[4]
 					b3,e3 = find_row_name(gff['exon'], mRNA_id, 7)
 					b4,e4 = find_row(gff['exon'], pos, b3, e3+1)
 					if gff['exon'][b4:e4+1]:
@@ -773,6 +805,8 @@ def check_mutation2(row, arg):
 						b6,e6 = find_row(gff['CDS'], pos, b5, e5+1)
 						if gff['CDS'][b6:e6+1]:
 							for cds in gff['CDS'][b6:e6+1]:
+								cds_id = cds[6]
+								result['phase'],result['TYPE'] = cds[5],'CDS'
 								beg, end = codon_coords(pos,cds[2],cds[3],cds[4],int(cds[5])) #target pos, cds start, cds end, cds strand, cds phase
 								print(cds, beg, end)
 								if beg < cds[2]:
@@ -790,8 +824,11 @@ def check_mutation2(row, arg):
 									codon_alt = codon_ref[:pos-beg]+row['ALT']+codon_ref[pos-beg+1:]
 									print(codon_ref)
 									print(codon_alt)
-									find_effect(codon_ref,codon_alt,cds[4])
-									arg['results'].append()
+									aa_before, aa_after,change = find_effect(codon_ref,codon_alt,cds[4])
+									result['codon_ref'],result['codon_alt'],result['aa_ref'],result['aa_alt'], result['aa_change'] = codon_ref, codon_alt, aa_before, aa_after,change
+									result['attributes'].append('Possible splice site mutation')
+									result['Parent'] = mRNA_id
+									results.append(result)
 								elif end > cds[3]:
 									next_cds = gff['CDS'][e6+1]
 									n_beg = next_cds[2]
@@ -806,15 +843,20 @@ def check_mutation2(row, arg):
 									print(codon_alt)
 									print("  Codon is truncated at exon/intron boundary at: ",cds[3])
 									print("  Possible splice site mutation. Check adjacent exon for a possible aa substitution")
-									find_effect(codon_ref,codon_alt,cds[4])
+									aa_before, aa_after,change = find_effect(codon_ref,codon_alt,cds[4])
+									result['codon_ref'],result['codon_alt'],result['aa_ref'],result['aa_alt'],result['aa_change'] = codon_ref, codon_alt, aa_before, aa_after,change
+									result['Parent'] = mRNA_id
+									result['attributes'].append('Possible splice site mutation')
 								else:
 									print(' Codon fully contained exon')
 									codon = arg['ref'].seq[beg-1:end]
 									before = codon[:pos-beg]+row['REF']+codon[pos-beg+1:]
 									after = codon[:pos-beg]+row['ALT']+codon[pos-beg+1:]
 									print(before, after)
-									find_effect(before,after,cds[4])
-
+									aa_before, aa_after,change = find_effect(before,after,cds[4])
+									result['Parent'] = mRNA_id
+									result['codon_ref'],result['codon_alt'],result['aa_ref'],result['aa_alt'],result['aa_change'] = before, after, aa_before, aa_after,change
+									results.append(result)
 						b7,e7 = find_row_name(gff['five_prime_UTR'], mRNA_id, 7)
 						b8,e8 = find_row(gff['five_prime_UTR'], pos, b7, e7+1)
 						b9,e9 = find_row_name(gff['three_prime_UTR'], mRNA_id, 7)
@@ -823,50 +865,62 @@ def check_mutation2(row, arg):
 							five =  gff['five_prime_UTR'][b8:e8+1][0]
 							print('is 5\' UTR')
 							print(five)
-							find_new_ATG(arg, pos, five, row)
+							result['TYPE'] = 'five_prime_UTR'
+							new_ATG = find_new_ATG(arg, pos, five, row)
+							result['attributes'] += new_ATG
+							result['Parent'] = mRNA_id
+							results.append(result)
 						elif gff['three_prime_UTR'][b10:e10+1]:
 							three =  gff['three_prime_UTR'][b10:e10+1][0]
+							result['TYPE'] = 'three_prime_UTR'
 							print('is 3\' UTR')
 							print(three)
-
+							result['Parent'] = mRNA_id
+							results.append(result)
 					else:
 						print('is intron')
+						result['TYPE'] = 'intron'
 						print(gff['exon'][b4])
 						print(gff['exon'][e4])
 						dis1 = gff['exon'][b4][2] - pos
 						dis2 = pos - gff['exon'][e4][3]
+						d = {gff['exon'][e4][8]:dis2,gff['exon'][b4][8]:dis1}
+						result['Parent'] = mRNA_id
+						result['attributes'].append(d)
 						print('located at ' + str(dis2) + ' bp of closest flanking exon on the left side (' + gff['exon'][e4][8] + ') and ' + str(dis1) + 'bp of the closest flanking exon on the right side (' + gff['exon'][b4][8] +')' )
+						print(result)
+						results.append(result)
 			
 			b11,e11 = find_row_name(gff['tRNA'], gene_id, 7) #tRNA
 			b12,e12 = find_row(gff['tRNA'], pos, b11, e11+1)
-			check_nc_gene(arg,gff,'tRNA', b12, e12, pos)
+			check_nc_gene(arg,gff,'tRNA', b12, e12, pos,results,result)
 			b13,e13 = find_row_name(gff['rRNA'], gene_id, 7) #rRNA
 			b14,e14 = find_row(gff['rRNA'], pos, b13, e13+1)
-			check_nc_gene(arg,gff,'rRNA', b14, e14, pos)
+			check_nc_gene(arg,gff,'rRNA', b14, e14, pos,results,result)
 			b15,e15 = find_row_name(gff['ncRNA'], gene_id, 7) #ncRNA
 			b16,e16 = find_row(gff['ncRNA'], pos, b15, e15+1)
-			check_nc_gene(arg,gff,'ncRNA', b16, e16, pos)
+			check_nc_gene(arg,gff,'ncRNA', b16, e16, pos,results,result)
 			b17,e17 = find_row_name(gff['lnc_RNA'], gene_id, 7) #lncRNA
 			b18,e18 = find_row(gff['lnc_RNA'], pos, b17, e17+1)
-			check_nc_gene(arg,gff,'lnc_RNA', b18, e18, pos)
+			check_nc_gene(arg,gff,'lnc_RNA', b18, e18, pos,results,result)
 			b19,e19 = find_row_name(gff['miRNA'], gene_id, 7) #miRNA
 			b20,e20 = find_row(gff['miRNA'], pos, b19, e19+1)
-			check_nc_gene(arg,gff,'miRNA', b20, e20, pos)
+			check_nc_gene(arg,gff,'miRNA', b20, e20, pos,results,result)
 			b21,e21 = find_row_name(gff['pre_miRNA'], gene_id, 7) #pre_miRNA
 			b22,e22 = find_row(gff['pre_miRNA'], pos, b21, e21+1)
-			check_nc_gene(arg,gff,'pre_miRNA', b22, e22, pos)
+			check_nc_gene(arg,gff,'pre_miRNA', b22, e22, pos,results,result)
 			b23,e23 = find_row_name(gff['snRNA'], gene_id, 7) #snRNA
 			b24,e24 = find_row(gff['snRNA'], pos, b23, e23+1)
-			check_nc_gene(arg,gff,'snRNA', b24, e24, pos)
+			check_nc_gene(arg,gff,'snRNA', b24, e24, pos,results,result)
 			b25,e25 = find_row_name(gff['snoRNA'], gene_id, 7) #snoRNA
 			b26,e26 = find_row(gff['snoRNA'], pos, b25, e25+1)
-			check_nc_gene(arg,gff,'snoRNA', b26, e26, pos)
+			check_nc_gene(arg,gff,'snoRNA', b26, e26, pos,results,result)
 			b27,e27 = find_row_name(gff['pseudogenic_transcript'], gene_id, 7) #pseudogenic_transcript
 			b28,e28 = find_row(gff['pseudogenic_transcript'], pos, b27, e27+1)
-			check_nc_gene(arg,gff,'pseudogenic_transcript', b28, e28, pos)
+			check_nc_gene(arg,gff,'pseudogenic_transcript', b28, e28, pos,results,result)
 			b29,e29 = find_row_name(gff['SRP_RNA'], gene_id, 7) #SRP_RNA
 			b30,e30 = find_row(gff['SRP_RNA'], pos, b29, e29+1)
-			check_nc_gene(arg,gff,'SRP_RNA', b30, e30, pos)
+			check_nc_gene(arg,gff,'SRP_RNA', b30, e30, pos,results,result)
 
 	else:
 		print('is intergenic')
@@ -875,10 +929,21 @@ def check_mutation2(row, arg):
 		dis1 = gff['gene'][b][2] - pos
 		dis2 = pos - gff['gene'][e][3]
 		print('located at ' + str(dis2) + ' bp of closest flanking gene on the left side (' + gff['gene'][e][6] + ') and ' + str(dis1) + 'bp of the closest flanking gene on the right side (' + gff['gene'][b][6] +')' )
+		result['TYPE'] = 'intergenic'
+		d = {gff['gene'][e][6]:dis2,gff['gene'][b][6]:dis1}
+		result['attributes'].append(d)
+		results.append(result)
 
-#first = False
-#n_head = spacer.join(header)+'\n'
-#write_line(n_head, fsal)
+def write_annotate_results(arg, results, fsal):
+	header=['#CHROM','POS','REF','ALT', 'DPref_1','DPalt_1','DPref_2','DPalt_2','TYPE','ID','Parent','strand',\
+		'phase','codon_ref','codon_alt','aa_ref','aa_alt','aa_change','attributes']
+	spacer = arg['spacer']
+	n_head = spacer.join(header)+'\n'
+	write_line(n_head,fsal)
+	for row in results:
+		line = [str(row[key]) for key in header]
+		n_line = spacer.join(line)+'\n'
+		write_line(n_line,fsal)
 
 #CHROM	POS		REF		ALT		DPr		DPalt		cRef	cAlt	type	      strand		ID		LEFT	RIGHT	Ldist   Rdist 
 # 1    1456654   C		T		1         18	ATG(Met)   CTG(Ser) Nonsynonymous   +          ATG10809 ATG..    ATG..  1500    156
