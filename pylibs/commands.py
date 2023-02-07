@@ -328,6 +328,7 @@ Output Options:
   df = df.reset_index()
   start = time.perf_counter()
   load_gff(arg)
+  arg['results'] = list()
   for idx, row in df.iterrows():
     check_mutation2(row,arg)
     print('------------')
