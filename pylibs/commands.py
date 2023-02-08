@@ -303,8 +303,10 @@ Output Options:
   df = create_df(arg)
   output = arg['--output']
   fsal = False
+  arg['fsal'] = False
   if output != None:
     fsal = open(arg['--outdir']+arg['--output'], 'w')
+    arg['fsal'] = fsal
   
   if arg['--input']:
     inp = open(arg['--input'], 'r')
@@ -328,11 +330,11 @@ Output Options:
   df = df.reset_index()
   start = time.perf_counter()
   load_gff(arg)
-  results = list()
+  write_annotate_header(arg, fsal)
   for idx, row in df.iterrows():
-    check_mutation2(row,arg,results)
+    check_mutation2(row,arg)
     print('------------')
   finish = time.perf_counter()
   print(f'Variant annotation finished in {round(finish-start, 2)} second(s)')
-  write_annotate_results(arg, results, fsal)
+  
   ##
