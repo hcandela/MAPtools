@@ -313,13 +313,14 @@ Output Options:
   else:
     inp = sys.stdin
   for line in inp:
+    print(line)
     if not line.startswith('#'):
       line = filter_region(line, arg)
       if line != None:
         fields, pools = vcf_line_parser2(line, arg)
         if (fields, pools) != (0,0):
           REF = fields[2]
-          all_count = normalize(pools, REF, arg)
+          all_count = normalize_annotate(pools, REF, arg)
           if all_count != None:
             flag = filter_mut(arg, all_count[:2])
             if flag:
