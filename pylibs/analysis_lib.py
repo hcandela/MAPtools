@@ -9,7 +9,7 @@ from scipy.stats import fisher_exact
 from scipy.stats import hypergeom
 from scipy.spatial import distance
 import pandas as pd
-import gffpandas.gffpandas as gffpd
+#import gffpandas.gffpandas as gffpd
 from Bio import SeqIO
 from Bio.Seq import Seq
 #from docopt import docopt
