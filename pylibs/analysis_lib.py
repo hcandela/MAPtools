@@ -29,7 +29,6 @@ def test_args(__doc__,arg):
 			print('Error: The input file {} does not exist'.format(inp_f))
 			sys.exit()
 	
-	
 	wd = os.getcwd()
 	try:
 		os.makedirs(wd+'/'+arg['--outdir'])
@@ -55,7 +54,9 @@ def test_args(__doc__,arg):
 	if 'qtl' in arg.keys():
 		arg = check_qtl_args(arg)
 	return arg
-
+#def read_header(arg,line):
+#	if line.startswith('##bcftoolsVersion='):
+		
 def check_save_an(arg, file_name):
 	typ = arg['--fileformat']
 	if os.path.isfile(arg['--outdir']+file_name):
@@ -815,11 +816,26 @@ def check_mutation2(row, arg):
 							b9,e9 = find_row_name(gff['three_prime_UTR'], mRNA_id, 7)
 							b10,e10 = find_row(gff['three_prime_UTR'], pos, b9, e9+1)
 							if gff['CDS'][b6:e6+1]:
+								print(gff['CDS'][b6:e6+1])
 								for cds in gff['CDS'][b6:e6+1]:
 									cds_id = cds[6]
 									result['phase'],result['TYPE'] = cds[5],'CDS'
 									beg, end = codon_coords(pos,cds[2],cds[3],cds[4],int(cds[5])) #target pos, cds start, cds end, cds strand, cds phase
 									print(cds, beg, end)
+									if gff['CDS'][b6-1][7] == cds[7]: #if prev cds exist
+										if pos - cds[2] in {0,1,2}:
+											if cds[4] == '+':
+												result['attributes']['5_splice_site'] = 'exon-boundary:'+gff['CDS'][e6][6]
+											else:
+												result['attributes']['3_splice_site'] = 'exon-boundary:'+gff['CDS'][e6][6]
+
+									if gff['CDS'][b6+1][7] == cds[7]: #if next cds exist
+										if cds[3] - pos in {0,1,2}:
+											if cds[4] == '+':
+												result['attributes']['3_splice_site'] = 'exon-boundary:'+gff['CDS'][e6][6]
+											else:
+												result['attributes']['5_splice_site'] = 'exon-boundary:'+gff['CDS'][e6][6]
+
 									if beg < cds[2]:
 										prev_cds = gff['CDS'][e6-1]
 										p_beg = prev_cds[2]
@@ -905,6 +921,16 @@ def check_mutation2(row, arg):
 							result['Parent'] = mRNA_id
 							result['attributes']['left'] = gff['exon'][e4][8] +':'+ str(dis2)
 							result['attributes']['right'] = gff['exon'][b4][8] +':'+ str(dis1)
+							if dis2 in {1,2,3}:
+								if gff['exon'][e4][4] == '+':
+									result['attributes']['5_splice_site'] = 'intron-boundary:'+gff['exon'][e4][8]
+								else:
+									result['attributes']['3_splice_site'] = 'intron-boundary:'+gff['exon'][e4][8]
+							if dis1 in {1,2,3}:
+								if gff['exon'][b4][4] == '+':
+									result['attributes']['3_splice_site'] = 'intron-boundary:'+gff['exon'][b4][8]
+								else:
+									result['attributes']['5_splice_site'] = 'intron-boundary:'+gff['exon'][b4][8]
 							print('located at ' + str(dis2) + ' bp of closest flanking exon on the left side (' + gff['exon'][e4][8] + ') and ' + str(dis1) + 'bp of the closest flanking exon on the right side (' + gff['exon'][b4][8] +')' )
 							write_annotate_line(arg, result)
 							result['attributes'] = dict()
@@ -967,6 +993,85 @@ def write_annotate_line(arg, result):
 	line = [str(v) for k,v in result.items()]
 	n_line = arg['spacer'].join(line)+'\n'
 	write_line(n_line,arg['fsal'])
+
+def normalize_annotate(pools, REF, arg, r_min=0.03):
+	data = arg['--data'].split(',')
+	inf_s = set(data)
+	ref = arg['--ref']
+	n_ref = arg['--no-ref']
+	rec = pools['R']
+	alle = [a for a,v in rec.items()]	#list of alleles ['A','G']
+	REF_idx = alle.index(REF)
+	if len(alle) > 2:
+		return
+	if len(inf_s) == 1:
+		if ref == 'D' or n_ref == True:
+			a = rec[alle[REF_idx]]
+			alle.pop(REF_idx)
+			b = rec[alle[0]]
+			return [REF, alle[0], a, b]
+		elif ref == 'R':
+			b = rec[alle[REF_idx]]
+			alle.pop(REF_idx)
+			a = rec[alle[0]]
+			return [alle[0],REF,a, b]
+
+	elif len(inf_s) == 2:
+		if n_ref == True:
+			dom = pools['D']
+			dom_list = [count for al,count in dom.items()]
+			rec_list = [count for al,count in rec.items()]
+			return[alle[0],alle[1],dom_list[0],dom_list[1],rec_list[0],rec_list[1]]
+		elif inf_s == {'R','D'} and ref == 'D':
+			dom = pools['D']
+			a = dom[alle[REF_idx]]
+			c = rec[alle[REF_idx]]
+			alle.pop(REF_idx)
+			b = dom[alle[0]]
+			d = rec[alle[0]]
+			return [REF, alle[0], a, b, c, d]
+		elif inf_s == {'R','D'} and ref == 'R':
+			dom = pools['D']
+			b = dom[alle[REF_idx]]
+			d = rec[alle[REF_idx]]
+			alle.pop(REF_idx)
+			a = dom[alle[0]]
+			c = rec[alle[0]]
+			return [alle[0], REF, a, b, c, d]
+		elif 'Pd' in inf_s:
+			p_dom = pools['Pd']
+			p_al = sorted(p_dom, key=lambda key: p_dom[key], reverse=True) #ordered from higher to lower
+			if p_dom[p_al[0]] > 0 and p_dom[p_al[1]]/(p_dom[p_al[0]] + p_dom[p_al[1]]) < r_min or len(p_al) > 2:
+				a = rec[p_al[0]]
+				b = rec[p_al[1]]
+				return [p_al[0], p_al[1], a, b]
+		elif 'Pr' in inf_s:
+			p_rec = pools['Pr']
+			p_al = sorted(p_rec, key=lambda key: p_rec[key], reverse=True)
+			if p_rec[p_al[0]] > 0 and p_rec[p_al[1]]/(p_rec[p_al[0]] + p_rec[p_al[1]]) < r_min or len(p_al) > 2:
+				a = rec[p_al[0]]
+				b = rec[p_al[1]]
+				return [p_al[1], p_al[0], a, b]
+	elif len(inf_s) == 3:
+		if 'Pr' in inf_s:
+			parental = pools['Pr'] # {'Pr':{alle1:count1,'T':10}}
+		elif 'Pd' in inf_s:
+			parental = pools['Pd']
+		p_al = sorted(parental, key=lambda key: parental[key], reverse=True)
+		dom = pools['D']
+		if parental[p_al[0]] > 0 and parental[p_al[1]] <= 1:
+			if 'Pd' in inf_s:
+				a = dom[p_al[0]]
+				b = dom[p_al[1]]
+				c = rec[p_al[0]]
+				d = rec[p_al[1]]
+				return[p_al[0], p_al[1], a, b, c, d]
+			elif 'Pr' in inf_s:
+				a = dom[p_al[1]]
+				b = dom[p_al[0]]
+				c = rec[p_al[1]]
+				d = rec[p_al[0]]
+				return[p_al[1], p_al[0], a, b, c, d]
 
 #CHROM	POS		REF		ALT		DPr		DPalt		cRef	cAlt	type	      strand		ID		LEFT	RIGHT	Ldist   Rdist 
 # 1    1456654   C		T		1         18	ATG(Met)   CTG(Ser) Nonsynonymous   +          ATG10809 ATG..    ATG..  1500    156
