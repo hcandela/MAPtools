@@ -14,6 +14,7 @@ Usage:
    maptools.py <command>
    maptools.py --version
    maptools.py -h
+   maptools.py
 
 Avalaible commands:
    mbs
@@ -29,6 +30,9 @@ from pylibs.commands import *
 
 if __name__ == '__main__':
     args = docopt(__doc__, version='maptools version=0.1', options_first=True)
+    if not args['<command>']:
+        print(__doc__,end='')
+        sys.exit()
     if not args['<args>']:
         argv = [args['<command>']]
     else:

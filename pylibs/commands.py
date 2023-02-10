@@ -322,8 +322,6 @@ Output Options:
           all_count = normalize_annotate(pools, REF, arg, fields)
           if all_count != None:
             flag = filter_mut(arg, all_count[:2])
-            if fields[1] == '1283497':
-              print(line)
             if flag:
               calcs = ann_calc(all_count[2:], arg)
               if calcs != None:
