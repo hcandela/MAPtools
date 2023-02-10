@@ -981,7 +981,7 @@ def check_mutation2(row, arg):
 
 def write_annotate_header(arg, fsal):
 	header=['#CHROM','POS','REF','ALT', 'DPref_1','DPalt_1','DPref_2','DPalt_2','TYPE','ID','Parent','strand',\
-		'phase','codon_ref','codon_alt','aa_ref','aa_alt','aa_change','attributes']
+		'phase','codon_ref','codon_alt','aa_ref','aa_alt','attributes']
 	spacer = arg['spacer']
 	n_head = spacer.join(header)+'\n'
 	write_line(n_head,fsal)
@@ -994,7 +994,9 @@ def write_annotate_line(arg, result):
 	n_line = arg['spacer'].join(line)+'\n'
 	write_line(n_line,arg['fsal'])
 
-def normalize_annotate(pools, REF, arg, r_min=0.03):
+def normalize_annotate(pools, REF, arg, fields, r_min=0.03):
+	if fields[1] == '1283497':
+		print('inside',fields, pools)
 	data = arg['--data'].split(',')
 	inf_s = set(data)
 	ref = arg['--ref']
@@ -1002,6 +1004,7 @@ def normalize_annotate(pools, REF, arg, r_min=0.03):
 	rec = pools['R']
 	alle = [a for a,v in rec.items()]	#list of alleles ['A','G']
 	REF_idx = alle.index(REF)
+
 	if len(alle) > 2:
 		return
 	if len(inf_s) == 1:
@@ -1057,21 +1060,35 @@ def normalize_annotate(pools, REF, arg, r_min=0.03):
 			parental = pools['Pr'] # {'Pr':{alle1:count1,'T':10}}
 		elif 'Pd' in inf_s:
 			parental = pools['Pd']
+
 		p_al = sorted(parental, key=lambda key: parental[key], reverse=True)
+		p_al = [k for k,v in parental.items()]
 		dom = pools['D']
-		if parental[p_al[0]] > 0 and parental[p_al[1]] <= 1:
-			if 'Pd' in inf_s:
-				a = dom[p_al[0]]
-				b = dom[p_al[1]]
-				c = rec[p_al[0]]
-				d = rec[p_al[1]]
-				return[p_al[0], p_al[1], a, b, c, d]
-			elif 'Pr' in inf_s:
+
+		if 'Pd' in inf_s and arg['--ref'] == 'D':
+			a = dom[p_al[0]]
+			b = dom[p_al[1]]
+			c = rec[p_al[0]]
+			d = rec[p_al[1]]
+			ref_ = p_al[0]
+			alt_ = p_al[1]
+			return[ref_, alt_, a, b, c, d]
+		elif 'Pr' in inf_s and parental[p_al[1]] <= 1:
+			if p_al[0] != REF:
 				a = dom[p_al[1]]
 				b = dom[p_al[0]]
 				c = rec[p_al[1]]
 				d = rec[p_al[0]]
-				return[p_al[1], p_al[0], a, b, c, d]
+				alt_ = p_al[0]
+				ref_ = p_al[1]
+			elif p_al[0] == REF:
+				a = dom[p_al[0]]
+				b = dom[p_al[1]]
+				c = rec[p_al[0]]
+				d = rec[p_al[1]]
+				ref_ = p_al[0]
+				alt_ = p_al[1]
+			return[ref_, alt_, a, b, c, d]
 
 #CHROM	POS		REF		ALT		DPr		DPalt		cRef	cAlt	type	      strand		ID		LEFT	RIGHT	Ldist   Rdist 
 # 1    1456654   C		T		1         18	ATG(Met)   CTG(Ser) Nonsynonymous   +          ATG10809 ATG..    ATG..  1500    156
