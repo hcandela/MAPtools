@@ -18,6 +18,7 @@ def cmHH(command_line):
 	os.system(command_line)
 
 def test_args(__doc__,arg):
+	arg['chromosomes'] = list()
 	if arg['--input'] == None and arg['pipe'] == True:
 		print(__doc__, end='')
 		sys.exit()
@@ -54,8 +55,7 @@ def test_args(__doc__,arg):
 	if 'qtl' in arg.keys():
 		arg = check_qtl_args(arg)
 	return arg
-#def read_header(arg,line):
-#	if line.startswith('##bcftoolsVersion='):
+
 		
 def check_save_an(arg, file_name):
 	typ = arg['--fileformat']
@@ -436,6 +436,7 @@ def test_arg_ann(__doc__,arg):
 			print('Error: The input file {} does not exit'.format(inp_f))
 			sys.exit()
 	wd = os.getcwd()
+	arg['--version'] = True
 	try:
 		os.makedirs(wd+'/'+arg['--outdir'])
 	except FileExistsError:
@@ -465,7 +466,7 @@ def test_arg_ann(__doc__,arg):
 	except FileNotFoundError:
 		print('The reference file does not exist.')
 		sys.exit()
-	
+	arg['chromosomes'] = list()
 	Tchrom,Treg = arg['--region'].split(':')
 	Treg = Treg.split('-')
 	arg['--region'] = [Tchrom,int(Treg[0]),int(Treg[1])]
@@ -492,6 +493,7 @@ def filter_region(line, arg):
 		return line
 	else:
 		return
+
 def load_gff(arg):
 	gff_path = arg['--gff']
 	gff = {'chromosome':[],'gene': [], 'mRNA':[], 'five_prime_UTR':[], 'exon':[], 'CDS':[], 'three_prime_UTR':[],\
@@ -1092,3 +1094,24 @@ def normalize_annotate(pools, REF, arg, fields, r_min=0.03):
 
 #CHROM	POS		REF		ALT		DPr		DPalt		cRef	cAlt	type	      strand		ID		LEFT	RIGHT	Ldist   Rdist 
 # 1    1456654   C		T		1         18	ATG(Met)   CTG(Ser) Nonsynonymous   +          ATG10809 ATG..    ATG..  1500    156
+
+def read_header(arg:dict,line:str):
+   fsal = arg['fsal']
+   if line.startswith('##bcftoolsVersion='):
+      write_line(line,fsal)
+   if line.startswith('##bcftoolsCommand='):
+      write_line(line,fsal)
+   if line.startswith('##bcftools_callCommand='):
+      write_line(line,fsal)
+   if line.startswith('##reference='):
+      write_line(line,fsal)
+   if line.startswith('##contig=<ID='):
+      c = line.split('##contig=<ID=')[1].split(',')[0]
+      arg['chromosomes'].append(c)
+      write_line(line,fsal)
+
+def write_argv(arg:dict,argv:str):
+   fsal = arg['fsal']
+   line = '##maptools_{}Command='.format(argv[0])+' '.join(argv) + '\n'
+   write_line(line, fsal)
+   return True

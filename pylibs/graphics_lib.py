@@ -30,7 +30,7 @@ pd.options.mode.chained_assignment = None
 
 
 
-def test_plot(arg):
+def test_plot(arg, __doc__):
     font_files = matplotlib.font_manager.findSystemFonts()
     for font_file in font_files:
         matplotlib.font_manager.fontManager.addfont(font_file)
@@ -38,6 +38,9 @@ def test_plot(arg):
     global fields
     global header
     inp_f = arg['<input_file>']
+    if not inp_f:
+        print(__doc__, end='')
+        sys.exit()
     inp_ext = inp_f.split('.')[-1]
     if inp_ext == 'csv':
         sep_ = ','
@@ -103,9 +106,12 @@ def test_plot(arg):
     return df, arg
 
 
-def test_merge(arg):
+def test_merge(arg,__doc__):
     global fields
     inp_f = arg['<input_file>']
+    if not inp_f:
+        print(__doc__,end='')
+        sys.exit()
     inp_ext = inp_f.split('.')[-1]
     if inp_ext == 'csv':
         sep_ = ','

@@ -1,3 +1,4 @@
+
 fields = {'#CHROM': str, 'POS': int, 'REF': str, 'ALT': str, 'DPref_1': int, 'DPalt_1': int, 'DPref_2': int, 'DPalt_2': int, 'SNPidx1': float,
           'SNPidx2': float, 'DELTA': float, 'MAX_SNPidx2': float, 'PVALUE': float, 'log10PVALUE': float, 'FISHER': float, 'BOOST': float, 'ED': float, 'G':float, 'CI95': float}
 RANG = 100
@@ -5,14 +6,18 @@ MUT = 'EMS'
 blind_mbs = {'dots':('#000000','black'), 'MAX_SNPidx2':('#f781bf','pink'),'log10PVALUE':('#f0e442','yellow'),'SNPidx1':('#00ffff','light blue'),'SNPidx2':('#ff9a31','orange'),'BOOST':('#00ffff','light blue')}
 norm_mbs = {'dots':('royalblue','blue'), 'MAX_SNPidx2':('#f781bf','pink'),'log10PVALUE':('tomato','red'),'SNPidx1':('limegreen','green'),'SNPidx2':('#FF33F9' ,'pink'),'BOOST':('limegreen','green')}
 
-palettes_mbs = {'1':blind_mbs,'2':norm_mbs}
-
+palettes_mbs = {'2':blind_mbs,'1':norm_mbs}
+#TODO - Configure qtl palettes
 norm_qtl = {'dots':('royalblue','blue'), 'MAX_SNPidx2':('limegreen','green')
 ,'log10PVALUE':('tomato','red'),'SNPidx1':('limegreen','green'),'SNPidx2':('#FAC205','yellow'),
 'DELTA':('#f781bf','pink'), 'mvg':('tomato','red'), 'ci':('#ff7f00','orange')
 }
 
-palettes_qtl = {'2':norm_qtl}
+blind_qtl={'dots':('#000000','black'), 'MAX_SNPidx2':('#f781bf','pink')
+,'log10PVALUE':('#f0e442','yellow'),'SNPidx1':('#00ffff','light blue'),'SNPidx2':('#ff9a31','orange'),
+'DELTA':('#f781bf','pink'), 'mvg':('#f0e442','yellow'), 'ci':('#f781bf','pink')
+}
+palettes_qtl = {'2':blind_qtl,'1':norm_qtl}
 
 titles_mbs = {1:('p-values of two-tailed Fisher\'s exact tests along the chromosomes ({}).','pvalues_multiH' ),
           2:('p-values of two-tailed Fisher\'s exact tests in chromosome {}.', 'pvalue_chr{}'),
@@ -81,3 +86,10 @@ lines_qtl = {-3:'Each {} dot was calculated substracting the SNP-index value of 
         
          
 }
+
+v_annotate= 'Annotate variants version: 1.00'
+v_mbs= 'Mapping by Sequencing analysis version: 1.00'
+v_mbsplot = 'Mapping by Sequencing plots version: 1.00'
+v_qtl= 'QTL-Seq analysis version: 1.00'
+v_qtlplot= 'QTL-Seq plots version: 1.00'
+v_merge='Merge mbs or qtl analysis version: 1.00'

@@ -8,7 +8,7 @@ from pylibs.graphics_lib import *
 
 
 def mbs(argv):
-    mbs_doc = """Mapping by Sequencing analysis
+    mbs_doc = """
     Usage:
        maptools.py mbs [options]
        maptools.py mbs --version
@@ -32,11 +32,10 @@ def mbs(argv):
       --fileformat=<ext>          Formats availables: txt, csv (,) [default: txt]
     """
 
-    arg = docopt(mbs_doc, argv=None, help=True,
-                 version='Mapping by Sequencing analysis version: 0.1')
+    arg = docopt(mbs_doc, argv=None, help=True,version=v_mbs)
     arg['pipe'] = sys.stdin.isatty()
     arg = test_args(mbs_doc, arg)
-
+    arg['version'] = v_mbs
     output = arg['--output']
     fsal = False
     if output != None:
@@ -60,14 +59,13 @@ def mbs(argv):
 
 
 def qtl(argv):
-    qtl_doc = """QTL-Seq analysis
+    qtl_doc = """
   Usage:
      maptools.py qtl [options]
      maptools.py qtl --version
-     maptools.py qtl -h
+     maptools.py qtl
 
   Options:
-    --help -h                   Show this screen.
     --version                   Show the version.
     --input, -i=<file>          VCF input file. Can algo come from a pipe.
   Input Options:
@@ -82,10 +80,11 @@ def qtl(argv):
     --fileformat=<ext>          Formats availables: txt (tab), csv (,) [default: txt]
 
   """
-    arg = docopt(qtl_doc, argv=None, help=True, version='0.1')
+    arg = docopt(qtl_doc, argv=None, help=True, version=v_qtl)
     # print(arg)
     arg['pipe'] = sys.stdin.isatty()
     arg = test_args(qtl_doc, arg)
+    arg['version'] = v_qtl
     output = arg['--output']
     fsal = False
     if output != None:
@@ -113,10 +112,9 @@ def merge(argv):
   Usage:
      maptools.py merge <input_file> [options]
      maptools.py merge -v
-     maptools.py merge -h
+     maptools.py merge
 
   Options:
-     -h --help                     Show this screen.
      -v --version                  Show the version.
      --window, -w=<int>            Number of adjacent markers to merge the data [default: 20].
      --chromosomes, -c=<list_int>  List of chromosomes separated by comma, from 1 to nº chr [default: all].
@@ -124,28 +122,24 @@ def merge(argv):
      --output, -o=<file>           Output file.
      --fileformat=<ext>            Formats availables: txt (tab), csv (,) [default: txt]
   """
-  arg = docopt(merge_doc, argv=None, help=True, version='Merge mbs or qtl analysis version=0.1')
-  df, arg = test_merge(arg)
+  arg = docopt(merge_doc, argv=None, help=True, version=v_merge)
+  df, arg = test_merge(arg, merge_doc)
   fsal = False
   if arg['--output'] != None:
     fsal = open(arg['--outdir']+arg['--output'], 'w')
   arg['fsal'] = fsal
+  arg['version'] = v_merge
   grouped_by(df, arg)
   if fsal == True:
     fsal.close()
 
 def mbs_plot(argv):
-    mbsplot_doc = """MBS
+    mbsplot_doc = """
   Usage:
      maptools.py mbsplot <input_file> [options]
-     maptools.py mbsplot -v
-     maptools.py mbsplot -h
+     maptools.py mbsplot
 
   Options:
-    -h --help                  Show this screen.
-    -v --version               Show the version.
-
-  Output options:
     --chromosomes,-c=<opt>     List of chromosomes separeted by comma, from 1 to nºchr [default: all].
     --multi-chrom, -m          Multigraph representation.
     --pvalue, -p               Generates p-value graphics.
@@ -162,13 +156,11 @@ def mbs_plot(argv):
     --fileformat=<type>        Formats available for the output: pdf, svg, jpg [default: pdf].
     --captions                 Generate figure captions.
     --outdir,-o=<dir>          Create a new directory if it doesn't exist. If not provided uses the input directory [default: graphics].
-
   """
-    arg = docopt(mbsplot_doc, argv=None, help=True,
-                 version='Maptools mbsplot version=0.1')
-    #print(arg)
-    df, arg = test_plot(arg)
-    print(arg)
+    arg = docopt(mbsplot_doc, argv=None, help=True,version=v_mbsplot)
+    print(argv)
+    df, arg = test_plot(arg, mbsplot_doc)
+    arg['version'] = v_mbsplot
     if arg['--pvalue'] == True:
         pval_mono_graph(df, arg)
         if arg['--multi-chrom'] == True:
@@ -204,10 +196,9 @@ def qtl_plot(argv):
   Usage:
      maptools.py qtlplot <input_file> [options]
      maptools.py qtlplot -v
-     maptools.py qtlplot -h
+     maptools.py qtlplot
 
   Options:
-    -h --help                  Show this screen.
     -v --version               Show the version.
 
   Output options:
@@ -232,10 +223,10 @@ def qtl_plot(argv):
     --outdir,-o=<dir>          Create a new directory if it doesn't exist. If not provided uses the input directory [default: graphics].
 
   """
-    arg = docopt(qtlplot_doc, argv=None, help=True,version='qtl_plot qtl version=0.1')
+    arg = docopt(qtlplot_doc, argv=None, help=True,version=v_qtlplot)
     #print(arg)
-    df, arg = test_plot(arg)
-    print(arg)
+    df, arg = test_plot(arg, qtlplot_doc)
+    arg['version'] = v_qtlplot
     if arg['--euclidean-distance']:
         df = get_ED100_4(df, arg, RANG)
         plot_ED(df,arg)
@@ -295,11 +286,10 @@ Output Options:
    --output, -o=<file>           Output file.
    --outdir, -O=<dir>            Output directory [default: results].           
   """
-  arg = docopt(annotate_doc, argv=None, help=True, version='Annotate variants version: 0.1')
+  arg = docopt(annotate_doc, argv=None, help=True, version=v_annotate)
   arg['pipe'] = sys.stdin.isatty()
-  print(arg)
+  arg['version'] = v_annotate
   arg = test_arg_ann(annotate_doc, arg)
-  print(arg)
   df = create_df(arg)
   output = arg['--output']
   fsal = False
@@ -312,8 +302,13 @@ Output Options:
     inp = open(arg['--input'], 'r')
   else:
     inp = sys.stdin
+  flag = False
   for line in inp:
-    if not line.startswith('#'):
+    if line.startswith('##'):
+      read_header(arg,line)
+      if flag == False:
+        flag = write_argv(arg, argv)
+    elif not line.startswith('#'):
       line = filter_region(line, arg)
       if line != None:
         fields, pools = vcf_line_parser2(line, arg)
