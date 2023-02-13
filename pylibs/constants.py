@@ -86,10 +86,41 @@ lines_qtl = {-3:'Each {} dot was calculated substracting the SNP-index value of 
         
          
 }
-
+v_maptools='1.00'
 v_annotate= 'Annotate variants version: 1.00'
 v_mbs= 'Mapping by Sequencing analysis version: 1.00'
 v_mbsplot = 'Mapping by Sequencing plots version: 1.00'
 v_qtl= 'QTL-Seq analysis version: 1.00'
 v_qtlplot= 'QTL-Seq plots version: 1.00'
 v_merge='Merge mbs or qtl analysis version: 1.00'
+
+variable_descriptions={
+   '#CHROM':'##CHROM=<ID=*,Description=\"Chromosome name.\"\n',\
+   'POS':'##POS=<ID=*, Type=Integer, Description=\"Position in the chromosome.\"\n',\
+   'REF':'##REF=<ID=*, Description=\"Reference allele.\"\n',\
+   'ALT':'##ALT=<ID=*, Description=\"Represents allele, other tjan observed.\"\n',\
+   'DPref_1':'##DPref_1=<ID=*, Type=Integer, Description=\"Allelic depth of reference allele in pool 1.\"\n',\
+   'DPalt_1':'##DPalt_1=<ID=*, Type=Integer, Description=\"Allelic depth of alternative allele in pool 1.\"\n',\
+   'DPref_2':'##DPref_1=<ID=*, Type=Integer, Description=\"Allelic depth of reference allele in pool 2.\"\n',\
+   'DPalt_2':'##DPalt_1=<ID=*, Type=Integer, Description=\"Allelic depth of alternative allele in pool 2.\"\n',\
+   'SNPidx1':'\"\n',\
+   'SNPidx2':'\"\n',\
+   'MAX_SNPidx2':'\"\n',\
+   'FISHER':'\"\n',\
+   'BOOST':'\"\n',\
+   'PVALUE':'\"\n',\
+   'log10PVALUE':'\"\n',\
+   'DELTA':'\"\n',\
+   'ED':'\"\n',\
+   'G':'\"\n',\
+   'TYPE':'\"\n',\
+   'Parent':'\"\n',\
+   'strand':'\"\n',\
+   'phase':'\"\n',\
+   'codon_ref':'\"\n',\
+   'codon_alt':'\"\n',\
+   'aa_ref':'\"\n',\
+   'aa_alt':'\"\n',\
+   'attributes':'\"\n',\
+   
+}

@@ -9,9 +9,9 @@ from scipy.stats import fisher_exact
 from scipy.stats import hypergeom
 from scipy.spatial import distance
 import pandas as pd
-#import gffpandas.gffpandas as gffpd
 from Bio import SeqIO
 from Bio.Seq import Seq
+from datetime import datetime,date
 #from docopt import docopt
 
 def cmHH(command_line):
@@ -19,6 +19,7 @@ def cmHH(command_line):
 
 def test_args(__doc__,arg):
 	arg['chromosomes'] = list()
+	arg['--data'] = arg['--data'].split(',')
 	if arg['--input'] == None and arg['pipe'] == True:
 		print(__doc__, end='')
 		sys.exit()
@@ -73,7 +74,7 @@ def check_save_an(arg, file_name):
 		return file_name
 
 def check_mbs_args(arg):
-	data = arg['--data'].split(',')
+	data = arg['--data']
 	if not 'R' in data:
 		print('Error: You should include the recessive pool (--data R,X,X')
 		sys.exit()
@@ -96,7 +97,7 @@ def check_mbs_args(arg):
 		sys.exit()
 	return arg
 def check_qtl_args(arg):
-	data = arg['--data'].split(',')
+	data = arg['--data']
 	if len(data) < 2:
 		print('Error: You should include a minimum of 2 pools in QTL-seq experiment (--data D,R,Px or --data D,R)')
 		sys.exit()
@@ -173,7 +174,7 @@ def mbs_calc(inp, arg):
 		]
 	'''
 	#TODO - Change boost to calculate always 
-	data = arg['--data'].split(',')
+	data = arg['--data']
 	inf_s = set(data)
 	min_dp = arg['--min-depth']
 	max_dp = arg['--max-depth']
@@ -210,7 +211,7 @@ def mbs_calc(inp, arg):
 				return [ratio1,ratio2,ratio3,resultado,boost,pva,pva10]
 
 def qtl_calc(inp, arg):
-	data = arg['--data'].split(',')
+	data = arg['--data']
 	inf_s = set(data)
 	no_ref = arg['--no-ref']
 	min_dp = arg['--min-depth']
@@ -235,7 +236,7 @@ def qtl_calc(inp, arg):
 			return [ratio1,ratio2,delta,ed,g,pva,pva10]
 
 def new_line(fsal, arg, first, fields, al_count, calcs):
-	data = arg['--data'].split(',')
+	data = arg['--data']
 	inf_s = set(data)
 	res = fields + al_count + calcs
 	spacer = arg['spacer']
@@ -299,7 +300,7 @@ def vcf_line_parser2(line, arg):
 		form = z[8].split(':')
 		GT_index = form.index('GT')
 		AD_index = form.index('AD')
-		data = arg['--data'].split(',')
+		data = arg['--data']
 		res = dict()
 		inf = dict()
 		c = 9
@@ -346,7 +347,7 @@ def vcf_line_parser2(line, arg):
 		return [z[0], z[1], z[3]],res #returns chromosome, position, reference allele, and the data for each bam)
 
 def normalize(pools, REF, arg, r_min=0.03):
-	data = arg['--data'].split(',')
+	data = arg['--data']
 	inf_s = set(data)
 	ref = arg['--ref']
 	n_ref = arg['--no-ref']
@@ -470,7 +471,7 @@ def test_arg_ann(__doc__,arg):
 	Tchrom,Treg = arg['--region'].split(':')
 	Treg = Treg.split('-')
 	arg['--region'] = [Tchrom,int(Treg[0]),int(Treg[1])]
-	data = arg['--data'].split(',')
+	arg['--data'] = arg['--data'].split(',')
 	arg['spacer'] = '\t'
 	arg['mbs'] = True
 	arg['lim'] = 1e-90
@@ -480,7 +481,7 @@ def test_arg_ann(__doc__,arg):
 	
 	if arg['--mutagen'] == None:
 		arg['--mutagen'] = 'EMS'
-	if not 'R' in data:
+	if not 'R' in arg['--data']:
 		print('Error: You should include the recessive pool (--data')
 		sys.exit()
 	return arg
@@ -507,7 +508,8 @@ def load_gff(arg):
 				line = line.rstrip()
 				data = line.split('\t')
 				seqid = data[0]
-				if seqid == arg['--region'][0]: #TODO Complete condition to cath only structures in our region
+				#TODO Complete condition to cath only structures in our region
+				if seqid == arg['--region'][0]: #Load only the chromosome selected
 					type_ = data[2]
 					start = data[3]
 					end = data[4]
@@ -519,17 +521,17 @@ def load_gff(arg):
 						dict_att[att.split('=')[0]] = att.split('=')[1]
 					#dict_att = {dict_att[att.split('=')[0]] :att.split('=')[1] for att in attributes}
 					if type_ in gff.keys():
-
 						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, dict_att['ID'], dict_att['Parent'], dict_att['Name']])
-		gff['gene'] = gff['gene'] + gff['ncRNA_gene'] + gff['pseudogene']
-		gff['gene'].sort(key=lambda row:row[2])
-		gff['mRNA'].sort(key=lambda row:(row[6], row[2]))
-		gff['exon'].sort(key=lambda row:(row[7], row[2]))
-		gff['CDS'].sort(key=lambda row:(row[7], row[2]))
-		gff['five_prime_UTR'].sort(key=lambda row:(row[7], row[2]))
-		gff['three_prime_UTR'].sort(key=lambda row:(row[7], row[2]))
+
+		gff['gene'] = gff['gene'] + gff['ncRNA_gene'] + gff['pseudogene']	#all of these types are considered as genes
+		gff['gene'].sort(key=lambda row:row[2]) #ordered by pos
+		gff['mRNA'].sort(key=lambda row:(row[6], row[2])) #ordered by id and pos
+		gff['exon'].sort(key=lambda row:(row[7], row[2])) #ordered by parent and pos
+		gff['CDS'].sort(key=lambda row:(row[7], row[2])) #ordered by parent and pos
+		gff['five_prime_UTR'].sort(key=lambda row:(row[7], row[2])) #ordered by parent and pos
+		gff['three_prime_UTR'].sort(key=lambda row:(row[7], row[2])) #ordered by parent and pos
 		ordered = ['gene', 'mRNA', 'exon', 'CDS', 'five_prime_UTR', 'three_prime_UTR']
-		for type_ in gff:
+		for type_ in gff: #the rest of types are ordered only by pos
 			if type_ not in ordered:
 				gff[type_].sort(key=lambda row:row[2])
 	arg['gff'] = gff
@@ -646,7 +648,7 @@ def ann_calc(inp, arg):
 		log10 of p-value
 		]
 	'''
-	data = arg['--data'].split(',')
+	data = arg['--data']
 	inf_s = set(data)
 	if len(inf_s) == 1 and arg['--no-ref'] == True:
 		a, b = inp[0], inp[1]
@@ -678,7 +680,7 @@ def ann_calc(inp, arg):
 			return [ratio1,ratio2,ratio3,resultado,boost,pva,pva10]
 
 def create_df(arg):
-	data = arg['--data'].split(',')
+	data = arg['--data']
 	inf_s = set(data)
 	if len(inf_s) == 1 or 'D' not in inf_s:
 		if arg['--no-ref'] == True:
@@ -694,7 +696,7 @@ def create_df(arg):
 	return df
 
 def new_df_line(df, arg, fields, al_count, calcs):
-	data = arg['--data'].split(',')
+	data = arg['--data']
 	inf_s = set(data)
 	res = fields + al_count + calcs
 	n_line = {arg['header'][i]:res[i] for i in range(len(res))}
@@ -999,8 +1001,7 @@ def write_annotate_line(arg, result):
 def normalize_annotate(pools, REF, arg, fields, r_min=0.03):
 	if fields[1] == '1283497':
 		print('inside',fields, pools)
-	data = arg['--data'].split(',')
-	inf_s = set(data)
+	inf_s = set(arg['--data'])
 	ref = arg['--ref']
 	n_ref = arg['--no-ref']
 	rec = pools['R']
@@ -1096,22 +1097,39 @@ def normalize_annotate(pools, REF, arg, fields, r_min=0.03):
 # 1    1456654   C		T		1         18	ATG(Met)   CTG(Ser) Nonsynonymous   +          ATG10809 ATG..    ATG..  1500    156
 
 def read_header(arg:dict,line:str):
-   fsal = arg['fsal']
-   if line.startswith('##bcftoolsVersion='):
-      write_line(line,fsal)
-   if line.startswith('##bcftoolsCommand='):
-      write_line(line,fsal)
-   if line.startswith('##bcftools_callCommand='):
-      write_line(line,fsal)
-   if line.startswith('##reference='):
-      write_line(line,fsal)
-   if line.startswith('##contig=<ID='):
-      c = line.split('##contig=<ID=')[1].split(',')[0]
-      arg['chromosomes'].append(c)
-      write_line(line,fsal)
+	fsal = arg['fsal']
+	if line.startswith('##bcftoolsVersion='):
+		write_line(line,fsal)
+	if line.startswith('##bcftoolsCommand='):
+		write_line(line,fsal)
+	if line.startswith('##bcftools_callCommand='):
+		write_line(line.split(';')[0]+'\n',fsal)
+	if line.startswith('##reference='):
+		if 'mbs' in arg.keys() or 'qtl' in arg.keys():
+			write_line(line,fsal)
+	if line.startswith('##contig=<ID='):
+		c = line.split('##contig=<ID=')[1].split(',')[0]
+		arg['chromosomes'].append(c)
+		write_line(line,fsal)
+	if line.startswith('#CHROM'):
+		bam_list = line.rstrip().split('\t')[9:]
+		if len(arg['--data']) > len(bam_list):
+			print('Error: The data list does not match with the number of pools used.')
+			sys.exit()
+		elif len(arg['--data']) <= len(bam_list):
+			arg['pools'] = {arg['--data'][i]:bam_list[i] for i in range(len(arg['--data']))}
+			pools = '##bamFiles:genotypes='+','.join(':'.join((key,val)) for (key, val) in arg['pools'].items()) + '\n'
+			write_line(pools, fsal)
 
 def write_argv(arg:dict,argv:str):
-   fsal = arg['fsal']
-   line = '##maptools_{}Command='.format(argv[0])+' '.join(argv) + '\n'
-   write_line(line, fsal)
-   return True
+	fsal = arg['fsal']
+	version = '##maptoolsVersion='+v_maptools+'\n'
+	line = '##maptools_{}Command='.format(argv[0])+' '.join(argv) +';'+'Date='+datetime.now().ctime()+'\n'
+	write_line(version,fsal)
+	write_line(line, fsal)
+	if argv[0] == 'annotate':
+		ref_idx = argv.index('--reference')
+		gff_idx = argv.index('--gff')
+		write_line('##reference=file://'+argv[ref_idx+1].split('/')[-1]+'\n',fsal)
+		write_line('##gff3=file://'+argv[gff_idx+1].split('/')[-1]+'\n',fsal)
+	return True

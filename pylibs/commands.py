@@ -304,10 +304,11 @@ Output Options:
     inp = sys.stdin
   flag = False
   for line in inp:
-    if line.startswith('##'):
+    if line.startswith('#'):
       read_header(arg,line)
       if flag == False:
         flag = write_argv(arg, argv)
+      print(arg)
     elif not line.startswith('#'):
       line = filter_region(line, arg)
       if line != None:
