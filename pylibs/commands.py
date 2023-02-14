@@ -40,13 +40,18 @@ def mbs(argv):
     fsal = False
     if output != None:
         fsal = open(arg['--outdir']+arg['--output'], 'w')
+    arg['fsal'] = fsal
     first = True
     if arg['--input']:
         inp = open(arg['--input'], 'r')
     else:
         inp = sys.stdin
+    choose_header(arg)
+    write_argv(arg, argv)
     for line in inp:
-        if not line.startswith('#'):
+        if line.startswith('#'):
+          read_header(arg,line)
+        else:
             fields, pools = vcf_line_parser2(line, arg)
             if (fields, pools) != (0, 0):
                 REF = fields[2]
@@ -89,13 +94,18 @@ def qtl(argv):
     fsal = False
     if output != None:
         fsal = open(arg['--outdir']+arg['--output'], 'w')
+    arg['fsal'] = fsal
     first = True
     if arg['--input']:
         inp = open(arg['--input'], 'r')
     else:
         inp = sys.stdin
+    choose_header(arg)
+    write_argv(arg, argv)
     for line in inp:
-        if not line.startswith('#'):
+        if line.startswith('#'):
+          read_header(arg,line)
+        else:
             fields, pools = vcf_line_parser2(line, arg)
             if (fields, pools) != (0, 0):
                 REF = fields[2]
@@ -266,7 +276,7 @@ def qtl_plot(argv):
 def annotate(argv):
   annotate_doc="""Annotate variants
 Usage:
-   maptools.py annotate [options]
+   maptools.py annotate <input_file> [options]
    maptools.py annotate --version
    maptools.py annotate -h
 
@@ -290,6 +300,7 @@ Output Options:
   arg['pipe'] = sys.stdin.isatty()
   arg['version'] = v_annotate
   arg = test_arg_ann(annotate_doc, arg)
+  print(arg)
   df = create_df(arg)
   output = arg['--output']
   fsal = False
@@ -302,14 +313,11 @@ Output Options:
     inp = open(arg['--input'], 'r')
   else:
     inp = sys.stdin
-  flag = False
+  write_argv(arg, argv)
   for line in inp:
     if line.startswith('#'):
       read_header(arg,line)
-      if flag == False:
-        flag = write_argv(arg, argv)
-      print(arg)
-    elif not line.startswith('#'):
+    else:
       line = filter_region(line, arg)
       if line != None:
         fields, pools = vcf_line_parser2(line, arg)
@@ -326,7 +334,7 @@ Output Options:
   df = df.reset_index()
   start = time.perf_counter()
   load_gff(arg)
-  write_annotate_header(arg, fsal)
+  write_annotate_header(arg)
   for idx, row in df.iterrows():
     check_mutation2(row,arg)
     print('------------')

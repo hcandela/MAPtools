@@ -105,7 +105,26 @@ def test_plot(arg, __doc__):
         arg = check_qtl_opts(arg)
     return df, arg
 
-
+def load_dataframe(arg):
+    inp_f = arg['<input_file>']
+    inp_ext = inp_f.split('.')[-1]
+    if inp_ext == 'csv':
+        sep_ = ','
+    else:
+        sep_ = '\t'
+    df = pd.read_csv(inp_f, sep=sep_, dtype=fields, names=arg['header'], comment='#')
+    chroms = df['#CHROM'].unique()
+    if arg['--chromosomes'] == 'all':
+        arg['--chromosomes'] = list(chroms)
+    else:
+        ch_idx = [int(c) - 1 for c in arg['--chromosomes'].split(',')]
+        chroms_ = [chroms[idx] for idx in ch_idx]
+        arg['--chromosomes'] = chroms_
+    arg['--fields'] = list(df.columns)
+    arg['--fields'].remove('REF')
+    arg['--fields'].remove('ALT')
+    return arg, df
+    
 def test_merge(arg,__doc__):
     global fields
     inp_f = arg['<input_file>']
@@ -118,7 +137,7 @@ def test_merge(arg,__doc__):
     else:
         sep_ = '\t'
     try:
-        df = pd.read_csv(inp_f, sep=sep_, dtype=fields, header='infer')
+        arg['<input_file>'] = open(inp_f, 'r')
     except FileNotFoundError:
         print('Error: The input file {} does not exist'.format(inp_f))
         sys.exit()
@@ -136,7 +155,7 @@ def test_merge(arg,__doc__):
         sys.exit()
     if arg['--output'] != None:
         arg['--fileformat'] = '.'+arg['--fileformat']
-        arg['--output'] = 'w'+str(arg['--window'])+'w_'+arg['--output'] + arg['--fileformat']
+        arg['--output'] = arg['--output'] + arg['--fileformat']
         arg['--output'] = check_save_an(arg, arg['--output'])
     else:
         arg['--output'] = None
@@ -145,23 +164,13 @@ def test_merge(arg,__doc__):
     else:
         arg['spacer'] = '\t'
 
-    chroms = df['#CHROM'].unique()
-    if arg['--chromosomes'] == 'all':
-        arg['--chromosomes'] = list(chroms)
-    else:
-        ch_idx = [int(c) - 1 for c in arg['--chromosomes'].split(',')]
-        chroms_ = [chroms[idx] for idx in ch_idx]
-        arg['--chromosomes'] = chroms_
-    arg['--fields'] = list(df.columns)
-    arg['--fields'].remove('REF')
-    arg['--fields'].remove('ALT')
     arg['--fileformat'] = '.'+arg['--fileformat']
     arg['--window'] = int(arg['--window'])
     if arg['--window'] <= 0:
         print('Error: The window size must be an integer higher than zero.')
         sys.exit()
     # Checking graphic types
-    return df, arg
+    return arg
 
 
 def check_mbs_opts(arg):

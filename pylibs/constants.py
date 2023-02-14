@@ -95,32 +95,37 @@ v_qtlplot= 'QTL-Seq plots version: 1.00'
 v_merge='Merge mbs or qtl analysis version: 1.00'
 
 variable_descriptions={
-   '#CHROM':'##CHROM=<ID=*,Description=\"Chromosome name.\"\n',\
-   'POS':'##POS=<ID=*, Type=Integer, Description=\"Position in the chromosome.\"\n',\
+   '#CHROM':'##CHROM=<ID=*, Description=\"Chromosome name.\">\n',\
+   'POS':'##POS=<ID=*, Number=1, Type=Integer, Description=\"Position in the chromosome.\">\n',\
    'REF':'##REF=<ID=*, Description=\"Reference allele.\"\n',\
-   'ALT':'##ALT=<ID=*, Description=\"Represents allele, other tjan observed.\"\n',\
-   'DPref_1':'##DPref_1=<ID=*, Type=Integer, Description=\"Allelic depth of reference allele in pool 1.\"\n',\
-   'DPalt_1':'##DPalt_1=<ID=*, Type=Integer, Description=\"Allelic depth of alternative allele in pool 1.\"\n',\
-   'DPref_2':'##DPref_1=<ID=*, Type=Integer, Description=\"Allelic depth of reference allele in pool 2.\"\n',\
-   'DPalt_2':'##DPalt_1=<ID=*, Type=Integer, Description=\"Allelic depth of alternative allele in pool 2.\"\n',\
-   'SNPidx1':'\"\n',\
-   'SNPidx2':'\"\n',\
-   'MAX_SNPidx2':'\"\n',\
-   'FISHER':'\"\n',\
-   'BOOST':'\"\n',\
-   'PVALUE':'\"\n',\
-   'log10PVALUE':'\"\n',\
-   'DELTA':'\"\n',\
-   'ED':'\"\n',\
-   'G':'\"\n',\
-   'TYPE':'\"\n',\
-   'Parent':'\"\n',\
-   'strand':'\"\n',\
-   'phase':'\"\n',\
-   'codon_ref':'\"\n',\
-   'codon_alt':'\"\n',\
-   'aa_ref':'\"\n',\
-   'aa_alt':'\"\n',\
-   'attributes':'\"\n',\
+   'ALT':'##ALT=<ID=*, Description=\"Represents allele, other than observed.\">\n',\
+   'DPref_1':'##DPref_1=<ID=*, Number=1, Type=Integer, Description=\"Allelic depth of reference allele in pool 1.\">\n',\
+   'DPalt_1':'##DPalt_1=<ID=*, Number=1, Type=Integer, Description=\"Allelic depth of alternative allele in pool 1.\">\n',\
+   'DPref_2':'##DPref_2=<ID=*, Number=1, Type=Integer, Description=\"Allelic depth of reference allele in pool 2.\">\n',\
+   'DPalt_2':'##DPalt_2=<ID=*, Number=1, Type=Integer, Description=\"Allelic depth of alternative allele in pool 2.\">\n',\
+   'SNPidx1':'##SNPidx1=<ID=*, Number=1, Type=Float, Description=\"Allele frequency of pool 1.\">\n',\
+   'SNPidx2':'##SNPidx2=<ID=*, Number=1, Type=Float, Description=\"Allele frequency of pool 1.\">\n',\
+   'MAX_SNPidx2':'##MAX_SNPidx2=<ID=*, Number=1, Type=Float, Description=\"Maximum allele frecuency ratio of target pool.\">\n',\
+   'FISHER':'##FISHER=<ID=*, Number=1, Type=Float, Description=\"Two-tailed Fisher exact test.\">\n',\
+   'BOOST':'##BOOST=<ID=*, Number=1, Type=Float, Description=\"Scarcity-values, calculated from the allele frecuency values of the recessive pool.\">\n',\
+   'PVALUE':'##PVALUE=<ID=*, Number=1, Type=Float, Description=\"P-values of Fisher test.\">\n',\
+   'log10PVALUE':'##log10PVALUE=<ID=*, Number=1, Type=Float, Description=\"Base 10 logarithm of p-value.\">\n',\
+   'DELTA':'##DELTA=<ID=*, Number=1, Type=Float, Description=\"Difference between SNPidx1 minus SNPidx2 (1 to -1).\">\n',\
+   'ED':'##ED=<ID=*, Number=1, Type=Float, Description=\"Euclidean distance.\">\n',\
+   'G':'##G=<ID=*, Number=1, Type=Float, Description=\"G-statistic.\">\n',\
+   'TYPE':'##TYPE=<ID=*, Number=0, Type=Flag, Description=\"Type of element in which the mutation occurs.\">\n',\
+   'ID':'##ID=<ID=*, Number=0, Type=Flag, Description=\"ID of mutated element.\">\n',\
+   'PARENT':'##PARENT=<ID=*, Number=0, Type=Flag, Description=\"The gene or mRNA containig the mutated element.\">\n',\
+   'STRAND':'##STRAND=<ID=*, Number=0, Type=Flag, Description=\"Genome strand cointaining the element (+, -, .).\">\n',\
+   'PHASE':'##PHASE=<ID=*, Number=0, Type=Integer, Description=\"CDS phase (0,1,2)\".>\n',\
+   'CODON_ref':'##CODON_ref=<ID=*, Number=0, Type=Flag, Description=\"Target codon before mutation.\">\n',\
+   'CODON_alt':'##CODON_alt=<ID=*, Number=0, Type=Flag, Description=\"Target codon after mutation.\">\n',\
+   'AA_ref':'##AA_ref=<ID=*, Number=0, Type=Flag, Description=\"Aminoacid before mutation.\">\n',\
+   'AA_alt':'##AA_ref=<ID=*, Number=0, Type=Flag, Description=\"Aminoacid before mutation.\">\n',\
+   'INFO':'##INFO=<ID=effect, Number=0, Type=Flag, Description=\"Type of aminoacid change effect in exons (Nonsynonimous or Synonimous:missense or nonsense or nonstop), in 5\'UTR (new_ATG:in_frame or out_of_frame:truncated_protein or elongated_protein) or if affects to non-coding gene (non_coding:exonic or intronic).\">\n'\
+          '##INFO=<ID=left, Number=0, Type=Flag, Description=\"Gene or Exon immediately left (towards lower POS) and distance on bp(element:distance).\">\n'\
+          '##INFO=<ID=right, Number=0, Type=Flag, Description=\"Gene or Exon immediately right (towards higher POS) and distance on bp(element:distance).\">\n'\
+          '##INFO=<ID=5_splice_site, Number=0, Type=Flag, Description=\"The mutation is 3 or less bp from the upstream splicing site (exon or intron _boundary:ID_CDS).">\n'\
+          '##INFO=<ID=3_splice_site, Number=0, Type=Flag, Description=\"The mutation is 3 or less bp from the downstream splicing site (exon or intron _boundary:ID_CDS).">\n'\
    
 }

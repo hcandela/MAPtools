@@ -235,32 +235,32 @@ def qtl_calc(inp, arg):
 			delta = ratio1 - ratio2
 			return [ratio1,ratio2,delta,ed,g,pva,pva10]
 
-def new_line(fsal, arg, first, fields, al_count, calcs):
+def choose_header(arg):
 	data = arg['--data']
 	inf_s = set(data)
+	if 'mbs' in arg.keys():
+		if len(inf_s) == 1 or 'D' not in inf_s:
+			if arg['--no-ref'] == True:
+				header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','MAX_SNPidx2','BOOST']
+			else:
+				header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','SNPidx1','BOOST']
+		elif 'D' in inf_s and 'R' in inf_s and arg['--no-ref'] == False:
+			header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','SNPidx1','SNPidx2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE']
+		elif 'D' in inf_s and 'R' in inf_s and arg['--no-ref'] == True:
+			header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE']
+	elif 'qtl' in arg.keys():
+		if arg['--no-ref'] == True:
+			header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','ED','G','PVALUE','log10PVALUE']
+		if arg['--no-ref'] == False:
+			header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','SNPidx1','SNPidx2','DELTA','ED','G','PVALUE','log10PVALUE']
+	arg['header'] = header
+
+
+def new_line(fsal, arg, first, fields, al_count, calcs):
 	res = fields + al_count + calcs
 	spacer = arg['spacer']
-	if first:
-		if 'mbs' in arg.keys():
-			if len(inf_s) == 1 or 'D' not in inf_s:
-				if arg['--no-ref'] == True:
-					header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','MAX_SNPidx2','BOOST']
-				else:
-					header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','SNPidx1','BOOST']
-
-			elif 'D' in inf_s and 'R' in inf_s and arg['--no-ref'] == False:
-				header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','SNPidx1','SNPidx2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE']
-
-			elif 'D' in inf_s and 'R' in inf_s and arg['--no-ref'] == True:
-				header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE']
-
-		elif 'qtl' in arg.keys():
-			if arg['--no-ref'] == True:
-				header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','ED','G','PVALUE','log10PVALUE']
-
-			if arg['--no-ref'] == False:
-				header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','SNPidx1','SNPidx2','DELTA','ED','G','PVALUE','log10PVALUE']
-
+	header = arg['header']
+	if first:	
 		first = False
 		n_head = spacer.join(header)+'\n'
 		write_line(n_head, fsal)
@@ -475,10 +475,9 @@ def test_arg_ann(__doc__,arg):
 	arg['spacer'] = '\t'
 	arg['mbs'] = True
 	arg['lim'] = 1e-90
-	#chroms = gff['seq_id'].unique()
-	#gff_chrom = chroms[int(Tchrom) - 1]
-	#arg['gff_chrom'] = gff_chrom
-	
+	header=['#CHROM','POS','REF','ALT', 'DPref_1','DPalt_1','DPref_2','DPalt_2','TYPE','ID','PARENT','STRAND',\
+		'PHASE','CODON_ref','CODON_alt','AA_ref','AA_alt','INFO']
+	arg['header'] = header
 	if arg['--mutagen'] == None:
 		arg['--mutagen'] = 'EMS'
 	if not 'R' in arg['--data']:
@@ -691,7 +690,7 @@ def create_df(arg):
 		header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','SNPidx1','SNPidx2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE']
 	elif 'D' in inf_s and 'R' in inf_s and arg['--no-ref'] == True:
 		header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE']
-	arg['header'] = header
+	arg['header2'] = header
 	df = pd.DataFrame(columns=header)
 	return df
 
@@ -699,7 +698,7 @@ def new_df_line(df, arg, fields, al_count, calcs):
 	data = arg['--data']
 	inf_s = set(data)
 	res = fields + al_count + calcs
-	n_line = {arg['header'][i]:res[i] for i in range(len(res))}
+	n_line = {arg['header2'][i]:res[i] for i in range(len(res))}
 	df_nline = pd.DataFrame.from_records([n_line])
 	df = pd.concat([df, df_nline])
 	return df
@@ -767,7 +766,7 @@ def find_new_ATG(arg, pos, five, row):
 			return '.:.:.'
 
 def check_nc_gene(arg,gff,type_, b, e, pos,result):
-	result['phase'],result['codon_ref'], result['codon_alt'], result['aa_ref'],result['aa_alt']= '.','.','.','.','.'
+	result['PHASE'],result['CODON_ref'], result['CODON_alt'], result['AA_ref'],result['AA_alt']= '.','.','.','.','.'
 	if gff[type_][b:e+1]:
 		for ncRNA in gff[type_][b:e+1]:
 			ncRNA_id = ncRNA[6]
@@ -777,22 +776,22 @@ def check_nc_gene(arg,gff,type_, b, e, pos,result):
 			if gff['exon'][b2:e2+1]:
 				print(gff['exon'][b2:e2+1])
 				print('Exonic, non-coding',type_,ncRNA_id)
-				result['ID'],result['Parent'],result['TYPE'],result['strand'] = ncRNA_id,ncRNA[7],type_,ncRNA[4]
-				result['attributes']['effect'] = 'non_coding:exonic'
+				result['ID'],result['PARENT'],result['TYPE'],result['STRAND'] = ncRNA_id,ncRNA[7],type_,ncRNA[4]
+				result['INFO']['effect'] = 'non_coding:exonic'
 				write_annotate_line(arg, result)
-				result['attributes'] = dict()
+				result['INFO'] = dict()
 			else:
 				print('intronic, non-coding',type_,ncRNA_id)
-				result['ID'],result['Parent'],result['TYPE'],result['strand'] = ncRNA_id,ncRNA[7],type_,ncRNA[4]
-				result['attributes']['effect'] = 'non_coding:intronic'
+				result['ID'],result['PARENT'],result['TYPE'],result['STRAND'] = ncRNA_id,ncRNA[7],type_,ncRNA[4]
+				result['INFO']['effect'] = 'non_coding:intronic'
 				write_annotate_line(arg, result)
-				result['attributes'] = dict()
+				result['INFO'] = dict()
 			
 
 def check_mutation2(row, arg):
 	result = {'#CHROM':row['#CHROM'],'POS':row['POS'],'REF':row['REF'],'ALT':row['ALT'], 'DPref_1':row['DPref_1'],\
-	'DPalt_1':row['DPalt_1'], 'DPref_2':row['DPref_2'], 'DPalt_2':row['DPalt_2'], 'TYPE':'.', 'ID':'.','Parent':'.','strand':'.',\
-		'phase':'.','codon_ref':'.','codon_alt':'.','aa_ref':'.','aa_alt':'.','attributes':dict()}
+	'DPalt_1':row['DPalt_1'], 'DPref_2':row['DPref_2'], 'DPalt_2':row['DPalt_2'], 'TYPE':'.', 'ID':'.','PARENT':'.','strand':'.',\
+		'PHASE':'.','CODON_ref':'.','CODON_alt':'.','AA_ref':'.','AA_alt':'.','INFO':dict()}
 	gff = arg['gff']
 	pos = int(row['POS'])
 	b,e = find_row(gff['gene'], pos, 0, len(gff['gene']))
@@ -806,7 +805,7 @@ def check_mutation2(row, arg):
 				for mRNA in gff['mRNA'][b2:e2+1]:
 					print(mRNA)
 					mRNA_id = mRNA[6]
-					result['strand'] = mRNA[4]
+					result['STRAND'] = mRNA[4]
 					b3,e3 = find_row_name(gff['exon'], mRNA_id, 7)
 					b4,e4 = find_row(gff['exon'], pos, b3, e3+1)
 					if pos <= mRNA[3] and pos >= mRNA[2]:
@@ -823,22 +822,22 @@ def check_mutation2(row, arg):
 								print(gff['CDS'][b6:e6+1])
 								for cds in gff['CDS'][b6:e6+1]:
 									cds_id = cds[6]
-									result['phase'],result['TYPE'] = cds[5],'CDS'
+									result['PHASE'],result['TYPE'] = cds[5],'CDS'
 									beg, end = codon_coords(pos,cds[2],cds[3],cds[4],int(cds[5])) #target pos, cds start, cds end, cds strand, cds phase
 									print(cds, beg, end)
 									if gff['CDS'][b6-1][7] == cds[7]: #if prev cds exist
 										if pos - cds[2] in {0,1,2}:
 											if cds[4] == '+':
-												result['attributes']['5_splice_site'] = 'exon-boundary:'+gff['CDS'][e6][6]
+												result['INFO']['5_splice_site'] = 'exon-boundary:'+gff['CDS'][e6][6]
 											else:
-												result['attributes']['3_splice_site'] = 'exon-boundary:'+gff['CDS'][e6][6]
+												result['INFO']['3_splice_site'] = 'exon-boundary:'+gff['CDS'][e6][6]
 
 									if gff['CDS'][b6+1][7] == cds[7]: #if next cds exist
 										if cds[3] - pos in {0,1,2}:
 											if cds[4] == '+':
-												result['attributes']['3_splice_site'] = 'exon-boundary:'+gff['CDS'][e6][6]
+												result['INFO']['3_splice_site'] = 'exon-boundary:'+gff['CDS'][e6][6]
 											else:
-												result['attributes']['5_splice_site'] = 'exon-boundary:'+gff['CDS'][e6][6]
+												result['INFO']['5_splice_site'] = 'exon-boundary:'+gff['CDS'][e6][6]
 
 									if beg < cds[2]:
 										prev_cds = gff['CDS'][e6-1]
@@ -856,12 +855,12 @@ def check_mutation2(row, arg):
 										print(codon_ref)
 										print(codon_alt)
 										aa_before, aa_after,change = find_effect(codon_ref,codon_alt,cds[4])
-										result['codon_ref'],result['codon_alt'],result['aa_ref'],result['aa_alt'] = codon_ref, codon_alt, aa_before, aa_after
-										result['attributes']['effect'] = change
-										result['Parent'] = mRNA_id
+										result['CODON_ref'],result['CODON_alt'],result['AA_ref'],result['AA_alt'] = codon_ref, codon_alt, aa_before, aa_after
+										result['INFO']['effect'] = change
+										result['PARENT'] = mRNA_id
 										write_annotate_line(arg, result)
-										result['attributes'] = dict()
-										result['phase'],result['codon_ref'], result['codon_alt'], result['aa_ref'],result['aa_alt']= '.','.','.','.','.'
+										result['INFO'] = dict()
+										result['PHASE'],result['CODON_ref'], result['CODON_alt'], result['AA_ref'],result['AA_alt']= '.','.','.','.','.'
 									elif end > cds[3]:
 										next_cds = gff['CDS'][e6+1]
 										n_beg = next_cds[2]
@@ -877,12 +876,12 @@ def check_mutation2(row, arg):
 										print("  Codon is truncated at exon/intron boundary at: ",cds[3])
 										print("  Possible splice site mutation. Check adjacent exon for a possible aa substitution")
 										aa_before, aa_after,change = find_effect(codon_ref,codon_alt,cds[4])
-										result['codon_ref'],result['codon_alt'],result['aa_ref'],result['aa_alt'] = codon_ref, codon_alt, aa_before, aa_after
-										result['Parent'] = mRNA_id
-										result['attributes']['effect'] = change
+										result['CODON_ref'],result['CODON_alt'],result['AA_ref'],result['AA_alt'] = codon_ref, codon_alt, aa_before, aa_after
+										result['PARENT'] = mRNA_id
+										result['INFO']['effect'] = change
 										write_annotate_line(arg, result)
-										result['attributes'] = dict()
-										result['phase'],result['codon_ref'], result['codon_alt'], result['aa_ref'],result['aa_alt']= '.','.','.','.','.'
+										result['INFO'] = dict()
+										result['PHASE'],result['CODON_ref'], result['CODON_alt'], result['AA_ref'],result['AA_alt']= '.','.','.','.','.'
 									else:
 										print(' Codon fully contained exon')
 										codon = arg['ref'].seq[beg-1:end]
@@ -890,12 +889,12 @@ def check_mutation2(row, arg):
 										after = codon[:pos-beg]+row['ALT']+codon[pos-beg+1:]
 										print(before, after)
 										aa_before, aa_after,change = find_effect(before,after,cds[4])
-										result['Parent'] = mRNA_id
-										result['codon_ref'],result['codon_alt'],result['aa_ref'],result['aa_alt'] = before, after, aa_before, aa_after
-										result['attributes']['effect'] = change
+										result['PARENT'] = mRNA_id
+										result['CODON_ref'],result['CODON_alt'],result['AA_ref'],result['AA_alt'] = before, after, aa_before, aa_after
+										result['INFO']['effect'] = change
 										write_annotate_line(arg, result)
-										result['attributes'] = dict()
-										result['phase'],result['codon_ref'], result['codon_alt'], result['aa_ref'],result['aa_alt']= '.','.','.','.','.'
+										result['INFO'] = dict()
+										result['PHASE'],result['CODON_ref'], result['CODON_alt'], result['AA_ref'],result['AA_alt']= '.','.','.','.','.'
 							elif gff['five_prime_UTR'][b8:e8+1]:
 								#five =  gff['five_prime_UTR'][b8:e8+1][0]
 								for five in  gff['five_prime_UTR'][b8:e8+1]:
@@ -903,18 +902,18 @@ def check_mutation2(row, arg):
 									print(five)
 									result['TYPE'] = 'five_prime_UTR'
 									
-									result['attributes']['effect'] = find_new_ATG(arg, pos, five, row)
-									result['Parent'] = mRNA_id
+									result['INFO']['effect'] = find_new_ATG(arg, pos, five, row)
+									result['PARENT'] = mRNA_id
 									write_annotate_line(arg, result)
-									result['attributes'] = dict()
+									result['INFO'] = dict()
 							elif gff['three_prime_UTR'][b10:e10+1]:
 								three =  gff['three_prime_UTR'][b10:e10+1][0]
 								result['TYPE'] = 'three_prime_UTR'
 								print('is 3\' UTR')
 								print(three)
-								result['Parent'] = mRNA_id
+								result['PARENT'] = mRNA_id
 								write_annotate_line(arg, result)
-								result['attributes'] = dict()
+								result['INFO'] = dict()
 						else:
 							print('is intron')
 							result['TYPE'] = 'intron'
@@ -923,21 +922,21 @@ def check_mutation2(row, arg):
 							dis1 = gff['exon'][b4][2] - pos
 							dis2 = pos - gff['exon'][e4][3]
 							result['Parent'] = mRNA_id
-							result['attributes']['left'] = gff['exon'][e4][8] +':'+ str(dis2)
-							result['attributes']['right'] = gff['exon'][b4][8] +':'+ str(dis1)
+							result['INFO']['left'] = gff['exon'][e4][8] +':'+ str(dis2)
+							result['INFO']['right'] = gff['exon'][b4][8] +':'+ str(dis1)
 							if dis2 in {1,2,3}:
 								if gff['exon'][e4][4] == '+':
-									result['attributes']['5_splice_site'] = 'intron-boundary:'+gff['exon'][e4][8]
+									result['INFO']['5_splice_site'] = 'intron-boundary:'+gff['exon'][e4][8]
 								else:
-									result['attributes']['3_splice_site'] = 'intron-boundary:'+gff['exon'][e4][8]
+									result['INFO']['3_splice_site'] = 'intron-boundary:'+gff['exon'][e4][8]
 							if dis1 in {1,2,3}:
 								if gff['exon'][b4][4] == '+':
-									result['attributes']['3_splice_site'] = 'intron-boundary:'+gff['exon'][b4][8]
+									result['INFO']['3_splice_site'] = 'intron-boundary:'+gff['exon'][b4][8]
 								else:
-									result['attributes']['5_splice_site'] = 'intron-boundary:'+gff['exon'][b4][8]
+									result['INFO']['5_splice_site'] = 'intron-boundary:'+gff['exon'][b4][8]
 							print('located at ' + str(dis2) + ' bp of closest flanking exon on the left side (' + gff['exon'][e4][8] + ') and ' + str(dis1) + 'bp of the closest flanking exon on the right side (' + gff['exon'][b4][8] +')' )
 							write_annotate_line(arg, result)
-							result['attributes'] = dict()
+							result['INFO'] = dict()
 			
 			b11,e11 = find_row_name(gff['tRNA'], gene_id, 7) #tRNA
 			b12,e12 = find_row(gff['tRNA'], pos, b11, e11+1)
@@ -978,29 +977,27 @@ def check_mutation2(row, arg):
 		dis2 = pos - gff['gene'][e][3]
 		print('located at ' + str(dis2) + ' bp of closest flanking gene on the left side (' + gff['gene'][e][6] + ') and ' + str(dis1) + 'bp of the closest flanking gene on the right side (' + gff['gene'][b][6] +')' )
 		result['TYPE'] = 'intergenic'
-		result['attributes']['left'] = gff['gene'][e][6] +':'+ str(dis2)
-		result['attributes']['right'] = gff['gene'][b][6] +':'+ str(dis1)
+		result['INFO']['left'] = gff['gene'][e][6] +':'+ str(dis2)
+		result['INFO']['right'] = gff['gene'][b][6] +':'+ str(dis1)
 		write_annotate_line(arg, result)
-		result['attributes'] = dict()
+		result['INFO'] = dict()
 
-def write_annotate_header(arg, fsal):
-	header=['#CHROM','POS','REF','ALT', 'DPref_1','DPalt_1','DPref_2','DPalt_2','TYPE','ID','Parent','strand',\
-		'phase','codon_ref','codon_alt','aa_ref','aa_alt','attributes']
+def write_annotate_header(arg):
+	fsal = arg['fsal']
+	header = arg['header']
 	spacer = arg['spacer']
 	n_head = spacer.join(header)+'\n'
 	write_line(n_head,fsal)
 
 def write_annotate_line(arg, result):
-	att_l = [k+'='+v for k,v in result['attributes'].items()]
+	att_l = [k+'='+v for k,v in result['INFO'].items()]
 	att = ';'.join(att_l)
-	result['attributes'] = att
+	result['INFO'] = att
 	line = [str(v) for k,v in result.items()]
 	n_line = arg['spacer'].join(line)+'\n'
 	write_line(n_line,arg['fsal'])
 
 def normalize_annotate(pools, REF, arg, fields, r_min=0.03):
-	if fields[1] == '1283497':
-		print('inside',fields, pools)
 	inf_s = set(arg['--data'])
 	ref = arg['--ref']
 	n_ref = arg['--no-ref']
@@ -1132,4 +1129,6 @@ def write_argv(arg:dict,argv:str):
 		gff_idx = argv.index('--gff')
 		write_line('##reference=file://'+argv[ref_idx+1].split('/')[-1]+'\n',fsal)
 		write_line('##gff3=file://'+argv[gff_idx+1].split('/')[-1]+'\n',fsal)
-	return True
+	for field in arg['header']:
+		if field in variable_descriptions.keys():
+			write_line(variable_descriptions[field], fsal)
