@@ -28,26 +28,40 @@ pd.options.mode.chained_assignment = None
 # ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','PVALUE','log10PVALUE']
 # ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','SNPidx1','SNPidx2','DELTA','PVALUE','log10PVALUE']
 
+def read_header_plot(arg):
+    arg['--contigs'] = dict()
+    with open(arg['<input_file>'],'r') as handle:
+        for line in handle:
+            if line.startswith('##maptools_mergeCommand'):
+                names = ['-w','--window']
+                merge_argv = line.split('=')[1].split(' ')
+                for w in names:
+                    if w in merge_argv:
+                        w_index = merge_argv.index(w)
+                arg['--window'] = merge_argv[w_index+1]
+            if line.startswith('##contig=<'):
+                s = line[line.find('<')+1:line.rfind('>')].split(',')
+                id = s[0].split('=')[1]
+                length = s[1].split('=')[1]
+                arg['--contigs'][id] = int(length)
+            if line.startswith('#CHROM'):
+                arg['header'] = line.rstrip().split('\t')
+                break
+    return arg
 
-
+                
 def test_plot(arg, __doc__):
     font_files = matplotlib.font_manager.findSystemFonts()
     for font_file in font_files:
         matplotlib.font_manager.fontManager.addfont(font_file)
     plt.rcParams['font.family'] = 'Arial'
     global fields
-    global header
     inp_f = arg['<input_file>']
     if not inp_f:
         print(__doc__, end='')
         sys.exit()
-    inp_ext = inp_f.split('.')[-1]
-    if inp_ext == 'csv':
-        sep_ = ','
-    else:
-        sep_ = '\t'
     try:
-        df = pd.read_csv(inp_f, sep=sep_, dtype=fields, header='infer')
+        f = open(inp_f, 'r')
     except FileNotFoundError:
         print('Error: The input file {} does not exist'.format(inp_f))
         sys.exit()
@@ -65,21 +79,8 @@ def test_plot(arg, __doc__):
         except FileExistsError:
             pass
 
-    chroms = df['#CHROM'].unique()
-    if arg['--chromosomes'] == 'all':
-        arg['--chromosomes'] = list(chroms)
-    else:
-        ch_idx = [int(c) - 1 for c in arg['--chromosomes'].split(',')]
-        chroms_ = [chroms[idx] for idx in ch_idx]
-        arg['--chromosomes'] = chroms_
-
-    arg['labs'] = {arg['--chromosomes'][i]:chr(97+i) for i in range(len(arg['--chromosomes']))}
-    chrom_lists = [arg['--chromosomes'][i:i+6] for i in range(0, len(arg['--chromosomes']), 6)]
-    arg['chrom_lists'] = chrom_lists
     if arg['--multi-chrom'] == True and len(arg['--chromosomes']) == 1:
         arg['--multi-chrom'] = False
-    arg['--fields'] = list(df.columns)
-    arg['n_markers'] = len(df)
     arg['--alpha'] = float(arg['--alpha'])
     arg['lim'] = 1e-90
     arg['--fileformat'] = '.'+arg['--fileformat']
@@ -91,21 +92,9 @@ def test_plot(arg, __doc__):
             print(
                 'Error: The window size  for m. avg must be an integer higher than zero.')
             sys.exit()
-    if 'log10PVALUE' in arg['--fields']:
-        r = pd.DataFrame(dtype=np.float32)
-        r['log10PVALUE'] = df['log10PVALUE']
-        r = r.replace({-np.inf: r[np.isfinite(r)].min().min()})
-        # r = r.replace({np.nan: r[np.isfinite(r)].min().min()})
-        # print(r[np.isfinite(r)].min().min())
-        df['log10PVALUE'] = r['log10PVALUE']
-    # Checking graphic types
-    if 'mbsplot' in arg.keys():
-        arg = check_mbs_opts(arg)
-    if 'qtlplot' in arg.keys():
-        arg = check_qtl_opts(arg)
-    return df, arg
+    return arg
 
-def load_dataframe(arg):
+def load_dataframe_plotting(arg):
     inp_f = arg['<input_file>']
     inp_ext = inp_f.split('.')[-1]
     if inp_ext == 'csv':
@@ -117,12 +106,40 @@ def load_dataframe(arg):
     if arg['--chromosomes'] == 'all':
         arg['--chromosomes'] = list(chroms)
     else:
-        ch_idx = [int(c) - 1 for c in arg['--chromosomes'].split(',')]
-        chroms_ = [chroms[idx] for idx in ch_idx]
+        #ch_idx = [int(c) - 1 for c in arg['--chromosomes'].split(',')]
+        #chroms_ = [chroms[idx] for idx in ch_idx]
+        chroms_ = arg['--chromosomes'].split(',')
         arg['--chromosomes'] = chroms_
+    arg['labs'] = {arg['--chromosomes'][i]:chr(97+i) for i in range(len(arg['--chromosomes']))}
+    chrom_lists = [arg['--chromosomes'][i:i+6] for i in range(0, len(arg['--chromosomes']), 6)]
+    arg['chrom_lists'] = chrom_lists
     arg['--fields'] = list(df.columns)
+    arg['contigs'] = {ch:arg['--contigs'][ch] for ch in arg['--chromosomes']}
+    arg['max_lenght'] = max(arg['contigs'].values())
+    if 'log10PVALUE' in arg['--fields']:
+        r = pd.DataFrame(dtype=np.float32)
+        r['log10PVALUE'] = df['log10PVALUE']
+        r = r.replace({-np.inf: r[np.isfinite(r)].min().min()})
+        df['log10PVALUE'] = r['log10PVALUE']
+    arg['n_markers'] = len(df)
+        # Checking graphic types
+    if 'mbsplot' in arg.keys():
+        arg = check_mbs_opts(arg)
+    if 'qtlplot' in arg.keys():
+        arg = check_qtl_opts(arg)
+    return arg, df
+
+def load_dataframe(arg):
+    inp_f = arg['<input_file>']
+    inp_ext = inp_f.split('.')[-1]
+    if inp_ext == 'csv':
+        sep_ = ','
+    else:
+        sep_ = '\t'
+    df = pd.read_csv(inp_f, sep=sep_, dtype=fields, names=arg['header'], comment='#')
     arg['--fields'].remove('REF')
     arg['--fields'].remove('ALT')
+    arg['header']=arg['--fields']
     return arg, df
     
 def test_merge(arg,__doc__):
@@ -137,7 +154,7 @@ def test_merge(arg,__doc__):
     else:
         sep_ = '\t'
     try:
-        arg['<input_file>'] = open(inp_f, 'r')
+        f = open(arg['<input_file>'], 'r')
     except FileNotFoundError:
         print('Error: The input file {} does not exist'.format(inp_f))
         sys.exit()
@@ -437,7 +454,7 @@ def plot_ED(df, arg):
     for ch in range(len(chrom)):
         d = df[df['#CHROM'] == chrom[ch]]
         d.index = np.arange(len(d))
-        max_x = max(d['POS'])
+        max_x = int(arg['contigs'][chrom[ch]])
         x = d[['POS']]
         y = d[['ED']]
         fig, ax = plt.subplots(figsize=(10, 4.2))
@@ -476,7 +493,7 @@ def plot_G(df, arg):
     t,rt,_ = arg['titles'][12]
     for ch in range(len(chrom)):
         d = df[df['#CHROM'] == chrom[ch]]
-        max_x = max(d['POS'])
+        max_x = int(arg['contigs'][ch])
         x = d[['POS']]
         y = d[['G']]
         fig, ax = plt.subplots(figsize=(10, 4.2))
@@ -527,7 +544,7 @@ def pval_multi_graph(df, arg):
             fig, ax = plt.subplots(1,2,figsize=(2*(3.3333333335), 2))
         for i in range(len(chrom)):
             d = df[df['#CHROM'] == chrom[i]]
-            max_x = max(d['POS'])
+            max_x = int(arg['contigs'][chrom[i]])
             x = d[['POS']]
             y = d[['log10PVALUE']]
             ax[i].scatter(x, y, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
@@ -573,7 +590,7 @@ def pval_mono_graph(df, arg):
     
     for i in range(len(chrom)):
         d=df[df['#CHROM'] == chrom[i]]
-        max_x=max(d['POS'])
+        max_x= int(arg['contigs'][chrom[i]])
         #DMAX = d[d.DELTA == d.DELTA.max()]
         #DMAX = DMAX[DMAX.log10PVALUE == DMAX.log10PVALUE.min()]
         #print('DELTA__MAX', DMAX)
@@ -675,7 +692,7 @@ def AF1_AF2_mono_graph(df, arg):
         d=df[df['#CHROM'] == chrom[i]]
         t1,rt1,_=arg['titles'][3]
         t2,rt2,_=arg['titles'][4]
-        max_x=max(d['POS'])
+        max_x= int(arg['contigs'][chrom[i]])
         x=d[['POS']]
         y1=d[['SNPidx1']]
         y2=d[['SNPidx2']]
@@ -778,7 +795,7 @@ def AF_mono_graph(df, arg, g_type):
             ticks_y=[-1, 0, 1]
             lim_y=(-1.5, 1.5)
         d=df[df['#CHROM'] == chrom[i]]
-        max_x=max(d['POS'])
+        max_x=int(arg['contigs'][chrom[i]])
         x=d[['POS']]
         y=d[[g_type]]
         fig, ax=plt.subplots(figsize=(10, 4.2))
@@ -834,7 +851,7 @@ def AF_mono_graph(df, arg, g_type):
 def pval_multi_Vertical_graph(df, arg):
     typ=arg['--fileformat']
     min_y = min(df['log10PVALUE'])*1.05
-    max_x = max(df['POS'])
+    max_x = arg['max_lenght']
     t,rt = arg['titles'][6]
     labs_list = list()
     f_name = list()
@@ -897,7 +914,7 @@ def pval_multi_Vertical_graph(df, arg):
 def ED_multi_Vertical_graph(df, arg):
     typ=arg['--fileformat']
     max_y = max(df['ED100_4'])
-    max_x = max(df['POS'])
+    max_x = arg['max_lenght']
     t,_,rt = arg['titles'][10]
     labs_list = list()
     f_name = list()
@@ -951,7 +968,7 @@ def ED_multi_Vertical_graph(df, arg):
 def G_multi_Vertical_graph(df, arg):
     typ=arg['--fileformat']
     min_y, max_y = min(df['G']), max(df['G'])
-    max_x = max(df['POS'])
+    max_x =arg['max_leght']
     t,_,rt = arg['titles'][12]
     labs_list = list()
     f_name = list()
@@ -1005,7 +1022,7 @@ def G_multi_Vertical_graph(df, arg):
 
 def AF_multi_Vertical_graph(df, arg, g_type):
     typ=arg['--fileformat']
-    max_x=max(df['POS'])
+    max_x=arg['max_lenght']
     ticks_y=[0, 0.25, 0.5, 0.75, 1]
     lim_y=(0, 1)
     ylab = 'Allele Frequency'
@@ -1106,7 +1123,7 @@ def AF_multi_Vertical_graph(df, arg, g_type):
 
 def AF12_multi_Vertical_graph(df, arg):
     typ=arg['--fileformat']
-    max_x=max(df['POS'])
+    max_x=arg['max_lenght']
     
     ticks_y=[0, 0.25, 0.5, 0.75, 1]
     lim_y=(0, 1)
@@ -1229,7 +1246,7 @@ def AF1_AF2_pval_mono(df, arg):
     for i in range(len(chrom)):
         fig, ax=plt.subplots(3, 1, figsize=(8.5, 7))#(7,9)paper
         d=df[df['#CHROM'] == chrom[i]]
-        max_x = max(d['POS'])
+        max_x = arg['contigs'][chrom[i]]
         t,rt = arg['titles'][10]
         x=d[['POS']]
         y1=d['SNPidx1']
@@ -1321,7 +1338,7 @@ def qtl_mixed_plot(df, arg):
     for i in range(len(chrom)):
         fig, ax=plt.subplots(4, 1, figsize=(8.5, 8.5))#(7,9)paper
         d=df[df['#CHROM'] == chrom[i]]
-        max_x = max(d['POS'])
+        max_x = arg['contigs'][chrom[i]]
         x=d[['POS']]
         y1=d['G']
         y2=d['ED']
@@ -1425,7 +1442,7 @@ def snp_index_graph(df, arg):
     for i in range(len(chrom)):
         fig, ax=plt.subplots(3, 1, figsize=(7.5, 5))
         d=df[df['#CHROM'] == chrom[i]]
-        max_x=max(d['POS'])
+        max_x=arg['contigs'][chrom[i]]
         x=d[['POS']]
         y1=d['SNPidx1']
         y2=d['SNPidx2']

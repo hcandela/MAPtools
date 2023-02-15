@@ -97,7 +97,7 @@ v_merge='Merge mbs or qtl analysis version: 1.00'
 variable_descriptions={
    '#CHROM':'##CHROM=<ID=*, Description=\"Chromosome name.\">\n',\
    'POS':'##POS=<ID=*, Number=1, Type=Integer, Description=\"Position in the chromosome.\">\n',\
-   'REF':'##REF=<ID=*, Description=\"Reference allele.\"\n',\
+   'REF':'##REF=<ID=*, Description=\"Reference allele.\">\n',\
    'ALT':'##ALT=<ID=*, Description=\"Represents allele, other than observed.\">\n',\
    'DPref_1':'##DPref_1=<ID=*, Number=1, Type=Integer, Description=\"Allelic depth of reference allele in pool 1.\">\n',\
    'DPalt_1':'##DPalt_1=<ID=*, Number=1, Type=Integer, Description=\"Allelic depth of alternative allele in pool 1.\">\n',\

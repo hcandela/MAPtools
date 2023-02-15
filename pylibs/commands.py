@@ -133,12 +133,17 @@ def merge(argv):
      --fileformat=<ext>            Formats availables: txt (tab), csv (,) [default: txt]
   """
   arg = docopt(merge_doc, argv=None, help=True, version=v_merge)
-  df, arg = test_merge(arg, merge_doc)
+  arg = test_merge(arg, merge_doc)
   fsal = False
   if arg['--output'] != None:
     fsal = open(arg['--outdir']+arg['--output'], 'w')
   arg['fsal'] = fsal
   arg['version'] = v_merge
+  header_lines = read_header_merge(arg)
+  write_argv(arg, argv)
+  arg, df = load_dataframe(arg)
+  for line in header_lines:
+    write_line(line, fsal)
   grouped_by(df, arg)
   if fsal == True:
     fsal.close()
@@ -168,8 +173,10 @@ def mbs_plot(argv):
     --outdir,-o=<dir>          Create a new directory if it doesn't exist. If not provided uses the input directory [default: graphics].
   """
     arg = docopt(mbsplot_doc, argv=None, help=True,version=v_mbsplot)
-    print(argv)
-    df, arg = test_plot(arg, mbsplot_doc)
+    arg = test_plot(arg, mbsplot_doc)
+    arg = read_header_plot(arg)
+    arg, df = load_dataframe_plotting(arg)
+    print(arg)
     arg['version'] = v_mbsplot
     if arg['--pvalue'] == True:
         pval_mono_graph(df, arg)
@@ -218,7 +225,7 @@ def qtl_plot(argv):
     --delta, -d                Generates the SNPidx for high and low pools and Delta graphic.
     --allele-freq-H, -H        Generates the alelle frequency graphics for the pool of high phenotype.
     --allele-freq-L, -L        Generates the allele frecuency graphics for the pool of low phenotype.
-    --combine, -C              Combined multi-graphics with high and low lines. Use it together with --moving-avg.
+    --combine, -X              Combined multi-graphics with high and low lines. Use it together with --moving-avg.
     --euclidean-distance, -E   Generates graphics with Euclidean distance between individual SNPs and in groups of 100 adjacent markers.
     --g-statistic, -G          Generates graphics with G-statistic for individual SNPs.
     --qtl-seq, -Q              Generate muti-graphic with ED, G, DELTA and p-value graphics for each chromosome.
@@ -234,9 +241,11 @@ def qtl_plot(argv):
 
   """
     arg = docopt(qtlplot_doc, argv=None, help=True,version=v_qtlplot)
-    #print(arg)
-    df, arg = test_plot(arg, qtlplot_doc)
+    arg = test_plot(arg, qtlplot_doc)
+    arg = read_header_plot(arg)
+    arg, df = load_dataframe_plotting(arg)
     arg['version'] = v_qtlplot
+    print(arg)
     if arg['--euclidean-distance']:
         df = get_ED100_4(df, arg, RANG)
         plot_ED(df,arg)
@@ -258,6 +267,7 @@ def qtl_plot(argv):
             AF_multi_Vertical_graph(df, arg, 'DELTA')
     
     if arg['--qtl-seq'] == True:
+      df = get_ED100_4(df, arg, RANG)
       qtl_mixed_plot(df, arg)
     if arg['--allele-freq-H'] == True and arg['--allele-freq-L'] == True:
         if arg['--combine'] and arg['--moving-avg'] != False:
@@ -276,7 +286,7 @@ def qtl_plot(argv):
 def annotate(argv):
   annotate_doc="""Annotate variants
 Usage:
-   maptools.py annotate <input_file> [options]
+   maptools.py annotate [options]
    maptools.py annotate --version
    maptools.py annotate -h
 

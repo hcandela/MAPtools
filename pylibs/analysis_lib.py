@@ -1120,8 +1120,10 @@ def read_header(arg:dict,line:str):
 
 def write_argv(arg:dict,argv:str):
 	fsal = arg['fsal']
-	version = '##maptoolsVersion='+v_maptools+'\n'
+	version_maptools = '##maptoolsVersion='+v_maptools+'\n'
+	version = '##maptools_{}Version='.format(argv[0])+arg['version']+'\n'
 	line = '##maptools_{}Command='.format(argv[0])+' '.join(argv) +';'+'Date='+datetime.now().ctime()+'\n'
+	write_line(version_maptools,fsal)
 	write_line(version,fsal)
 	write_line(line, fsal)
 	if argv[0] == 'annotate':
@@ -1130,5 +1132,43 @@ def write_argv(arg:dict,argv:str):
 		write_line('##reference=file://'+argv[ref_idx+1].split('/')[-1]+'\n',fsal)
 		write_line('##gff3=file://'+argv[gff_idx+1].split('/')[-1]+'\n',fsal)
 	for field in arg['header']:
+		if 'merge' in arg.keys():
+			if field == 'REF' or field == 'ALT':
+				continue
 		if field in variable_descriptions.keys():
 			write_line(variable_descriptions[field], fsal)
+	if argv[0] == 'merge':
+		line ='##maptools_mergeCommandINFO=\"All columns now represent the grouped values for the provided window size.\"\n'
+		write_line(line, fsal)
+
+def read_header_merge(arg:dict):
+	lines = list()
+	with open(arg['<input_file>'], 'r') as handle:
+		for line in handle:
+			if line.startswith('##maptools_'):
+				lines.append(line)
+			if line.startswith('##bcftoolsVersion='):
+				lines.append(line)
+			if line.startswith('##bcftoolsCommand='):
+				lines.append(line)
+			if line.startswith('##bcftools_callCommand='):
+				line = line.split(';')[0]
+				lines.append(line)
+			if line.startswith('##reference='):
+				if 'mbs' in arg.keys() or 'qtl' in arg.keys() or 'merge' in arg.keys():
+					lines.append(line)
+			if line.startswith('##contig=<ID='):
+				c = line.split('##contig=<ID=')[1].split(',')[0]
+				#arg['chromosomes'].append(c)
+				lines.append(line)
+			if line.startswith('##bamFiles'):
+				lines.append(line)
+			if line.startswith('#CHROM'):
+				header = line.split('\t')
+				header = [field.rstrip() for field in header]
+				arg['header'] = header
+				break
+	return lines
+
+
+		
