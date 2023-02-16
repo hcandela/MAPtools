@@ -121,7 +121,7 @@ variable_descriptions={
    'CODON_ref':'##CODON_ref=<ID=*, Number=0, Type=Flag, Description=\"Target codon before mutation.\">\n',\
    'CODON_alt':'##CODON_alt=<ID=*, Number=0, Type=Flag, Description=\"Target codon after mutation.\">\n',\
    'AA_ref':'##AA_ref=<ID=*, Number=0, Type=Flag, Description=\"Aminoacid before mutation.\">\n',\
-   'AA_alt':'##AA_ref=<ID=*, Number=0, Type=Flag, Description=\"Aminoacid before mutation.\">\n',\
+   'AA_alt':'##AA_alt=<ID=*, Number=0, Type=Flag, Description=\"Aminoacid after mutation.\">\n',\
    'INFO':'##INFO=<ID=effect, Number=0, Type=Flag, Description=\"Type of aminoacid change effect in exons (Nonsynonimous or Synonimous:missense or nonsense or nonstop), in 5\'UTR (new_ATG:in_frame or out_of_frame:truncated_protein or elongated_protein) or if affects to non-coding gene (non_coding:exonic or intronic).\">\n'\
           '##INFO=<ID=left, Number=0, Type=Flag, Description=\"Gene or Exon immediately left (towards lower POS) and distance on bp(element:distance).\">\n'\
           '##INFO=<ID=right, Number=0, Type=Flag, Description=\"Gene or Exon immediately right (towards higher POS) and distance on bp(element:distance).\">\n'\

@@ -176,7 +176,7 @@ def mbs_plot(argv):
     arg = test_plot(arg, mbsplot_doc)
     arg = read_header_plot(arg)
     arg, df = load_dataframe_plotting(arg)
-    print(arg)
+    #print(arg)
     arg['version'] = v_mbsplot
     if arg['--pvalue'] == True:
         pval_mono_graph(df, arg)
@@ -245,7 +245,7 @@ def qtl_plot(argv):
     arg = read_header_plot(arg)
     arg, df = load_dataframe_plotting(arg)
     arg['version'] = v_qtlplot
-    print(arg)
+    #print(arg)
     if arg['--euclidean-distance']:
         df = get_ED100_4(df, arg, RANG)
         plot_ED(df,arg)
@@ -310,7 +310,6 @@ Output Options:
   arg['pipe'] = sys.stdin.isatty()
   arg['version'] = v_annotate
   arg = test_arg_ann(annotate_doc, arg)
-  print(arg)
   df = create_df(arg)
   output = arg['--output']
   fsal = False
@@ -347,8 +346,7 @@ Output Options:
   write_annotate_header(arg)
   for idx, row in df.iterrows():
     check_mutation2(row,arg)
-    print('------------')
   finish = time.perf_counter()
-  print(f'Variant annotation finished in {round(finish-start, 2)} second(s)')
+  #print(f'Variant annotation finished in {round(finish-start, 2)} second(s)')
   
   ##

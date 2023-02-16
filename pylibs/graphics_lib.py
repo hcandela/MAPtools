@@ -32,7 +32,7 @@ def read_header_plot(arg):
     arg['--contigs'] = dict()
     with open(arg['<input_file>'],'r') as handle:
         for line in handle:
-            if line.startswith('##maptools_mergeCommand'):
+            if line.startswith('##maptools_mergeCommand='):
                 names = ['-w','--window']
                 merge_argv = line.split('=')[1].split(' ')
                 for w in names:
@@ -484,7 +484,7 @@ def plot_ED(df, arg):
             cap.append(t)
             cap.append(arg['lines'][9].format(arg['color_names']['dots']))
             cap.append(arg['lines'][10].format(arg['color_names']['mvg']))
-            write_caption(f,cap)
+            write_caption(f,cap,arg)
 
 def plot_G(df, arg):
     chrom = arg['--chromosomes']
@@ -493,7 +493,7 @@ def plot_G(df, arg):
     t,rt,_ = arg['titles'][12]
     for ch in range(len(chrom)):
         d = df[df['#CHROM'] == chrom[ch]]
-        max_x = int(arg['contigs'][ch])
+        max_x = int(arg['contigs'][chrom[ch]])
         x = d[['POS']]
         y = d[['G']]
         fig, ax = plt.subplots(figsize=(10, 4.2))
@@ -526,7 +526,7 @@ def plot_G(df, arg):
             cap.append(arg['lines'][11].format(arg['color_names']['dots']))
             if arg['--moving-avg'] != False:
                 cap.append(arg['lines'][12].format(arg['color_names']['mvg'], str(arg['--moving-avg'])))
-            write_caption(f,cap)
+            write_caption(f,cap,arg)
 
 def pval_multi_graph(df, arg):
     t, rt = arg['titles'][1]
@@ -580,7 +580,7 @@ def pval_multi_graph(df, arg):
             cap.append(arg['lines'][1].format(arg['color_names']['log10PVALUE'], str(arg['--moving-avg'])))
         if arg['--bonferroni']:
             cap.append(arg['lines'][2].format(str(arg['n_markers'])))
-        write_caption(f, cap)
+        write_caption(f, cap,arg)
     
 def pval_mono_graph(df, arg):
     chrom=arg['--chromosomes']
@@ -639,7 +639,7 @@ def pval_mono_graph(df, arg):
                 cap.append(arg['lines'][1].format(arg['color_names']['log10PVALUE'], str(arg['--moving-avg'])))
             if arg['--bonferroni']:
                 cap.append(arg['lines'][2].format(str(arg['n_markers'])))
-            write_caption(f, cap)
+            write_caption(f, cap,arg)
 
 
 def qq_plot(df, arg):
@@ -728,7 +728,7 @@ def AF1_AF2_mono_graph(df, arg):
             if arg['--moving-avg'] != False:
                 cap.append(arg['lines'][3].format(arg['color_names']['SNPidx1'], str(arg['--moving-avg'])))
                 cap.append(arg['lines'][4].format(arg['color_names']['SNPidx2'], str(arg['--moving-avg'])))
-            write_caption(f,cap) 
+            write_caption(f,cap,arg) 
         # AF2
         fig, ax=plt.subplots(figsize=(10, 4.2))
         ax.scatter(x, y2, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
@@ -761,7 +761,7 @@ def AF1_AF2_mono_graph(df, arg):
             if arg['--moving-avg'] != False:
                 cap.append(arg['lines'][4].format(arg['color_names']['SNPidx2'], str(arg['--moving-avg'])))
                 cap.append(arg['lines'][3].format(arg['color_names']['SNPidx1'], str(arg['--moving-avg'])))
-            write_caption(f,cap)
+            write_caption(f,cap,arg)
 
 
 def AF_mono_graph(df, arg, g_type):
@@ -846,7 +846,7 @@ def AF_mono_graph(df, arg, g_type):
             if 'qtlplot' in arg.keys():
                 if arg['--ci95'] and g_type == 'DELTA':
                     cap.append(arg['lines'][7].format(arg['color_names']['ci'], str(arg['n_markers'])))
-            write_caption(f, cap)
+            write_caption(f, cap,arg)
 
 def pval_multi_Vertical_graph(df, arg):
     typ=arg['--fileformat']
@@ -908,7 +908,7 @@ def pval_multi_Vertical_graph(df, arg):
             cap.append(arg['lines'][1].format(arg['color_names']['log10PVALUE'],str(arg['--moving-avg'])))
         if arg['--bonferroni']:
             cap.append(arg['lines'][2].format(str(arg['n_markers'])))
-        write_caption(f,cap)
+        write_caption(f,cap,arg)
 
 
 def ED_multi_Vertical_graph(df, arg):
@@ -963,12 +963,12 @@ def ED_multi_Vertical_graph(df, arg):
         cap = cap + labs_list
         cap.append(arg['lines'][9].format(arg['color_names']['dots']))
         cap.append(arg['lines'][10].format(arg['color_names']['mvg']))
-        write_caption(f,cap)
+        write_caption(f,cap,arg)
 
 def G_multi_Vertical_graph(df, arg):
     typ=arg['--fileformat']
     min_y, max_y = min(df['G']), max(df['G'])
-    max_x =arg['max_leght']
+    max_x =arg['max_lenght']
     t,_,rt = arg['titles'][12]
     labs_list = list()
     f_name = list()
@@ -1018,7 +1018,7 @@ def G_multi_Vertical_graph(df, arg):
         cap.append(arg['lines'][11].format(arg['color_names']['dots']))
         if arg['--moving-avg'] != False:
             cap.append(arg['lines'][12].format(arg['color_names']['mvg'], str(arg['--moving-avg'])))
-        write_caption(f,cap)
+        write_caption(f,cap,arg)
 
 def AF_multi_Vertical_graph(df, arg, g_type):
     typ=arg['--fileformat']
@@ -1119,7 +1119,7 @@ def AF_multi_Vertical_graph(df, arg, g_type):
         if 'qtlplot' in arg.keys() and g_type == 'DELTA':
             if arg['--ci95']:
                 cap.append(arg['lines'][7].format(arg['color_names']['ci'], str(arg['n_markers'])))
-        write_caption(f, cap)
+        write_caption(f, cap,arg)
 
 def AF12_multi_Vertical_graph(df, arg):
     typ=arg['--fileformat']
@@ -1182,7 +1182,7 @@ def AF12_multi_Vertical_graph(df, arg):
         if arg['--moving-avg'] != False:
             cap.append(arg['lines'][3].format(arg['color_names']['SNPidx1'], str(arg['--moving-avg'])))
             cap.append(arg['lines'][4].format(arg['color_names']['SNPidx2'], str(arg['--moving-avg'])))
-        write_caption(f,cap)
+        write_caption(f,cap,arg)
     
     #AF1&2
     f2_name = list()
@@ -1235,7 +1235,7 @@ def AF12_multi_Vertical_graph(df, arg):
         if arg['--moving-avg'] != False:
             cap.append(arg['lines'][4].format(arg['color_names']['SNPidx2'], str(arg['--moving-avg'])))
             cap.append(arg['lines'][3].format(arg['color_names']['SNPidx1'], str(arg['--moving-avg'])))
-        write_caption(f,cap)
+        write_caption(f,cap,arg)
 
 def AF1_AF2_pval_mono(df, arg):
     global fields
@@ -1328,7 +1328,7 @@ def AF1_AF2_pval_mono(df, arg):
                 cap.append(arg['lines'][4].format(arg['color_names']['SNPidx2'], str(arg['--moving-avg'])))
             if arg['--bonferroni']:
                 cap.append(arg['lines'][2].format(str(arg['n_markers'])))
-            write_caption(f,cap)
+            write_caption(f,cap,arg)
 
 def qtl_mixed_plot(df, arg):
     global fields
@@ -1431,7 +1431,7 @@ def qtl_mixed_plot(df, arg):
             #    cap.append(arg['lines'][4].format(arg['color_names']['SNPidx2'], str(arg['--moving-avg'])))
             if arg['--bonferroni']:
                 cap.append(arg['lines'][2].format(str(arg['n_markers'])))
-            write_caption(f,cap)
+            write_caption(f,cap, arg)
 
 def snp_index_graph(df, arg):
     global fields
@@ -1446,7 +1446,7 @@ def snp_index_graph(df, arg):
         x=d[['POS']]
         y1=d['SNPidx1']
         y2=d['SNPidx2']
-        y3=y2-y1  # delta
+        y3=d['DELTA']  # delta
 
         #SNPidx1
         ax[0].scatter(x, y1, s=0.5, c=arg['--palette']['SNPidx1'], alpha=arg['--alpha'])
@@ -1516,7 +1516,7 @@ def snp_index_graph(df, arg):
                 cap.append(arg['lines'][8].format(arg['color_names']['mvg'], str(arg['--moving-avg'])))
                 if arg['--ci95']:
                     cap.append(arg['lines'][7].format(arg['color_names']['ci'], str(arg['n_markers'])))
-            write_caption(f,cap)
+            write_caption(f,cap, arg)
 
 def calc_ci(d, arg, ax):
     z95=abs(st.norm.ppf(.025/arg['n_markers']))
@@ -1629,8 +1629,10 @@ def create_caption(arg, res_tit):
     f=open(arg['captions_dir'] + res_tit + '.txt', 'a')
     return f
 
-def write_caption(f, text):
+def write_caption(f, text, arg):
     for sentence in text:
         f.write(sentence+'\n')
+    if '--window' in arg.keys():
+        f.write('The dots correspond to genomic regions defined by non-overlapping bins of {} consecutive markers'.format(str(arg['--window'])))
     f.write('\n')
     f.close()

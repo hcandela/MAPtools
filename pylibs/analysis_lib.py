@@ -538,13 +538,9 @@ def load_gff(arg):
 def codon_coords(pos, start, end, strand, phase):
 	if strand == '+':
 		rest = (pos - start - phase) % 3
-		#print("Hebra: + Posicion: "+str(pos))
-		#print("Start: "+str(pos-resto), "End: "+str(pos-resto+2))
 		return (pos-rest, pos-rest+2)
 	elif strand == '-' :
 		rest = (end - pos - phase) % 3
-		#print("Hebra: - Posicion: "+str(pos))
-		#print("Start: "+str(pos+resto-2), "End: "+str(pos+resto))
 		return (pos+rest-2, pos+rest)
 				
 def  find_row(rows, pos, start, end):
@@ -610,17 +606,13 @@ def find_effect(before,after,strand):
 	before = before.translate(table=1)
 	after = after.translate(table=1)
 	if (before == after):
-		print("Synonymous",before,after)
 		change = 'Synonymous:.'
 	elif (before != after):
 		if (after == '*'):
-			print("Non_synonymous:non_sense_mutation",before,after)
 			change = 'Non_synonymous:nonsense'
 		elif (before == '*'):
-			print("Nonsynonymous - nonstop mutation",before,after)
 			change = 'Nonsynonymous:nonstop'
 		else:
-			print("Nonsynonymous - missense mutation",before,after)
 			change = 'Nonsynonymous:missense'
 	return [before, after,change]
 
@@ -705,11 +697,9 @@ def new_df_line(df, arg, fields, al_count, calcs):
 
 def find_new_ATG(arg, pos, five, row):
 	if five[4] == '+':
-		print(str(arg['ref'].seq[3631-1:3759]))
 		c1 = arg['ref'].seq[pos-3:pos-1]+row['ALT']
 		c2 = arg['ref'].seq[pos-2:pos-1]+row['ALT']+arg['ref'].seq[pos:pos+1]
 		c3 = row['ALT']+arg['ref'].seq[pos:pos+2]
-		print(c1,c2,c3)
 		if c1 == 'ATG' or c2 == 'ATG' or c3 == 'ATG':
 			if c1 == 'ATG':
 				lag = -2
@@ -718,17 +708,11 @@ def find_new_ATG(arg, pos, five, row):
 			elif c3 == 'ATG':
 				lag = 0
 			dist_to_cds = five[3] - (pos + lag) + 1
-			print(dist_to_cds)
 			if (dist_to_cds)%3 == 0:
-				print('New phased ATG')
 				codon = (Seq('ATG') + arg['ref'].seq[five[3]-dist_to_cds+3:five[3]]).translate(table=1)
-				print(codon)
-				print(Seq('ATG') + arg['ref'].seq[five[3]-dist_to_cds+3:five[3]])
 				if '*' in codon:
-					print('Truncated protein. Stop codon generation after new ATG codon')
 					return 'new_ATG:in_frame:truncated_protein'
 				else:
-					print('No stop codon generation. Elonged protein')
 					return 'new_ATG:in_frame:elongated_protein'
 			else:
 				return 'new_ATG:out_of_frame:.'
@@ -738,7 +722,6 @@ def find_new_ATG(arg, pos, five, row):
 		c1 = arg['ref'].seq[pos-3:pos-1]+row['ALT']
 		c2 = arg['ref'].seq[pos-2]+row['ALT']+arg['ref'].seq[pos:pos+1]
 		c3 = row['ALT']+arg['ref'].seq[pos:pos+2]
-		print(c1,c2,c3)
 		if c1 == 'CAT' or c2 == 'CAT' or c3 == 'CAT':
 			if c1 == 'CAT':
 				lag = 0
@@ -747,18 +730,12 @@ def find_new_ATG(arg, pos, five, row):
 			elif c3 == 'CAT':
 				lag = 2
 			dist_to_cds = pos + lag - five[2] + 1
-			print(dist_to_cds)
 			if (dist_to_cds)%3 == 0:
-				print('New phased CAT')
 				s_UTR = (arg['ref'][five[2]-1:pos+lag-3]+Seq('CAT')).reverse_complement()
-				print(s_UTR)
 				prot = s_UTR.translate(table=1)
-				print(str(prot.seq))
 				if '*' in prot:
-					print('Truncated protein. Stop codon generation after new CAT codon')
 					return 'new_ATG:in_frame:truncated_protein'
 				else:
-					print('No stop codon generation. Elonged protein')
 					return 'new_ATG:in_frame:elongated_protein'
 			else:
 				return 'new_ATG:out_of_frame:.'
@@ -770,18 +747,14 @@ def check_nc_gene(arg,gff,type_, b, e, pos,result):
 	if gff[type_][b:e+1]:
 		for ncRNA in gff[type_][b:e+1]:
 			ncRNA_id = ncRNA[6]
-			print(ncRNA)
 			b1,e1 = find_row_name(gff['exon'], ncRNA_id, 7)
 			b2,e2 = find_row(gff['exon'], pos, b1, e1+1)
 			if gff['exon'][b2:e2+1]:
-				print(gff['exon'][b2:e2+1])
-				print('Exonic, non-coding',type_,ncRNA_id)
 				result['ID'],result['PARENT'],result['TYPE'],result['STRAND'] = ncRNA_id,ncRNA[7],type_,ncRNA[4]
 				result['INFO']['effect'] = 'non_coding:exonic'
 				write_annotate_line(arg, result)
 				result['INFO'] = dict()
 			else:
-				print('intronic, non-coding',type_,ncRNA_id)
 				result['ID'],result['PARENT'],result['TYPE'],result['STRAND'] = ncRNA_id,ncRNA[7],type_,ncRNA[4]
 				result['INFO']['effect'] = 'non_coding:intronic'
 				write_annotate_line(arg, result)
@@ -796,22 +769,18 @@ def check_mutation2(row, arg):
 	pos = int(row['POS'])
 	b,e = find_row(gff['gene'], pos, 0, len(gff['gene']))
 	if gff['gene'][b:e+1]:
-		print(pos,'is genic')
 		for gene in gff['gene'][b:e+1]:
 			gene_id = gene[6]
 			b1,e1 = find_row_name(gff['mRNA'], gene_id, 7) #mRNA
 			b2,e2 = find_row(gff['mRNA'], pos, b1, e1+1)
 			if gff['mRNA'][b2:e2+1]:
 				for mRNA in gff['mRNA'][b2:e2+1]:
-					print(mRNA)
 					mRNA_id = mRNA[6]
 					result['STRAND'] = mRNA[4]
 					b3,e3 = find_row_name(gff['exon'], mRNA_id, 7)
 					b4,e4 = find_row(gff['exon'], pos, b3, e3+1)
 					if pos <= mRNA[3] and pos >= mRNA[2]:
 						if gff['exon'][b4:e4+1]:
-							#for exon in gff['exon'][b4:e4+1]:
-							#	print(exon)
 							b5,e5 = find_row_name(gff['CDS'], mRNA_id, 7)
 							b6,e6 = find_row(gff['CDS'], pos, b5, e5+1)
 							b7,e7 = find_row_name(gff['five_prime_UTR'], mRNA_id, 7)
@@ -819,12 +788,10 @@ def check_mutation2(row, arg):
 							b9,e9 = find_row_name(gff['three_prime_UTR'], mRNA_id, 7)
 							b10,e10 = find_row(gff['three_prime_UTR'], pos, b9, e9+1)
 							if gff['CDS'][b6:e6+1]:
-								print(gff['CDS'][b6:e6+1])
 								for cds in gff['CDS'][b6:e6+1]:
 									cds_id = cds[6]
 									result['PHASE'],result['TYPE'] = cds[5],'CDS'
 									beg, end = codon_coords(pos,cds[2],cds[3],cds[4],int(cds[5])) #target pos, cds start, cds end, cds strand, cds phase
-									print(cds, beg, end)
 									if gff['CDS'][b6-1][7] == cds[7]: #if prev cds exist
 										if pos - cds[2] in {0,1,2}:
 											if cds[4] == '+':
@@ -848,12 +815,8 @@ def check_mutation2(row, arg):
 										n_beg = gff['CDS'][e6][2]
 										n_end = gff['CDS'][e6][3]
 										rest = cds[2] - beg
-										print("  Codon is truncated at intron/exon boundary at: ",cds[2])
-										print("  Possible splice site mutation. Check adjacent exon for a possible aa substitution")
 										codon_ref = seq_cds_p[-rest:] + arg['ref'].seq[n_beg-1: end]
 										codon_alt = codon_ref[:pos-beg]+row['ALT']+codon_ref[pos-beg+1:]
-										print(codon_ref)
-										print(codon_alt)
 										aa_before, aa_after,change = find_effect(codon_ref,codon_alt,cds[4])
 										result['CODON_ref'],result['CODON_alt'],result['AA_ref'],result['AA_alt'] = codon_ref, codon_alt, aa_before, aa_after
 										result['INFO']['effect'] = change
@@ -871,10 +834,6 @@ def check_mutation2(row, arg):
 										rest = end - cds[3]
 										codon_ref = arg['ref'].seq[beg-1: p_end] + seq_cds_n[:rest]
 										codon_alt = codon_ref[:pos-beg]+row['ALT']+codon_ref[pos-beg+1:]
-										print(codon_ref)
-										print(codon_alt)
-										print("  Codon is truncated at exon/intron boundary at: ",cds[3])
-										print("  Possible splice site mutation. Check adjacent exon for a possible aa substitution")
 										aa_before, aa_after,change = find_effect(codon_ref,codon_alt,cds[4])
 										result['CODON_ref'],result['CODON_alt'],result['AA_ref'],result['AA_alt'] = codon_ref, codon_alt, aa_before, aa_after
 										result['PARENT'] = mRNA_id
@@ -883,11 +842,9 @@ def check_mutation2(row, arg):
 										result['INFO'] = dict()
 										result['PHASE'],result['CODON_ref'], result['CODON_alt'], result['AA_ref'],result['AA_alt']= '.','.','.','.','.'
 									else:
-										print(' Codon fully contained exon')
 										codon = arg['ref'].seq[beg-1:end]
 										before = codon[:pos-beg]+row['REF']+codon[pos-beg+1:]
 										after = codon[:pos-beg]+row['ALT']+codon[pos-beg+1:]
-										print(before, after)
 										aa_before, aa_after,change = find_effect(before,after,cds[4])
 										result['PARENT'] = mRNA_id
 										result['CODON_ref'],result['CODON_alt'],result['AA_ref'],result['AA_alt'] = before, after, aa_before, aa_after
@@ -898,10 +855,7 @@ def check_mutation2(row, arg):
 							elif gff['five_prime_UTR'][b8:e8+1]:
 								#five =  gff['five_prime_UTR'][b8:e8+1][0]
 								for five in  gff['five_prime_UTR'][b8:e8+1]:
-									print('is 5\' UTR')
-									print(five)
-									result['TYPE'] = 'five_prime_UTR'
-									
+									result['TYPE'] = 'five_prime_UTR'		
 									result['INFO']['effect'] = find_new_ATG(arg, pos, five, row)
 									result['PARENT'] = mRNA_id
 									write_annotate_line(arg, result)
@@ -909,16 +863,11 @@ def check_mutation2(row, arg):
 							elif gff['three_prime_UTR'][b10:e10+1]:
 								three =  gff['three_prime_UTR'][b10:e10+1][0]
 								result['TYPE'] = 'three_prime_UTR'
-								print('is 3\' UTR')
-								print(three)
 								result['PARENT'] = mRNA_id
 								write_annotate_line(arg, result)
 								result['INFO'] = dict()
 						else:
-							print('is intron')
 							result['TYPE'] = 'intron'
-							print(gff['exon'][b4]) #downstream(-)
-							print(gff['exon'][e4]) #upstream(-)
 							dis1 = gff['exon'][b4][2] - pos
 							dis2 = pos - gff['exon'][e4][3]
 							result['Parent'] = mRNA_id
@@ -934,7 +883,6 @@ def check_mutation2(row, arg):
 									result['INFO']['3_splice_site'] = 'intron-boundary:'+gff['exon'][b4][8]
 								else:
 									result['INFO']['5_splice_site'] = 'intron-boundary:'+gff['exon'][b4][8]
-							print('located at ' + str(dis2) + ' bp of closest flanking exon on the left side (' + gff['exon'][e4][8] + ') and ' + str(dis1) + 'bp of the closest flanking exon on the right side (' + gff['exon'][b4][8] +')' )
 							write_annotate_line(arg, result)
 							result['INFO'] = dict()
 			
@@ -970,12 +918,8 @@ def check_mutation2(row, arg):
 			check_nc_gene(arg,gff,'SRP_RNA', b30, e30, pos,result)
 
 	else:
-		print('is intergenic')
-		print(gff['gene'][b])
-		print(gff['gene'][e])
 		dis1 = gff['gene'][b][2] - pos
 		dis2 = pos - gff['gene'][e][3]
-		print('located at ' + str(dis2) + ' bp of closest flanking gene on the left side (' + gff['gene'][e][6] + ') and ' + str(dis1) + 'bp of the closest flanking gene on the right side (' + gff['gene'][b][6] +')' )
 		result['TYPE'] = 'intergenic'
 		result['INFO']['left'] = gff['gene'][e][6] +':'+ str(dis2)
 		result['INFO']['right'] = gff['gene'][b][6] +':'+ str(dis1)
