@@ -12,6 +12,7 @@ import pandas as pd
 from Bio import SeqIO
 from Bio.Seq import Seq
 from datetime import datetime,date
+import gzip
 #from docopt import docopt
 
 def cmHH(command_line):
@@ -25,12 +26,19 @@ def test_args(__doc__,arg):
 		sys.exit()
 	if arg['--input'] != None:
 		inp_f = arg['--input']
-		try:
-			f = open(inp_f, 'r')
-		except FileNotFoundError:
-			print('Error: The input file {} does not exist'.format(inp_f))
-			sys.exit()
-	
+		if arg['--input'].split('.')[-1] == 'gz':
+			try:
+				f = gzip.open(inp_f, 'rt')
+			except FileNotFoundError:
+				print('Error: The input file {} does not exist'.format(inp_f))
+				sys.exit()
+		else:
+			try:
+				f = open(inp_f, 'r')
+			except FileNotFoundError:
+				print('Error: The input file {} does not exist'.format(inp_f))
+				sys.exit()
+		arg['inp'] = f
 	wd = os.getcwd()
 	try:
 		os.makedirs(wd+'/'+arg['--outdir'])
@@ -431,11 +439,19 @@ def test_arg_ann(__doc__,arg):
 		sys.exit()
 	if arg['--input'] != None:
 		inp_f = arg['--input']
-		try:
-			f = open(inp_f, 'r')
-		except FileNotFoundError:
-			print('Error: The input file {} does not exit'.format(inp_f))
-			sys.exit()
+		if arg['--input'].split('.')[-1] == 'gz':
+			try:
+				f = gzip.open(inp_f, 'rt')
+			except FileNotFoundError:
+				print('Error: The input file {} does not exit'.format(inp_f))
+				sys.exit()
+		else:
+			try:
+				f = open(inp_f, 'r')
+			except FileNotFoundError:
+				print('Error: The input file {} does not exit'.format(inp_f))
+				sys.exit()
+		arg['inp'] = f
 	wd = os.getcwd()
 	arg['--version'] = True
 	try:
@@ -453,17 +469,24 @@ def test_arg_ann(__doc__,arg):
 	else:
 		arg['--output'] = None
 	try:
-		gff = open(wd+'/'+arg['--gff'])
-		gff.close()
+		if arg['--gff'].split('.')[-1] == 'gz':
+			gff = gzip.open(wd+'/'+arg['--gff'],'rt')
+		else:
+			gff = open(wd+'/'+arg['--gff'],'r')
 		arg['--gff'] = wd+'/'+arg['--gff']
+		arg['--gff'] = gff
 	except FileNotFoundError:
 		print('The gff file does not exist.')
 		sys.exit()
 
 	try:
-		ref = open(wd+'/'+arg['--reference'])
-		ref.close()
+		if arg['--reference'].split('.')[-1] == 'gz':
+			ref = gzip.open(wd+'/'+arg['--reference'],'rt')
+		else:
+			ref = open(wd+'/'+arg['--reference'],'r')
+		#arg['--reference'] = ref
 		arg['--reference'] = wd+'/'+arg['--reference']
+		ref.close()
 	except FileNotFoundError:
 		print('The reference file does not exist.')
 		sys.exit()
@@ -499,40 +522,40 @@ def load_gff(arg):
 	gff = {'chromosome':[],'gene': [], 'mRNA':[], 'five_prime_UTR':[], 'exon':[], 'CDS':[], 'three_prime_UTR':[],\
 		 'miRNA':[], 'tRNA':[], 'ncRNA':[], 'ncRNA_gene':[], 'lnc_RNA':[], 'snoRNA':[], 'snRNA':[],\
 		 'rRNA':[], 'pseudogene':[], 'pseudogenic_transcript':[], 'pre_miRNA':[], 'SRP_RNA':[]}
-	with open(gff_path, 'r') as handle:
-		for line in handle:
-			if line.startswith('#'):
-				continue
-			else:
-				line = line.rstrip()
-				data = line.split('\t')
-				seqid = data[0]
-				#TODO Complete condition to cath only structures in our region
-				if seqid == arg['--region'][0]: #Load only the chromosome selected
-					type_ = data[2]
-					start = data[3]
-					end = data[4]
-					strand = data[6]
-					phase = data[7]
-					attributes = data[8].split(';')
-					dict_att = {'ID':'.','Parent':'.','Name':'.'}
-					for att in attributes:
-						dict_att[att.split('=')[0]] = att.split('=')[1]
-					#dict_att = {dict_att[att.split('=')[0]] :att.split('=')[1] for att in attributes}
-					if type_ in gff.keys():
-						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, dict_att['ID'], dict_att['Parent'], dict_att['Name']])
+	#with open(gff_path, 'r') as handle:
+	for line in gff_path:
+		if line.startswith('#'):
+			continue
+		else:
+			line = line.rstrip()
+			data = line.split('\t')
+			seqid = data[0]
+			#TODO Complete condition to cath only structures in our region
+			if seqid == arg['--region'][0]: #Load only the chromosome selected
+				type_ = data[2]
+				start = data[3]
+				end = data[4]
+				strand = data[6]
+				phase = data[7]
+				attributes = data[8].split(';')
+				dict_att = {'ID':'.','Parent':'.','Name':'.'}
+				for att in attributes:
+					dict_att[att.split('=')[0]] = att.split('=')[1]
+				#dict_att = {dict_att[att.split('=')[0]] :att.split('=')[1] for att in attributes}
+				if type_ in gff.keys():
+					gff[type_].append([seqid, type_, int(start), int(end), strand, phase, dict_att['ID'], dict_att['Parent'], dict_att['Name']])
 
-		gff['gene'] = gff['gene'] + gff['ncRNA_gene'] + gff['pseudogene']	#all of these types are considered as genes
-		gff['gene'].sort(key=lambda row:row[2]) #ordered by pos
-		gff['mRNA'].sort(key=lambda row:(row[6], row[2])) #ordered by id and pos
-		gff['exon'].sort(key=lambda row:(row[7], row[2])) #ordered by parent and pos
-		gff['CDS'].sort(key=lambda row:(row[7], row[2])) #ordered by parent and pos
-		gff['five_prime_UTR'].sort(key=lambda row:(row[7], row[2])) #ordered by parent and pos
-		gff['three_prime_UTR'].sort(key=lambda row:(row[7], row[2])) #ordered by parent and pos
-		ordered = ['gene', 'mRNA', 'exon', 'CDS', 'five_prime_UTR', 'three_prime_UTR']
-		for type_ in gff: #the rest of types are ordered only by pos
-			if type_ not in ordered:
-				gff[type_].sort(key=lambda row:row[2])
+	gff['gene'] = gff['gene'] + gff['ncRNA_gene'] + gff['pseudogene']	#all of these types are considered as genes
+	gff['gene'].sort(key=lambda row:row[2]) #ordered by pos
+	gff['mRNA'].sort(key=lambda row:(row[6], row[2])) #ordered by id and pos
+	gff['exon'].sort(key=lambda row:(row[7], row[2])) #ordered by parent and pos
+	gff['CDS'].sort(key=lambda row:(row[7], row[2])) #ordered by parent and pos
+	gff['five_prime_UTR'].sort(key=lambda row:(row[7], row[2])) #ordered by parent and pos
+	gff['three_prime_UTR'].sort(key=lambda row:(row[7], row[2])) #ordered by parent and pos
+	ordered = ['gene', 'mRNA', 'exon', 'CDS', 'five_prime_UTR', 'three_prime_UTR']
+	for type_ in gff: #the rest of types are ordered only by pos
+		if type_ not in ordered:
+			gff[type_].sort(key=lambda row:row[2])
 	arg['gff'] = gff
 
 def codon_coords(pos, start, end, strand, phase):
@@ -588,14 +611,27 @@ def  find_row_name(rows, pos, key):
 def load_reference(df,arg):
 	chrom = df['#CHROM'].unique()[0]
 	flag = True
-	for sequ in SeqIO.parse(arg['--reference'], 'fasta'):
-		if sequ.id == chrom:
-			arg['ref'] = sequ
-			flag = False
-			break
-	if flag == True:
-		print('Chromosome not found in FASTA file.')
-		sys.exit()
+	if arg['--reference'].split('.')[-1] == 'gz':
+		with gzip.open(arg['--reference'], 'rt') as handle:
+			for sequ in SeqIO.parse(handle, 'fasta'):
+				if sequ.id == chrom:
+					arg['ref'] = sequ
+					flag = False
+					break
+			if flag == True:
+				print('Chromosome not found in FASTA file.')
+				sys.exit()
+	else:
+		with open(arg['--reference'], 'r') as handle:
+			for sequ in SeqIO.parse(handle, 'fasta'):
+				if sequ.id == chrom:
+					arg['ref'] = sequ
+					flag = False
+					break
+			if flag == True:
+				print('Chromosome not found in FASTA file.')
+				sys.exit()
+
 
 def find_effect(before,after,strand):
 	before = Seq(before)

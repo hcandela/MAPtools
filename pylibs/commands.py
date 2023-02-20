@@ -43,7 +43,7 @@ def mbs(argv):
     arg['fsal'] = fsal
     first = True
     if arg['--input']:
-        inp = open(arg['--input'], 'r')
+        inp = arg['inp']
     else:
         inp = sys.stdin
     choose_header(arg)
@@ -97,7 +97,7 @@ def qtl(argv):
     arg['fsal'] = fsal
     first = True
     if arg['--input']:
-        inp = open(arg['--input'], 'r')
+        inp = arg['inp']
     else:
         inp = sys.stdin
     choose_header(arg)
@@ -319,7 +319,7 @@ Output Options:
     arg['fsal'] = fsal
   
   if arg['--input']:
-    inp = open(arg['--input'], 'r')
+    inp = arg['inp']
   else:
     inp = sys.stdin
   write_argv(arg, argv)
