@@ -83,6 +83,7 @@ def check_save_an(arg, file_name):
 
 def check_mbs_args(arg):
 	data = arg['--data']
+	arg['--mutagen'] = 'EMS'
 	if not 'R' in data:
 		print('Error: You should include the recessive pool (--data R,X,X')
 		sys.exit()
@@ -199,7 +200,8 @@ def mbs_calc(inp, arg):
 		if a != 0 or b != 0:
 			ratio1 = b/(a+b)
 			boost = 1/(arg['lim'] + abs(1 - 1/max(ratio1, 1-ratio1)))
-			return [ratio1, boost]
+			if a + b >= min_dp:# and a + b <= max_dp:
+				return [ratio1, boost]
 	elif 'D' in inf_s and 'R' in inf_s:
 		a, b, c, d = inp[0], inp[1], inp[2], inp[3]
 		dom = a + b #allele count of the dominant pool
@@ -344,6 +346,7 @@ def vcf_line_parser2(line, arg):
 						pool[alt[i]] = int(AD[i+1])
 					res[p] = pool	#{'R':{'nt1':AD1, 'nt2':AD2 }, 'D':{'nt1':AD1, 'nt2':AD2}...}
 			elif inf_s == {'R','Pr'} or inf_s == {'R','Pd'}:
+				flag = True
 				ref = z[3]
 				alt = z[4].split(',')
 				for p,c in inf.items():
@@ -352,7 +355,42 @@ def vcf_line_parser2(line, arg):
 					for i in range(len(alt)):
 						pool[alt[i]] = int(AD[i+1])
 					res[p] = pool
+				flag = isogenic_filter(z,res, arg)
+				if flag == False:
+					return 0,0
+					
 		return [z[0], z[1], z[3]],res #returns chromosome, position, reference allele, and the data for each bam)
+def isogenic_filter2(z, inf, GT_index, res):
+	data1 = z[inf['R']].split(':')
+	if 'Pr' in res.keys():
+		key2 = 'Pr'
+	else:
+		key2 = 'Pd'
+	data2 = z[inf[key2]].split(':')
+	GT1 = data1[GT_index].split('/')
+	GT2 = data2[GT_index].split('/')
+	if GT1 == GT2:
+		return False
+	else:
+		print('\t'.join(z), end='')
+def isogenic_filter(z,res, arg):
+	key1 = 'R'
+	if 'Pr' in res.keys():
+		key2 = 'Pr'
+	else:
+		key2 = 'Pd'
+	rec = res[key1]
+	par = res[key2]
+	if len(rec) == 2:
+		count_rec = [c for k,c in rec.items()]
+		count_par = [c for k,c in par.items()]
+		a,b,c,d = count_rec[0],count_rec[1],count_par[0],count_par[1]
+		if a + b >= arg['--min-depth'] and c + d >= arg['--min-depth'] and  0.1*a < arg['--min-depth'] < 0.9*a and 0.1*c < arg['--min-depth'] < 0.9*c:
+			return False
+		elif a == a+b and c >= 3:
+			return False
+		else: 
+			print('\t'.join(z), end='')
 
 def normalize(pools, REF, arg, r_min=0.03):
 	data = arg['--data']
@@ -377,7 +415,7 @@ def normalize(pools, REF, arg, r_min=0.03):
 			return [alle[0],REF,a, b]
 
 	elif len(inf_s) == 2:
-		if n_ref == True:
+		if n_ref == True: #TODO - Fix this when you are using a parental pool and no ref
 			dom = pools['D']
 			dom_list = [count for al,count in dom.items()]
 			rec_list = [count for al,count in rec.items()]
@@ -400,7 +438,8 @@ def normalize(pools, REF, arg, r_min=0.03):
 			return [alle[0], REF, a, b, c, d]
 		elif 'Pd' in inf_s:
 			p_dom = pools['Pd']
-			p_al = sorted(p_dom, key=lambda key: p_dom[key], reverse=True) #ordered from higher to lower
+			#p_al = sorted(p_dom, key=lambda key: p_dom[key], reverse=True) #ordered from higher to lower
+			p_al = [key for key,arg in p_dom.items()]
 			if p_dom[p_al[0]] > 0 and p_dom[p_al[1]]/(p_dom[p_al[0]] + p_dom[p_al[1]]) < r_min or len(p_al) > 2:
 				a = rec[p_al[0]]
 				b = rec[p_al[1]]
@@ -497,6 +536,7 @@ def test_arg_ann(__doc__,arg):
 	arg['--data'] = arg['--data'].split(',')
 	arg['spacer'] = '\t'
 	arg['mbs'] = True
+	arg['--min-depth'] = 10
 	arg['lim'] = 1e-90
 	header=['#CHROM','POS','REF','ALT', 'DPref_1','DPalt_1','DPref_2','DPalt_2','TYPE','ID','PARENT','STRAND',\
 		'PHASE','CODON_ref','CODON_alt','AA_ref','AA_alt','INFO']

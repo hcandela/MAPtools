@@ -48,6 +48,7 @@ def mbs(argv):
         inp = sys.stdin
     choose_header(arg)
     write_argv(arg, argv)
+    print(arg)
     for line in inp:
         if line.startswith('#'):
           read_header(arg,line)
@@ -57,10 +58,12 @@ def mbs(argv):
                 REF = fields[2]
                 al_count = normalize(pools, REF, arg)
                 if al_count != None:
-                    calcs = mbs_calc(al_count[2:], arg)
-                    if calcs != None:
-                        first = new_line(fsal, arg, first,
-                                         fields[:2], al_count, calcs)
+                    flag = filter_mut(arg, al_count[:2])
+                    if flag:
+                      calcs = mbs_calc(al_count[2:], arg)
+                      if calcs != None:
+                          first = new_line(fsal, arg, first,
+                                          fields[:2], al_count, calcs)
 
 
 def qtl(argv):
@@ -197,10 +200,13 @@ def mbs_plot(argv):
     if arg['--allele-freq-1'] == True:
         print('Allele Frequency 1 single chromosome')
         AF_mono_graph(df, arg, 'SNPidx1')
-
+        if arg['--multi-chrom'] == True:
+           AF_multi_Vertical_graph(df, arg, 'SNPidx1')
     if arg['--allele-freq-2'] == True:
         print('Allele Frequency 2 single chromosome')
         AF_mono_graph(df, arg, 'SNPidx2')
+        if arg['--multi-chrom'] == True:
+           AF_multi_Vertical_graph(df, arg, 'SNPidx2')
 
     if arg['--max-allele-freq2'] == True:
         AF_mono_graph(df, arg, 'MAX_SNPidx2')
