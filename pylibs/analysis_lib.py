@@ -390,7 +390,8 @@ def isogenic_filter(z,res, arg):
 		elif a == a+b and c >= 3:
 			return False
 		else: 
-			print('\t'.join(z), end='')
+			#print('\t'.join(z), end='')
+			return True
 
 def normalize(pools, REF, arg, r_min=0.03):
 	data = arg['--data']
@@ -538,8 +539,12 @@ def test_arg_ann(__doc__,arg):
 	arg['mbs'] = True
 	arg['--min-depth'] = 10
 	arg['lim'] = 1e-90
-	header=['#CHROM','POS','REF','ALT', 'DPref_1','DPalt_1','DPref_2','DPalt_2','TYPE','ID','PARENT','STRAND',\
-		'PHASE','CODON_ref','CODON_alt','AA_ref','AA_alt','INFO']
+	if 'R' in arg['--data'] and 'D' in arg['--data']:
+		header=['#CHROM','POS','REF','ALT', 'DPref_1','DPalt_1','DPref_2','DPalt_2','TYPE','ID','PARENT','STRAND',\
+			'PHASE','CODON_ref','CODON_alt','AA_ref','AA_alt','INFO']
+	else:
+		header=['#CHROM','POS','REF','ALT', 'DPref_1','DPalt_1','TYPE','ID','PARENT','STRAND',\
+			'PHASE','CODON_ref','CODON_alt','AA_ref','AA_alt','INFO']
 	arg['header'] = header
 	if arg['--mutagen'] == None:
 		arg['--mutagen'] = 'EMS'
@@ -838,9 +843,10 @@ def check_nc_gene(arg,gff,type_, b, e, pos,result):
 			
 
 def check_mutation2(row, arg):
-	result = {'#CHROM':row['#CHROM'],'POS':row['POS'],'REF':row['REF'],'ALT':row['ALT'], 'DPref_1':row['DPref_1'],\
-	'DPalt_1':row['DPalt_1'], 'DPref_2':row['DPref_2'], 'DPalt_2':row['DPalt_2'], 'TYPE':'.', 'ID':'.','PARENT':'.','strand':'.',\
-		'PHASE':'.','CODON_ref':'.','CODON_alt':'.','AA_ref':'.','AA_alt':'.','INFO':dict()}
+	result = {h:row[h] for h in arg['header2'] if h in arg['header2'] and h in arg['header']}
+	result2 = {h:'.' for h in arg['header'] if h not in arg['header2']}
+	result2['INFO'] = dict()
+	result.update(result2)
 	gff = arg['gff']
 	pos = int(row['POS'])
 	b,e = find_row(gff['gene'], pos, 0, len(gff['gene']))
@@ -947,8 +953,8 @@ def check_mutation2(row, arg):
 							dis1 = gff['exon'][b4][2] - pos
 							dis2 = pos - gff['exon'][e4][3]
 							result['Parent'] = mRNA_id
-							result['INFO']['left'] = gff['exon'][e4][8] +':'+ str(dis2)
-							result['INFO']['right'] = gff['exon'][b4][8] +':'+ str(dis1)
+							result['INFO']['left'] = gff['exon'][e4][7] +':'+ str(dis2)
+							result['INFO']['right'] = gff['exon'][b4][7] +':'+ str(dis1)
 							if dis2 in {1,2,3}:
 								if gff['exon'][e4][4] == '+':
 									result['INFO']['5_splice_site'] = 'intron-boundary:'+gff['exon'][e4][8]

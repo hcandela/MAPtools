@@ -129,3 +129,6 @@ variable_descriptions={
           '##INFO=<ID=3_splice_site, Number=0, Type=Flag, Description=\"The mutation is 3 or less bp from the downstream splicing site (exon or intron _boundary:ID_CDS).">\n'\
    
 }
+#result = {'#CHROM':row['#CHROM'],'POS':row['POS'],'REF':row['REF'],'ALT':row['ALT'], 'DPref_1':row['DPref_1'],\
+#'DPalt_1':row['DPalt_1'], 'DPref_2':row['DPref_2'], 'DPalt_2':row['DPalt_2'], 'TYPE':'.', 'ID':'.','PARENT':'.','strand':'.',\
+#	'PHASE':'.','CODON_ref':'.','CODON_alt':'.','AA_ref':'.','AA_alt':'.','INFO':dict()}
