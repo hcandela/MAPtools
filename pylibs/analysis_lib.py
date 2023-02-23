@@ -451,7 +451,7 @@ def normalize(pools, REF, arg, r_min=0.03):
 			if p_rec[p_al[0]] > 0 and p_rec[p_al[1]]/(p_rec[p_al[0]] + p_rec[p_al[1]]) < r_min or len(p_al) > 2:
 				a = rec[p_al[0]]
 				b = rec[p_al[1]]
-				return [p_al[1], p_al[0], a, b]
+				return [p_al[1], p_al[0], b, a]
 	elif len(inf_s) == 3:
 		if 'Pr' in inf_s:
 			parental = pools['Pr']
@@ -952,9 +952,9 @@ def check_mutation2(row, arg):
 							result['TYPE'] = 'intron'
 							dis1 = gff['exon'][b4][2] - pos
 							dis2 = pos - gff['exon'][e4][3]
-							result['Parent'] = mRNA_id
-							result['INFO']['left'] = gff['exon'][e4][7] +':'+ str(dis2)
-							result['INFO']['right'] = gff['exon'][b4][7] +':'+ str(dis1)
+							result['PARENT'] = mRNA_id
+							result['INFO']['left'] = gff['exon'][e4][8] +':'+ str(dis2)
+							result['INFO']['right'] = gff['exon'][b4][8] +':'+ str(dis1)
 							if dis2 in {1,2,3}:
 								if gff['exon'][e4][4] == '+':
 									result['INFO']['5_splice_site'] = 'intron-boundary:'+gff['exon'][e4][8]
