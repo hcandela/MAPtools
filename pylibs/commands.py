@@ -26,6 +26,7 @@ def mbs(argv):
       --min-depth=<int>           Filt out reads with depth below minimum, in dominant pool [default: 20]
       --max-ratio=<int>           Filt out reads with allele frequency ratio above maximum, in dominant pool [default: 85]
       --min-ratio=<int>           Filt out reads with allele frequency ratio below minimum, in dominant pool [default: 15]
+      --mutagen, -M=<opt>         Type of mutagen used to filter variants[defult: EMS].
     Output Options:
       --output, -o=<file>         Output file
       --outdir, -O=<dir>          Output directory [default: results]
@@ -306,7 +307,7 @@ Input Options:
    --data, -d=<opt>              Code of genotypes ordered according VCF input file [default: D,R].
    --ref, -r=<opt>               Which parental houses the reference [default: D].
    --no-ref                      Don't normalize data.
-   --mutagen, -M=<opt>           Type of mutagen used [defult: EMS].
+   --mutagen, -M=<opt>           Type of mutagen used to filter variants[defult: EMS].
    --region, -R=<region>         Region of the genome to explore (... -R chrName:Spos-Fpos)
 Output Options:
    --output, -o=<file>           Output file.

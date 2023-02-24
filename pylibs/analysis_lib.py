@@ -83,7 +83,8 @@ def check_save_an(arg, file_name):
 
 def check_mbs_args(arg):
 	data = arg['--data']
-	arg['--mutagen'] = 'EMS'
+	if arg['--mutagen'] == None:
+		arg['--mutagen'] = 'EMS'
 	if not 'R' in data:
 		print('Error: You should include the recessive pool (--data R,X,X')
 		sys.exit()
