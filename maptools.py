@@ -16,7 +16,7 @@ Usage:
    maptools.py -h
    maptools.py
 
-Avalaible commands:
+Availaible commands:
    mbs
    mbsplot
    qtl

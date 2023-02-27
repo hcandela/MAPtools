@@ -17,15 +17,15 @@ def mbs(argv):
     Options:
       --help -h                   Show this screen.
       --version                   Show the version
-      --input, -i=<file>          VCF input file. Can algo come from a pipe.
+      --input, -i=<file>          VCF input file. Can also come from a pipe.
     Input Options:
       --data,-d=<opt>             Code of Genotypes [default: D,R].
       --ref, -r=<opt2>            Which parental houses the reference [default: D].
       --no-ref                    Don't normalize data
-      --max-depth=<int>           Filt out reads with depth above maximum, in dominant pool [default: 120]
-      --min-depth=<int>           Filt out reads with depth below minimum, in dominant pool [default: 20]
-      --max-ratio=<int>           Filt out reads with allele frequency ratio above maximum, in dominant pool [default: 85]
-      --min-ratio=<int>           Filt out reads with allele frequency ratio below minimum, in dominant pool [default: 15]
+      --max-depth=<int>           Maximum read depth [default: 120]
+      --min-depth=<int>           Minimum read depth [default: 20]
+      --max-ratio=<int>           Maximum allele ratio [default: 85]
+      --min-ratio=<int>           Minimum allele ratio [default: 15]
       --mutagen, -M=<opt>         Type of mutagen used to filter variants[defult: EMS].
     Output Options:
       --output, -o=<file>         Output file
@@ -35,7 +35,7 @@ def mbs(argv):
 
     arg = docopt(mbs_doc, argv=None, help=True,version=v_mbs)
     arg['pipe'] = sys.stdin.isatty()
-    arg = test_args(mbs_doc, arg)
+    arg = check_args(mbs_doc, arg)
     arg['version'] = v_mbs
     output = arg['--output']
     fsal = False
@@ -81,8 +81,8 @@ def qtl(argv):
     --data,-d=<opt>             Code of Genotypes [default: D,R].
     --ref, -r=<opt2>            Linear references used in mapping step [default: D].
     --no-ref                    Don't normalize data
-    --max-depth=<int>           Filt out positions with total (High + Low) depth above maximum [default: 120]
-    --min-depth=<int>           Filt out positions with total (High + Low) depth below minimum [default: 20]
+    --max-depth=<int>           Maximum read depth [default: 120]
+    --min-depth=<int>           Minimum read depth [default: 20]
   Output Options:
     --output, -o=<file>         Output file
     --outdir, -O=<dir>          Output directory [default: results]
@@ -92,7 +92,7 @@ def qtl(argv):
     arg = docopt(qtl_doc, argv=None, help=True, version=v_qtl)
     # print(arg)
     arg['pipe'] = sys.stdin.isatty()
-    arg = test_args(qtl_doc, arg)
+    arg = check_args(qtl_doc, arg)
     arg['version'] = v_qtl
     output = arg['--output']
     fsal = False
@@ -131,7 +131,7 @@ def merge(argv):
   Options:
      -v --version                  Show the version.
      --window, -w=<int>            Number of adjacent markers to merge the data [default: 20].
-     --chromosomes, -c=<list_int>  List of chromosomes separated by comma, from 1 to nº chr [default: all].
+     --chromosomes, -c=<list_int>  List of chromosomes names (separeted by comma) [default: all].
      --outdir, -O=<dir>            Create a new directory if it doesn't exist. If not provide uses the working directory [default: merge]
      --output, -o=<file>           Output file.
      --fileformat=<ext>            Formats availables: txt (tab), csv (,) [default: txt]
@@ -159,22 +159,22 @@ def mbs_plot(argv):
      maptools.py mbsplot
 
   Options:
-    --chromosomes,-c=<opt>     List of chromosomes separeted by comma, from 1 to nºchr [default: all].
-    --multi-chrom, -m          Multigraph representation.
-    --pvalue, -p               Generates p-value graphics.
-    --allele-freq-1, -D        Generates the allele frequency graphics for the recessive pool (AF1).
-    --allele-freq-2, -R        Generates allele frequency graphics for the dominant pool (AF2).
-    --combine, -C              Combined multi-graphics with AF1 and AF2 lines. Use it together with --moving-avg.
+    --chromosomes,-c=<opt>     List of chromosome names (separeted by comma) [default: all].
+    --multi-chrom, -m          Multi-chromosome plots.
+    --pvalue, -p               Generates p-value plots.
+    --allele-freq-1, -D        Generates allele frequency plots for the dominant pool (AF1).
+    --allele-freq-2, -R        Generates allele frequency plots for the recessive pool (AF2).
+    --combine, -X              Combined plots with AF1 and AF2 lines. Use it together with --moving-avg.
     --max-allele-freq2, -M     Represents the maximum allele frequency in recessive pool. Recomended when data is not phased.
-    --all, -a                  Generates all possible graphics.
-    --moving-avg, -A=<int>     Selects the number of adjacent markers for the construction of moving average curves for allele frequncy and p-value.
-    --boost, -b=<int>          Selects the number of adjacent markers for the construction of moving average curves for boost, showed in recessive pool.
-    --palette, -P=<int>        Select the colour pallete for your grpahics (1 for colour blindness) [default: 1].
-    --alpha, -t=<float>        Select the dots transparency on graphics (0.0 to 1.0) [default: 0.4].
+    --all, -a                  Generates all possible plot types.
+    --moving-avg, -A=<int>     Number of adjacent markers for the calculation of moving average curves.
+    --boost, -b=<int>          Number of adjacent markers for the calculation of moving average curves for boost, showed in recessive pool.
+    --palette, -P=<int>        Select the colour pallete for your plots (1 for colour blindness) [default: 1].
+    --alpha, -t=<float>        Select the dot transparency (0.0 to 1.0) [default: 0.4].
     --bonferroni               Show Bonferroni test line in p-value graphics.
-    --fileformat=<type>        Formats available for the output: pdf, svg, jpg [default: pdf].
-    --captions                 Generate figure captions.
-    --outdir,-o=<dir>          Create a new directory if it doesn't exist. If not provided uses the input directory [default: graphics].
+    --fileformat=<type>        Output format: pdf, svg, jpg [default: pdf].
+    --captions                 Generates figure captions.
+    --outdir,-o=<dir>          Output directory [default: graphics].
   """
     arg = docopt(mbsplot_doc, argv=None, help=True,version=v_mbsplot)
     arg = test_plot(arg, mbsplot_doc)
@@ -226,25 +226,25 @@ def qtl_plot(argv):
     -v --version               Show the version.
 
   Output options:
-    --chromosomes,-c=<opt>     List of chromosomes separeted by comma, from 1 to nºchr [default: all].
-    --multi-chrom, -m          Multigraph representation.
-    --pvalue, -p               Generates p-value graphics.
-    --delta, -d                Generates the SNPidx for high and low pools and Delta graphic.
-    --allele-freq-H, -H        Generates the alelle frequency graphics for the pool of high phenotype.
-    --allele-freq-L, -L        Generates the allele frecuency graphics for the pool of low phenotype.
-    --combine, -X              Combined multi-graphics with high and low lines. Use it together with --moving-avg.
-    --euclidean-distance, -E   Generates graphics with Euclidean distance between individual SNPs and in groups of 100 adjacent markers.
-    --g-statistic, -G          Generates graphics with G-statistic for individual SNPs.
-    --qtl-seq, -Q              Generate muti-graphic with ED, G, DELTA and p-value graphics for each chromosome.
-    --all, -a                  Generates all possible graphics.
-    --moving-avg, -A=<int>     Selects the number of adjacent markers for the construction of moving average curves for allele frequncy and p-value.
-    --palette, -P=<int>        Select the colour palette for your graphics (1 for colour blidness) [default: 1].
-    --alpha, -t=<float>        Select the dots transparency on graphics (0.0 to 1.0) [default: 0.4].
-    --bonferroni               Show Bonferroni test line in p-value graphics.
-    --ci95                     Show the  95% cofindence interval in Delta graphics. 
-    --fileformat=<type>        Formats available for the output: pdf, svg, jpg [default: pdf].
-    --captions, -C             Generate figure captions.
-    --outdir,-o=<dir>          Create a new directory if it doesn't exist. If not provided uses the input directory [default: graphics].
+    --chromosomes,-c=<opt>     List of chromosome names (separeted by comma) [default: all].
+    --multi-chrom, -m          Multi-chromosome plots.
+    --pvalue, -p               Generates p-value plots.
+    --delta, -d                Generates the SNPidx for high and low pools and Delta plot.
+    --allele-freq-H, -H        Generates the alelle frequency plots for the pool of high phenotype.
+    --allele-freq-L, -L        Generates the allele frecuency plots for the pool of low phenotype.
+    --combine, -X              Combined plots with high and low lines. Use it together with --moving-avg.
+    --euclidean-distance, -E   Generates Euclidean distance plots between individual SNPs and in groups of 100 adjacent markers.
+    --g-statistic, -G          Generates G-statistic plots for individual SNPs.
+    --qtl-seq, -Q              Generates muti-plots with ED, G, DELTA and p-value graphics for each chromosome.
+    --all, -a                  Generates all possible plot types.
+    --moving-avg, -A=<int>     Number of adjacent markers for the calculation of moving average curves.
+    --palette, -P=<int>        Select the colour palette for your plots (1 for colour blidness) [default: 1].
+    --alpha, -t=<float>        Select the dot transparency (0.0 to 1.0) [default: 0.4].
+    --bonferroni               Show Bonferroni test line in p-value plots.
+    --ci95                     Show the  95% cofindence interval in Delta plots. 
+    --fileformat=<type>        Output format: pdf, svg, jpg [default: pdf].
+    --captions, -C             Generates figure captions.
+    --outdir,-o=<dir>          Output directory [default: graphics].
 
   """
     arg = docopt(qtlplot_doc, argv=None, help=True,version=v_qtlplot)
@@ -308,7 +308,7 @@ Input Options:
    --ref, -r=<opt>               Which parental houses the reference [default: D].
    --no-ref                      Don't normalize data.
    --mutagen, -M=<opt>           Type of mutagen used to filter variants[defult: EMS].
-   --region, -R=<region>         Region of the genome to explore (... -R chrName:Spos-Fpos)
+   --region, -R=<region>         Region of the genome to explore (... -R chrName:Startpos-Endpos)
 Output Options:
    --output, -o=<file>           Output file.
    --outdir, -O=<dir>            Output directory [default: results].           

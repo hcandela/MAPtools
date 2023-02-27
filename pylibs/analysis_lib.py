@@ -18,7 +18,7 @@ import gzip
 def cmHH(command_line):
 	os.system(command_line)
 
-def test_args(__doc__,arg):
+def check_args(__doc__,arg):
 	arg['chromosomes'] = list()
 	arg['--data'] = arg['--data'].split(',')
 	if arg['--input'] == None and arg['pipe'] == True:
