@@ -11,15 +11,14 @@ def mbs(argv):
     mbs_doc = """
     Usage:
        maptools.py mbs [options]
-       maptools.py mbs --version
-       maptools.py mbs -h
+       maptools.py mbs
 
     Options:
       -h, --help                  Show this screen.
       -v, --version               Show the version
       -i, --input FILE            VCF input file. Can also come from a pipe.
     Input Options:
-      -d, --data LIST             Pools genotype, dominant(D), recessive(R), parental dominant(Pd), parental recessive(Pr) [default: D,R].
+      -d, --data LIST             Pools genotype: dominant(D), recessive(R), parental dominant(Pd) and\n\t\t\t\t  parental recessive(Pr) [default: D,R].
       -r, --ref-genotype STR      Which parental houses the reference, \"miss\" for missing genotype [default: D].
       -C, --max-depth INT         Maximum allele depth [default: 120].
       -c, --min-depth INT         Minimum allele depth [default: 20].
