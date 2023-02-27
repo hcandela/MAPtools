@@ -19,14 +19,13 @@ def mbs(argv):
       -v, --version               Show the version
       -i, --input FILE            VCF input file. Can also come from a pipe.
     Input Options:
-      --data,-d=<opt>             Code of Genotypes [default: D,R].
-      --ref, -r=<opt2>            Which parental houses the reference [default: D].
-      --no-ref                    Don't normalize data
-      --max-depth=<int>           Maximum read depth [default: 120]
-      --min-depth=<int>           Minimum read depth [default: 20]
-      --max-ratio=<int>           Maximum allele ratio [default: 85]
-      --min-ratio=<int>           Minimum allele ratio [default: 15]
-      --mutagen, -M=<opt>         Type of mutagen used to filter variants[defult: EMS].
+      -d, --data LIST             Pools genotype, dominant(D), recessive(R), parental dominant(Pd), parental recessive(Pr) [default: D,R].
+      -r, --ref-genotype STR      Which parental houses the reference, \"miss\" for missing genotype [default: D].
+      -C, --max-depth INT         Maximum allele depth [default: 120].
+      -c, --min-depth INT         Minimum allele depth [default: 20].
+      -Q, --max-ratio INT         Maximum allele ratio [default: 85].
+      -q, --min-ratio INT         Minimum allele ratio [default: 15].
+      -M, --mutagen STR           Type of mutagen used to filter variants[default: EMS].
     Output Options:
       -o, --output FILE           Write output to file.
       -O, --output-type TYPE      'txt' tab separated, 'csv' comma separated [default: txt]
@@ -39,7 +38,7 @@ def mbs(argv):
     output = arg['--output']
     fsal = False
     if output != None:
-        fsal = open(arg['--outdir']+arg['--output'], 'w')
+        fsal = open(arg['--output'], 'w')
     arg['fsal'] = fsal
     first = True
     if arg['--input']:
@@ -48,7 +47,7 @@ def mbs(argv):
         inp = sys.stdin
     choose_header(arg)
     write_argv(arg, argv)
-    print(arg)
+    #print(arg)
     for line in inp:
         if line.startswith('#'):
           read_header(arg,line)

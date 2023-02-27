@@ -40,26 +40,28 @@ def check_args(__doc__,arg):
 				sys.exit()
 		arg['inp'] = f
 	wd = os.getcwd()
+	outdir_list = arg['--output'].split('/')[:-1]
+	outdir = '/'.join(outdir_list) +'/'
 	try:
-		os.makedirs(wd+'/'+arg['--output'])
+		os.makedirs(wd+'/'+outdir)
 	except FileExistsError:
 		print('#Warning: the output file already exists')
 		pass
-
+	arg['filename'] = arg['--output'].split('/')[-1]
+	arg['outdir']=wd+'/'+outdir
+	
 	if arg['--output-type'] in {'csv','txt'}:
 		if arg['--output-type'] == 'csv':
 			arg['spacer'] = ','
 		elif arg['--output-type'] == 'txt':
 			arg['spacer'] = '\t'
+		arg['--output-type'] = '.'+arg['--output-type']
 	else:
 		print('Error: select a valid format.')
 		sys.exit()
-	#arg['--outdir'] = wd+'/'+arg['--outdir']+'/'
+	arg['--output'] = arg['outdir'] + arg['filename']
 	if arg['--output'] != None:
-		arg['--output'] = arg['--output'].split('.')[0]
-		arg['--output-type'] = '.'+arg['--output-type']
-		arg['--output'] = arg['--output'] + arg['--output-type']
-		arg['--output'] = check_save_an(arg, arg['--output'])
+		arg['--output'] = check_save_an(arg, arg['filename'])
 	else:
 		arg['--output'] = None
 	
@@ -73,20 +75,18 @@ def check_args(__doc__,arg):
 		
 def check_save_an(arg, file_name):
 	typ = arg['--output-type']
-	outdir_list = arg['--output'].split('/')[:-1]
-	outdir = '/'.join(outdir_list) +'/'
 	if os.path.isfile(arg['--output']):
 		expand = 1
 		while True:
 			expand += 1
-			nw_file_name = file_name.split(typ)[0] +'_'+ str(expand) + typ
-			if os.path.isfile(outdir+nw_file_name):
+			nw_file_name = file_name.split(typ)[0] + '(' + str(expand) + ')' + typ
+			if os.path.isfile(arg['outdir']+nw_file_name):
 				continue
 			else:
-				file_name = nw_file_name
+				file_name = arg['outdir']+ nw_file_name
 				return file_name
 	else:
-		return file_name
+		return arg['outdir']+file_name
 
 def check_mbs_args(arg):
 	data = arg['--data']
@@ -197,13 +197,13 @@ def mbs_calc(inp, arg):
 	max_dp = arg['--max-depth']
 	min_ratio = arg['--min-ratio']
 	max_ratio = arg['--max-ratio']
-	if len(inf_s) == 1 and arg['--no-ref'] == True:
+	if len(inf_s) == 1 and arg['--ref-genotype'] == 'miss':
 		a, b = inp[0], inp[1]
 		if a != 0 or b != 0:
 			ratio3 = max(a,b)/(a+b)
 			boost = 1/(arg['lim'] + abs(1 - 1/ratio3))
 			return [ratio3, boost]
-	elif (len(inf_s) == 1 and arg['--no-ref'] == False) or (len(inf_s) == 2 and 'D' not in inf_s):
+	elif (len(inf_s) == 1 and arg['--ref-genotype'] == 'miss') or (len(inf_s) == 2 and 'D' not in inf_s):
 		a, b = inp[0], inp[1]
 		if a != 0 or b != 0:
 			ratio1 = b/(a+b)
@@ -219,7 +219,7 @@ def mbs_calc(inp, arg):
 			resultado = LogFisher(a,b,c,d)
 			pva = pvalor(a,b,c,d)
 			pva10 = (log(pva)/log(10))
-			if arg['--no-ref'] == True:
+			if arg['--ref-genotype'] == 'miss':
 				boost = 1/(arg['lim'] + abs(1 - 1/ratio3))
 				return [ratio3,resultado,boost,pva,pva10]
 			else:
@@ -231,7 +231,7 @@ def mbs_calc(inp, arg):
 def qtl_calc(inp, arg):
 	data = arg['--data']
 	inf_s = set(data)
-	no_ref = arg['--no-ref']
+	no_ref = arg['--ref-genotype']
 	min_dp = arg['--min-depth']
 	max_dp = arg['--max-depth']
 	a,b,c,d = inp[0], inp[1], inp[2], inp[3]
@@ -245,7 +245,7 @@ def qtl_calc(inp, arg):
 		g = Gstatic(a,b,c,d)
 		pva = pvalor(a,b,c,d)
 		pva10 = (log(pva)/log(10))
-		if no_ref == True:
+		if no_ref == 'miss':
 			return [ed,g,pva,pva10]
 		else:
 			ratio1 = b/(a+b)
@@ -258,18 +258,18 @@ def choose_header(arg):
 	inf_s = set(data)
 	if 'mbs' in arg.keys():
 		if len(inf_s) == 1 or 'D' not in inf_s:
-			if arg['--no-ref'] == True:
+			if arg['--ref-genotype'] == 'miss':
 				header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','MAX_SNPidx2','BOOST']
 			else:
 				header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','SNPidx1','BOOST']
-		elif 'D' in inf_s and 'R' in inf_s and arg['--no-ref'] == False:
+		elif 'D' in inf_s and 'R' in inf_s and arg['--ref-genotype'] != 'miss':
 			header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','SNPidx1','SNPidx2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE']
-		elif 'D' in inf_s and 'R' in inf_s and arg['--no-ref'] == True:
+		elif 'D' in inf_s and 'R' in inf_s and arg['--ref-genotype'] == 'miss':
 			header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE']
 	elif 'qtl' in arg.keys():
-		if arg['--no-ref'] == True:
+		if arg['--ref-genotype'] == 'miss':
 			header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','ED','G','PVALUE','log10PVALUE']
-		if arg['--no-ref'] == False:
+		if arg['--ref-genotype'] != 'miss':
 			header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','SNPidx1','SNPidx2','DELTA','ED','G','PVALUE','log10PVALUE']
 	arg['header'] = header
 
@@ -404,15 +404,14 @@ def isogenic_filter(z,res, arg):
 def normalize(pools, REF, arg, r_min=0.03):
 	data = arg['--data']
 	inf_s = set(data)
-	ref = arg['--ref']
-	n_ref = arg['--no-ref']
+	ref = arg['--ref-genotype']
 	rec = pools['R']
 	alle = [a for a,v in rec.items()]
 	REF_idx = alle.index(REF)
 	if len(alle) > 2:
 		return
 	if len(inf_s) == 1:
-		if ref == 'D' or n_ref == True:
+		if ref == 'D' or ref == 'miss':
 			a = rec[alle[REF_idx]]
 			alle.pop(REF_idx)
 			b = rec[alle[0]]
@@ -424,7 +423,7 @@ def normalize(pools, REF, arg, r_min=0.03):
 			return [alle[0],REF,a, b]
 
 	elif len(inf_s) == 2:
-		if n_ref == True: #TODO - Fix this when you are using a parental pool and no ref
+		if ref == 'miss': #TODO - Fix this when you are using a parental pool and no ref
 			dom = pools['D']
 			dom_list = [count for al,count in dom.items()]
 			rec_list = [count for al,count in rec.items()]
@@ -730,13 +729,13 @@ def ann_calc(inp, arg):
 	'''
 	data = arg['--data']
 	inf_s = set(data)
-	if len(inf_s) == 1 and arg['--no-ref'] == True:
+	if len(inf_s) == 1 and arg['--ref-genotype'] == 'miss':
 		a, b = inp[0], inp[1]
 		if a != 0 or b != 0:
 			ratio3 = max(a,b)/(a+b)
 			boost = 1/(arg['lim'] + abs(1 - 1/ratio3))
 			return [ratio3, boost]
-	elif (len(inf_s) == 1 and arg['--no-ref'] == False) or (len(inf_s) == 2 and 'D' not in inf_s):
+	elif (len(inf_s) == 1 and arg['--ref-genotype'] != 'miss') or (len(inf_s) == 2 and 'D' not in inf_s):
 		a, b = inp[0], inp[1]
 		if a != 0 or b != 0:
 			ratio1 = b/(a+b)
@@ -750,7 +749,7 @@ def ann_calc(inp, arg):
 		resultado = LogFisher(a,b,c,d)
 		pva = pvalor(a,b,c,d)
 		pva10 = (log(pva)/log(10))
-		if arg['--no-ref'] == True:
+		if arg['--ref-genotype'] == 'miss':
 			boost = 1/(arg['lim'] + abs(1 - 1/ratio3))
 			return [ratio3,resultado,boost,pva,pva10]
 		else:
@@ -763,13 +762,13 @@ def create_df(arg):
 	data = arg['--data']
 	inf_s = set(data)
 	if len(inf_s) == 1 or 'D' not in inf_s:
-		if arg['--no-ref'] == True:
+		if arg['--ref-genotype'] == 'miss':
 			header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','MAX_SNPidx2','BOOST']
 		else:
 			header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','SNPidx1','BOOST']
-	elif 'D' in inf_s and 'R' in inf_s and arg['--no-ref'] == False:
+	elif 'D' in inf_s and 'R' in inf_s and arg['--ref-genotype'] != 'miss':
 		header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','SNPidx1','SNPidx2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE']
-	elif 'D' in inf_s and 'R' in inf_s and arg['--no-ref'] == True:
+	elif 'D' in inf_s and 'R' in inf_s and arg['--ref-genotype'] == 'miss':
 		header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE']
 	arg['header2'] = header
 	df = pd.DataFrame(columns=header)
@@ -1033,8 +1032,7 @@ def write_annotate_line(arg, result):
 
 def normalize_annotate(pools, REF, arg, fields, r_min=0.03):
 	inf_s = set(arg['--data'])
-	ref = arg['--ref']
-	n_ref = arg['--no-ref']
+	ref = arg['--ref-genotype']
 	rec = pools['R']
 	alle = [a for a,v in rec.items()]	#list of alleles ['A','G']
 	REF_idx = alle.index(REF)
@@ -1042,7 +1040,7 @@ def normalize_annotate(pools, REF, arg, fields, r_min=0.03):
 	if len(alle) > 2:
 		return
 	if len(inf_s) == 1:
-		if ref == 'D' or n_ref == True:
+		if ref == 'D' or ref == 'miss':
 			a = rec[alle[REF_idx]]
 			alle.pop(REF_idx)
 			b = rec[alle[0]]
@@ -1054,7 +1052,7 @@ def normalize_annotate(pools, REF, arg, fields, r_min=0.03):
 			return [alle[0],REF,a, b]
 
 	elif len(inf_s) == 2:
-		if n_ref == True:
+		if ref == 'miss':
 			dom = pools['D']
 			dom_list = [count for al,count in dom.items()]
 			rec_list = [count for al,count in rec.items()]
@@ -1099,7 +1097,7 @@ def normalize_annotate(pools, REF, arg, fields, r_min=0.03):
 		p_al = [k for k,v in parental.items()]
 		dom = pools['D']
 
-		if 'Pd' in inf_s and arg['--ref'] == 'D':
+		if 'Pd' in inf_s and ref == 'D':
 			a = dom[p_al[0]]
 			b = dom[p_al[1]]
 			c = rec[p_al[0]]
