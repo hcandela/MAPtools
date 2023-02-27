@@ -15,9 +15,9 @@ def mbs(argv):
        maptools.py mbs -h
 
     Options:
-      --help -h                   Show this screen.
-      --version                   Show the version
-      --input, -i=<file>          VCF input file. Can also come from a pipe.
+      -h, --help                  Show this screen.
+      -v, --version               Show the version
+      -i, --input FILE            VCF input file. Can also come from a pipe.
     Input Options:
       --data,-d=<opt>             Code of Genotypes [default: D,R].
       --ref, -r=<opt2>            Which parental houses the reference [default: D].
@@ -28,9 +28,8 @@ def mbs(argv):
       --min-ratio=<int>           Minimum allele ratio [default: 15]
       --mutagen, -M=<opt>         Type of mutagen used to filter variants[defult: EMS].
     Output Options:
-      --output, -o=<file>         Output file
-      --outdir, -O=<dir>          Output directory [default: results]
-      --fileformat=<ext>          Formats availables: txt, csv (,) [default: txt]
+      -o, --output FILE           Write output to file.
+      -O, --output-type TYPE      'txt' tab separated, 'csv' comma separated [default: txt]
     """
 
     arg = docopt(mbs_doc, argv=None, help=True,version=v_mbs)

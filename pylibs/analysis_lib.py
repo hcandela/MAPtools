@@ -41,23 +41,28 @@ def check_args(__doc__,arg):
 		arg['inp'] = f
 	wd = os.getcwd()
 	try:
-		os.makedirs(wd+'/'+arg['--outdir'])
+		os.makedirs(wd+'/'+arg['--output'])
 	except FileExistsError:
-		print('#Warning: the output directory already exists')
+		print('#Warning: the output file already exists')
 		pass
 
-	arg['--outdir'] = wd+'/'+arg['--outdir']+'/'
+	if arg['--output-type'] in {'csv','txt'}:
+		if arg['--output-type'] == 'csv':
+			arg['spacer'] = ','
+		elif arg['--output-type'] == 'txt':
+			arg['spacer'] = '\t'
+	else:
+		print('Error: select a valid format.')
+		sys.exit()
+	#arg['--outdir'] = wd+'/'+arg['--outdir']+'/'
 	if arg['--output'] != None:
-		arg['--fileformat'] = '.'+arg['--fileformat']
-		arg['--output'] = arg['--output'] + arg['--fileformat']
+		arg['--output'] = arg['--output'].split('.')[0]
+		arg['--output-type'] = '.'+arg['--output-type']
+		arg['--output'] = arg['--output'] + arg['--output-type']
 		arg['--output'] = check_save_an(arg, arg['--output'])
 	else:
 		arg['--output'] = None
 	
-	if arg['--fileformat'] == '.csv':
-		arg['spacer'] = ','
-	else:
-		arg['spacer'] = '\t'
 	arg['lim'] = 1e-90
 	if 'mbs' in arg.keys():
 		arg = check_mbs_args(arg)
@@ -67,13 +72,15 @@ def check_args(__doc__,arg):
 
 		
 def check_save_an(arg, file_name):
-	typ = arg['--fileformat']
-	if os.path.isfile(arg['--outdir']+file_name):
+	typ = arg['--output-type']
+	outdir_list = arg['--output'].split('/')[:-1]
+	outdir = '/'.join(outdir_list) +'/'
+	if os.path.isfile(arg['--output']):
 		expand = 1
 		while True:
 			expand += 1
 			nw_file_name = file_name.split(typ)[0] +'_'+ str(expand) + typ
-			if os.path.isfile(arg['--outdir']+nw_file_name):
+			if os.path.isfile(outdir+nw_file_name):
 				continue
 			else:
 				file_name = nw_file_name
