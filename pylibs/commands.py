@@ -17,17 +17,21 @@ def mbs(argv):
       -h, --help                  Show this screen.
       -v, --version               Show the version
       -i, --input FILE            VCF input file. Can also come from a pipe.
+
     Input Options:
-      -d, --data LIST             Pools genotype: dominant(D), recessive(R), parental dominant(Pd) and\n\t\t\t\t  parental recessive(Pr) [default: D,R].
+      -d, --data LIST             Pools genotype: dominant(D), recessive(R), parental dominant(Pd) and
+                                  parental recessive(Pr) [default: D,R].
       -r, --ref-genotype STR      Which parental houses the reference, \"miss\" for missing genotype [default: D].
       -C, --max-depth INT         Maximum allele depth [default: 120].
       -c, --min-depth INT         Minimum allele depth [default: 20].
-      -Q, --max-ratio INT         Maximum allele ratio [default: 85].
-      -q, --min-ratio INT         Minimum allele ratio [default: 15].
+      -Q, --max-ratio INT         Maximum allele frequency in dominant pool [default: 100].
+      -q, --min-ratio INT         Minimum allele frequency in dominant pool [default: 0].
       -M, --mutagen STR           Type of mutagen used to filter variants[default: EMS].
+
     Output Options:
       -o, --output FILE           Write output to file.
-      -O, --output-type TYPE      'txt' tab separated, 'csv' comma separated [default: txt]
+      -O, --output-type TYPE      \"txt\" tab separated, \"csv\" comma separated [default: txt]
+
     """
 
     arg = docopt(mbs_doc, argv=None, help=True,version=v_mbs)
@@ -46,7 +50,7 @@ def mbs(argv):
         inp = sys.stdin
     choose_header(arg)
     write_argv(arg, argv)
-    #print(arg)
+    print(arg)
     for line in inp:
         if line.startswith('#'):
           read_header(arg,line)
@@ -68,22 +72,23 @@ def qtl(argv):
     qtl_doc = """
   Usage:
      maptools.py qtl [options]
-     maptools.py qtl --version
      maptools.py qtl
 
   Options:
-    --version                   Show the version.
-    --input, -i=<file>          VCF input file. Can algo come from a pipe.
+    -h, --help                    Show this screen.
+    -v, --version                 Show the version.
+    -i, --input FILE              VCF input file. Can also come from a pipe.
+
   Input Options:
-    --data,-d=<opt>             Code of Genotypes [default: D,R].
-    --ref, -r=<opt2>            Linear references used in mapping step [default: D].
-    --no-ref                    Don't normalize data
-    --max-depth=<int>           Maximum read depth [default: 120]
-    --min-depth=<int>           Minimum read depth [default: 20]
+    -d, --data LIST               Pools genotype: dominant(D), recessive(R), parental dominant(Pd) and 
+                                  parental recessive(Pr) [default: D,R].
+    -r, --ref-genotype STR        Which parental houses the reference, \"miss\" for missing genotype [default: D].
+    -C, --max-depth INT           Maximum read depth [default: 120].
+    -c, --min-depth INT           Minimum read depth [default: 20].
+
   Output Options:
-    --output, -o=<file>         Output file
-    --outdir, -O=<dir>          Output directory [default: results]
-    --fileformat=<ext>          Formats availables: txt (tab), csv (,) [default: txt]
+    -o, --output FILE             Write output file.
+    -O, --output-type TYPE        \"txt\" tab separated, \"csv\" comma separated [default: txt]
 
   """
     arg = docopt(qtl_doc, argv=None, help=True, version=v_qtl)
@@ -94,7 +99,7 @@ def qtl(argv):
     output = arg['--output']
     fsal = False
     if output != None:
-        fsal = open(arg['--outdir']+arg['--output'], 'w')
+        fsal = open(arg['--output'], 'w')
     arg['fsal'] = fsal
     first = True
     if arg['--input']:
@@ -103,6 +108,7 @@ def qtl(argv):
         inp = sys.stdin
     choose_header(arg)
     write_argv(arg, argv)
+    print(arg)
     for line in inp:
         if line.startswith('#'):
           read_header(arg,line)
@@ -119,30 +125,35 @@ def qtl(argv):
                                          fields[:2], al_count, calcs)
 
 def merge(argv):
-  merge_doc="""Merge
+  merge_doc="""
   Usage:
-     maptools.py merge <input_file> [options]
-     maptools.py merge -v
+     maptools.py merge [options]
      maptools.py merge
 
   Options:
-     -v --version                  Show the version.
-     --window, -w=<int>            Number of adjacent markers to merge the data [default: 20].
-     --chromosomes, -c=<list_int>  List of chromosomes names (separeted by comma) [default: all].
-     --outdir, -O=<dir>            Create a new directory if it doesn't exist. If not provide uses the working directory [default: merge]
-     --output, -o=<file>           Output file.
-     --fileformat=<ext>            Formats availables: txt (tab), csv (,) [default: txt]
+    -h, --help                    Show this screen.
+    -v, --version                 Show the version.
+    -i, --input FILE              Maptools MBS or QTL-Seq output.
+
+  Input Options:                   
+    -w, --window INT              Number of adjacent markers to merge the data [default: 20].
+    -c, --chromosomes LIST        Chromosomes names selection (separeted by comma) [default: all].
+  
+  Output Options:
+    -o, --output FILE             Write output to file.
+    -O, --output-type TYPE        \"txt\" tab separated, \"csv\" comma separated [default: txt]
   """
   arg = docopt(merge_doc, argv=None, help=True, version=v_merge)
-  arg = test_merge(arg, merge_doc)
+  arg = check_merge(arg, merge_doc)
   fsal = False
   if arg['--output'] != None:
-    fsal = open(arg['--outdir']+arg['--output'], 'w')
+    fsal = open(arg['--output'], 'w')
   arg['fsal'] = fsal
   arg['version'] = v_merge
   header_lines = read_header_merge(arg)
   write_argv(arg, argv)
   arg, df = load_dataframe(arg)
+  #print(arg)
   for line in header_lines:
     write_line(line, fsal)
   grouped_by(df, arg)

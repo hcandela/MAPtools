@@ -130,58 +130,61 @@ def load_dataframe_plotting(arg):
     return arg, df
 
 def load_dataframe(arg):
-    inp_f = arg['<input_file>']
+    inp_f = arg['--input']
     inp_ext = inp_f.split('.')[-1]
     if inp_ext == 'csv':
         sep_ = ','
     else:
         sep_ = '\t'
     df = pd.read_csv(inp_f, sep=sep_, dtype=fields, names=arg['header'], comment='#')
+    arg['--fields'] = list(df.columns)
     arg['--fields'].remove('REF')
     arg['--fields'].remove('ALT')
     arg['header']=arg['--fields']
+    if arg['--chromosomes'] == 'all':
+        arg['--chromosomes'] = list(df['#CHROM'].unique())
     return arg, df
     
-def test_merge(arg,__doc__):
+def check_merge(arg,__doc__):
     global fields
-    inp_f = arg['<input_file>']
+    inp_f = arg['--input']
     if not inp_f:
-        print(__doc__,end='')
+        print(__doc__,end='\n')
         sys.exit()
-    inp_ext = inp_f.split('.')[-1]
-    if inp_ext == 'csv':
-        sep_ = ','
-    else:
-        sep_ = '\t'
+
     try:
-        f = open(arg['<input_file>'], 'r')
+        f = open(arg['--input'], 'r')
     except FileNotFoundError:
         print('Error: The input file {} does not exist'.format(inp_f))
         sys.exit()
-    wd = os.getcwd()
-    try:
-        os.makedirs(wd+'/'+arg['--outdir'])
-    except FileExistsError:
-        print('Warning: the output directory already exists')
-        pass
-
-    arg['--outdir'] = wd+'/'+arg['--outdir']+'/'
-    arg['--window'] = int(arg['--window'])
-    if arg['--window'] <= 0:
-        print('Error: The window size must be an integer higher than zero.')
+    if arg['--output-type'] in {'csv','txt'}:
+        if arg['--output-type'] == 'csv':
+            arg['spacer'] = ','
+        elif arg['--output-type'] == 'txt':
+            arg['spacer'] = '\t'
+        arg['--output-type'] = '.' + arg['--output-type']
+    else:
+        print('Error: select a valid format.')
         sys.exit()
     if arg['--output'] != None:
-        arg['--fileformat'] = '.'+arg['--fileformat']
-        arg['--output'] = arg['--output'] + arg['--fileformat']
-        arg['--output'] = check_save_an(arg, arg['--output'])
-    else:
-        arg['--output'] = None
-    if arg['--fileformat'] == '.csv':
-        arg['spacer'] = ','
-    else:
-        arg['spacer'] = '\t'
+        wd = os.getcwd()
+        outdir_list = arg['--output'].split('/')[:-1]
+        outdir = '/'.join(outdir_list)+'/'
+        try:
+            os.makedirs(wd+'/'+outdir)
+        except FileExistsError:
+            print('Warning: the output directory already exists')
+            pass
+        arg['filename'] = arg['--output'].split('/')[-1]
+        arg['outdir'] = wd+'/'+outdir
+    
+        arg['--output'] = arg['outdir']+arg['filename']
+        if arg['--output'] != None:
+            arg['--output'] = check_save_an(arg, arg['filename'])
+        else:
+            arg['--output'] = None
 
-    arg['--fileformat'] = '.'+arg['--fileformat']
+    arg['lim'] = 1e-90
     arg['--window'] = int(arg['--window'])
     if arg['--window'] <= 0:
         print('Error: The window size must be an integer higher than zero.')

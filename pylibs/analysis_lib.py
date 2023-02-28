@@ -19,10 +19,9 @@ def cmHH(command_line):
 	os.system(command_line)
 
 def check_args(__doc__,arg):
-	arg['chromosomes'] = list()
 	arg['--data'] = arg['--data'].split(',')
 	if arg['--input'] == None and arg['pipe'] == True:
-		print(__doc__, end='')
+		print(__doc__, end='\n')
 		sys.exit()
 	if arg['--input'] != None:
 		inp_f = arg['--input']
@@ -39,17 +38,6 @@ def check_args(__doc__,arg):
 				print('Error: The input file {} does not exist'.format(inp_f))
 				sys.exit()
 		arg['inp'] = f
-	wd = os.getcwd()
-	outdir_list = arg['--output'].split('/')[:-1]
-	outdir = '/'.join(outdir_list) +'/'
-	try:
-		os.makedirs(wd+'/'+outdir)
-	except FileExistsError:
-		print('#Warning: the output file already exists')
-		pass
-	arg['filename'] = arg['--output'].split('/')[-1]
-	arg['outdir']=wd+'/'+outdir
-	
 	if arg['--output-type'] in {'csv','txt'}:
 		if arg['--output-type'] == 'csv':
 			arg['spacer'] = ','
@@ -59,11 +47,20 @@ def check_args(__doc__,arg):
 	else:
 		print('Error: select a valid format.')
 		sys.exit()
-	arg['--output'] = arg['outdir'] + arg['filename']
 	if arg['--output'] != None:
+		wd = os.getcwd()
+		outdir_list = arg['--output'].split('/')[:-1]
+		outdir = '/'.join(outdir_list) +'/'
+		try:
+			os.makedirs(wd+'/'+outdir)
+		except FileExistsError:
+			print('#Warning: the output directory already exists')
+			pass
+		arg['filename'] = arg['--output'].split('/')[-1]
+		arg['outdir']=wd+'/'+outdir
+	
+		arg['--output'] = arg['outdir'] + arg['filename']
 		arg['--output'] = check_save_an(arg, arg['filename'])
-	else:
-		arg['--output'] = None
 	
 	arg['lim'] = 1e-90
 	if 'mbs' in arg.keys():
@@ -100,15 +97,15 @@ def check_mbs_args(arg):
 		sys.exit()
 	arg['--min-depth'] = int(arg['--min-depth'])
 	arg['--max-depth'] = int(arg['--max-depth'])
-	arg['--min-ratio'] = int(arg['--min-ratio'])/100
-	arg['--max-ratio'] = int(arg['--max-ratio'])/100
+	arg['--min-ratio'] = float(arg['--min-ratio'])/100
+	arg['--max-ratio'] = float(arg['--max-ratio'])/100
 	if arg['--min-depth'] <= 0:
 		arg['--min-depth'] = 1
 	if arg['--max-depth'] <= arg['--min-depth']:
 		print('Error: You should choose a correct interval of depths(--min_depth 20 --max-depth 120)')
 		sys.exit()
-	if arg['--min-ratio'] <= 0:
-		arg['--min-ratio'] = 0
+	if arg['--min-ratio'] < 0:
+		arg['--min-ratio'] = 0.0
 	if arg['--max-ratio'] <= arg['--min-ratio']:
 		print('Error: You should choose a correct interval of frequencies(--min_ratio 15 --max-ratio 85)')
 		sys.exit()
@@ -343,7 +340,7 @@ def vcf_line_parser2(line, arg):
 				GT1 = data1[GT_index].split('/')
 				GT2 = data2[GT_index].split('/')
 				gt = set(GT1+GT2)				#compare the genotypes
-				if len(gt) == 1 or '.' in gt: #if all the genotypes are equal the line is discarded
+				if '.' in gt:#if len(gt) == 1 or '.' in gt: #if all the genotypes are equal the line is discarded
 					return 0,0
 				for p,c in inf.items():		#for each pool and column
 					ref = z[3]
@@ -381,6 +378,7 @@ def isogenic_filter2(z, inf, GT_index, res):
 		return False
 	else:
 		print('\t'.join(z), end='')
+
 def isogenic_filter(z,res, arg):
 	key1 = 'R'
 	if 'Pr' in res.keys():
@@ -446,8 +444,8 @@ def normalize(pools, REF, arg, r_min=0.03):
 			return [alle[0], REF, a, b, c, d]
 		elif 'Pd' in inf_s:
 			p_dom = pools['Pd']
-			#p_al = sorted(p_dom, key=lambda key: p_dom[key], reverse=True) #ordered from higher to lower
-			p_al = [key for key,arg in p_dom.items()]
+			p_al = sorted(p_dom, key=lambda key: p_dom[key], reverse=True) #ordered from higher to lower
+			#p_al = [key for key,arg in p_dom.items()]
 			if p_dom[p_al[0]] > 0 and p_dom[p_al[1]]/(p_dom[p_al[0]] + p_dom[p_al[1]]) < r_min or len(p_al) > 2:
 				a = rec[p_al[0]]
 				b = rec[p_al[1]]
@@ -1127,6 +1125,7 @@ def normalize_annotate(pools, REF, arg, fields, r_min=0.03):
 
 def read_header(arg:dict,line:str):
 	fsal = arg['fsal']
+	arg['chromosomes'] = list()
 	if line.startswith('##bcftoolsVersion='):
 		write_line(line,fsal)
 	if line.startswith('##bcftoolsCommand='):
@@ -1175,7 +1174,7 @@ def write_argv(arg:dict,argv:str):
 
 def read_header_merge(arg:dict):
 	lines = list()
-	with open(arg['<input_file>'], 'r') as handle:
+	with open(arg['--input'], 'r') as handle:
 		for line in handle:
 			if line.startswith('##maptools_'):
 				lines.append(line)
