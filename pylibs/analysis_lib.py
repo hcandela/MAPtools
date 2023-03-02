@@ -365,20 +365,23 @@ def vcf_line_parser2(line, arg):
 					return 0,0
 					
 		return [z[0], z[1], z[3]],res #returns chromosome, position, reference allele, and the data for each bam)
-def isogenic_filter2(z, inf, GT_index, res):
-	data1 = z[inf['R']].split(':')
-	if 'Pr' in res.keys():
-		key2 = 'Pr'
-	else:
-		key2 = 'Pd'
-	data2 = z[inf[key2]].split(':')
-	GT1 = data1[GT_index].split('/')
-	GT2 = data2[GT_index].split('/')
-	if GT1 == GT2:
-		return False
-	else:
-		print('\t'.join(z), end='')
 
+def filter(arg, al_count):
+	inf_s = set(arg['--data'])
+	ref = arg['--ref']
+	min_dp = arg['--min-depth']
+	max_dp = arg['--max-depth']
+	min_ratio = arg['--min-ratio']
+	max_ratio = arg['--max-ratio']
+	if len(inf_s) == 3:
+		REF, ALT, a,b,c,d,e,f = al_count[0], al_count[1], al_count[2], al_count[3], al_count[4], al_count[5], al_count[6], al_count[7]
+		if ref == 'D':
+			dom = a + b
+			if dom <= max_dp and dom >= min_dp and (a/dom) <= max_ratio and (a/dom) >= min_ratio:
+				return False
+			
+
+			
 def isogenic_filter(z,res, arg):
 	key1 = 'R'
 	if 'Pr' in res.keys():
@@ -406,6 +409,11 @@ def normalize(pools, REF, arg, r_min=0.03):
 	rec = pools['R']
 	alle = [a for a,v in rec.items()]
 	REF_idx = alle.index(REF)
+	if 'Pr' in inf_s:
+			parental = pools['Pr']
+	elif 'Pd' in inf_s:
+			parental = pools['Pd']
+	
 	if len(alle) > 2:
 		return
 	if len(inf_s) == 1:
@@ -419,13 +427,16 @@ def normalize(pools, REF, arg, r_min=0.03):
 			alle.pop(REF_idx)
 			a = rec[alle[0]]
 			return [alle[0],REF,a, b]
-
 	elif len(inf_s) == 2:
-		if ref == 'miss': #TODO - Fix this when you are using a parental pool and no ref
+		if 'R' in inf_s and 'D' in inf_s and ref == 'miss':
 			dom = pools['D']
-			dom_list = [count for al,count in dom.items()]
-			rec_list = [count for al,count in rec.items()]
-			return[alle[0],alle[1],dom_list[0],dom_list[1],rec_list[0],rec_list[1]]
+			#p_al = sorted(dom, key=lambda key: dom[key], reverse=True)
+			a = rec[alle[REF_idx]]
+			c = rec[alle[REF_idx]]
+			alle.pop(REF_idx)
+			b = dom[alle[0]]
+			d =	rec[alle[0]]
+			return [p_al[0], p_al[1], a, b, c, d]
 		elif inf_s == {'R','D'} and ref == 'D':
 			dom = pools['D']
 			a = dom[alle[REF_idx]]
@@ -441,16 +452,18 @@ def normalize(pools, REF, arg, r_min=0.03):
 			alle.pop(REF_idx)
 			a = dom[alle[0]]
 			c = rec[alle[0]]
-			return [alle[0], REF, a, b, c, d]
-		elif 'Pd' in inf_s:
+			return [alle[0],REF, a, b, c, d]
+		elif inf_s == {'R', 'Pd'}:
 			p_dom = pools['Pd']
 			p_al = sorted(p_dom, key=lambda key: p_dom[key], reverse=True) #ordered from higher to lower
 			#p_al = [key for key,arg in p_dom.items()]
 			if p_dom[p_al[0]] > 0 and p_dom[p_al[1]]/(p_dom[p_al[0]] + p_dom[p_al[1]]) < r_min or len(p_al) > 2:
 				a = rec[p_al[0]]
 				b = rec[p_al[1]]
+				e = p_dom[p_al[0]]
+				f = p_dom[p_al[1]]
 				return [p_al[0], p_al[1], a, b]
-		elif 'Pr' in inf_s:
+		elif inf_s == {'R', 'Pr'}:	#TODO Possibly delete this case
 			p_rec = pools['Pr']
 			p_al = sorted(p_rec, key=lambda key: p_rec[key], reverse=True)
 			if p_rec[p_al[0]] > 0 and p_rec[p_al[1]]/(p_rec[p_al[0]] + p_rec[p_al[1]]) < r_min or len(p_al) > 2:

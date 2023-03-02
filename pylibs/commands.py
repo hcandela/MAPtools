@@ -22,6 +22,7 @@ def mbs(argv):
       -d, --data LIST             Pools genotype: dominant(D), recessive(R), parental dominant(Pd) and
                                   parental recessive(Pr) [default: D,R].
       -r, --ref-genotype STR      Which parental houses the reference, \"miss\" for missing genotype [default: D].
+      -m, --mutant-pool STR       Which pool has the mutant phenotype [default: R].
       -C, --max-depth INT         Maximum allele depth [default: 120].
       -c, --min-depth INT         Minimum allele depth [default: 20].
       -Q, --max-ratio INT         Maximum allele frequency in dominant pool [default: 100].
@@ -64,8 +65,7 @@ def mbs(argv):
                     if flag:
                       calcs = mbs_calc(al_count[2:], arg)
                       if calcs != None:
-                          first = new_line(fsal, arg, first,
-                                          fields[:2], al_count, calcs)
+                          first = new_line(fsal, arg, first, fields[:2], al_count, calcs)
 
 
 def qtl(argv):
