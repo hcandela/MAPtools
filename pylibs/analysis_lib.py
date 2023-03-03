@@ -87,8 +87,10 @@ def check_save_an(arg, file_name):
 
 def check_mbs_args(arg):
 	data = arg['--data']
-	if arg['--mutagen'] == None:
-		arg['--mutagen'] = 'EMS'
+	if arg['--mutant-pool'] != 'R' or arg['--mutant-pool'] != 'D':
+		print('Error: Select valid mutant pool -m (\"R\"|\"D\")')
+		sys.exit()
+
 	if not 'R' in data:
 		print('Error: You should include the recessive pool (--data R,X,X')
 		sys.exit()
@@ -99,6 +101,7 @@ def check_mbs_args(arg):
 	arg['--max-depth'] = int(arg['--max-depth'])
 	arg['--min-ratio'] = float(arg['--min-ratio'])/100
 	arg['--max-ratio'] = float(arg['--max-ratio'])/100
+	arg['--min-error'] = int(arg['--min-error'])
 	if arg['--min-depth'] <= 0:
 		arg['--min-depth'] = 1
 	if arg['--max-depth'] <= arg['--min-depth']:
@@ -205,25 +208,21 @@ def mbs_calc(inp, arg):
 		if a != 0 or b != 0:
 			ratio1 = b/(a+b)
 			boost = 1/(arg['lim'] + abs(1 - 1/max(ratio1, 1-ratio1)))
-			if a + b >= min_dp:# and a + b <= max_dp:
-				return [ratio1, boost]
+			return [ratio1, boost]
 	elif 'D' in inf_s and 'R' in inf_s:
 		a, b, c, d = inp[0], inp[1], inp[2], inp[3]
-		dom = a + b #allele count of the dominant pool
-		rec = c + d #allele count of the recesive pool
-		if dom <= max_dp and dom >= min_dp and (a/dom) <= max_ratio and (a/dom) >= min_ratio: #filters for positions with enought coverage and heterozigous on the dominant pool
-			ratio3 = max(c,d)/(c+d)
-			resultado = LogFisher(a,b,c,d)
-			pva = pvalor(a,b,c,d)
-			pva10 = (log(pva)/log(10))
-			if arg['--ref-genotype'] == 'miss':
-				boost = 1/(arg['lim'] + abs(1 - 1/ratio3))
-				return [ratio3,resultado,boost,pva,pva10]
-			else:
-				ratio1 = b/(a+b)
-				ratio2 = d/(c+d)
-				boost = 1/(arg['lim'] + abs(1 - 1/ratio3))
-				return [ratio1,ratio2,ratio3,resultado,boost,pva,pva10]
+		ratio3 = max(c,d)/(c+d)
+		resultado = LogFisher(a,b,c,d)
+		pva = pvalor(a,b,c,d)
+		pva10 = (log(pva)/log(10))
+		if arg['--ref-genotype'] == 'miss':
+			boost = 1/(arg['lim'] + abs(1 - 1/ratio3))
+			return [ratio3,resultado,boost,pva,pva10]
+		else:
+			ratio1 = b/(a+b)
+			ratio2 = d/(c+d)
+			boost = 1/(arg['lim'] + abs(1 - 1/ratio3))
+			return [ratio1,ratio2,ratio3,resultado,boost,pva,pva10]
 
 def qtl_calc(inp, arg):
 	data = arg['--data']
@@ -366,41 +365,64 @@ def vcf_line_parser2(line, arg):
 					
 		return [z[0], z[1], z[3]],res #returns chromosome, position, reference allele, and the data for each bam)
 
-def filter(arg, al_count):
+def filter_mbs(arg, al_count):
+	flag = list()
 	inf_s = set(arg['--data'])
-	ref = arg['--ref']
+	min_dp = arg['--min-depth']
+	max_dp = arg['--max-depth']
+	if 'R' in inf_s and 'D' in inf_s:
+		REF,ALT,a,b,c,d = al_count[0], al_count[1], al_count[2], al_count[3], al_count[4], al_count[5]
+		dom = a + b
+		rec = c + d
+		if dom <= min_dp or dom >= max_dp or rec <= min_dp or rec >= max_dp:
+			flag.append(False)
+		else:
+			flag.append(True)
+		if arg['--het-filter']:
+			flag.append(het_filter(arg,a,b))
+		if arg['--EMS']:
+			flag.append(filter_EMS(arg, REF, ALT))
+		if arg['--isogenic-filter'] and ('Pr' in inf_s or 'Pd' in inf_s):
+			e,f = al_count[6], al_count[7]
+			flag.append(isogenic_filter(arg,c,d,e,f))
+	elif 'D' not in inf_s:
+		REF,ALT,c,d = al_count[0], al_count[1], al_count[2], al_count[3]
+		if c+d <= min_dp or c+d >= max_dp:
+			flag.append(False)
+		else:
+			flag.append(True)
+		if arg['--EMS'] and (arg['--ref'] != 'miss' or 'Pr' in inf_s or 'Pd' in inf_s):
+			flag.append(filter_EMS(arg, REF, ALT))
+		if arg['--isogenic-filter'] and ('Pr' in inf_s or 'Pd' in inf_s):
+			e,f = al_count[4], al_count[5]
+			flag.append(isogenic_filter(arg,c,d,e,f))
+	if False in flag:
+		return False
+	else:
+		return True
+				
+def het_filter(arg,a,b):
 	min_dp = arg['--min-depth']
 	max_dp = arg['--max-depth']
 	min_ratio = arg['--min-ratio']
 	max_ratio = arg['--max-ratio']
-	if len(inf_s) == 3:
-		REF, ALT, a,b,c,d,e,f = al_count[0], al_count[1], al_count[2], al_count[3], al_count[4], al_count[5], al_count[6], al_count[7]
-		if ref == 'D':
-			dom = a + b
-			if dom <= max_dp and dom >= min_dp and (a/dom) <= max_ratio and (a/dom) >= min_ratio:
-				return False
-			
-
-			
-def isogenic_filter(z,res, arg):
-	key1 = 'R'
-	if 'Pr' in res.keys():
-		key2 = 'Pr'
+	dom = a + b
+	if dom <= max_dp and dom >= min_dp and (a/dom) <= max_ratio and (a/dom) >= min_ratio:
+		return True
 	else:
-		key2 = 'Pd'
-	rec = res[key1]
-	par = res[key2]
-	if len(rec) == 2:
-		count_rec = [c for k,c in rec.items()]
-		count_par = [c for k,c in par.items()]
-		a,b,c,d = count_rec[0],count_rec[1],count_par[0],count_par[1]
-		if a + b >= arg['--min-depth'] and c + d >= arg['--min-depth'] and  0.1*a < arg['--min-depth'] < 0.9*a and 0.1*c < arg['--min-depth'] < 0.9*c:
-			return False
-		elif a == a+b and c >= 3:
-			return False
-		else: 
-			#print('\t'.join(z), end='')
-			return True
+		return False
+
+def isogenic_filter(arg,c,d,e,f):
+	min_dp = arg['--min-depth']
+	min_ratio = arg['--min-ratio']
+	max_ratio = arg['--max-ratio']
+	min_error = arg['--min-error']
+	if c + d >= min_dp and e + f >= min_dp and  min_ratio*c < min_dp < max_ratio*c and min_ratio*e < min_dp < max_ratio*c:
+		return False
+	elif c == c+d and e >= min_error:
+		return False
+	else: 
+		return True
 
 def normalize(pools, REF, arg, r_min=0.03):
 	data = arg['--data']
@@ -409,11 +431,7 @@ def normalize(pools, REF, arg, r_min=0.03):
 	rec = pools['R']
 	alle = [a for a,v in rec.items()]
 	REF_idx = alle.index(REF)
-	if 'Pr' in inf_s:
-			parental = pools['Pr']
-	elif 'Pd' in inf_s:
-			parental = pools['Pd']
-	
+
 	if len(alle) > 2:
 		return
 	if len(inf_s) == 1:
@@ -462,14 +480,16 @@ def normalize(pools, REF, arg, r_min=0.03):
 				b = rec[p_al[1]]
 				e = p_dom[p_al[0]]
 				f = p_dom[p_al[1]]
-				return [p_al[0], p_al[1], a, b]
+				return [p_al[0], p_al[1], a, b, e, f]
 		elif inf_s == {'R', 'Pr'}:	#TODO Possibly delete this case
 			p_rec = pools['Pr']
 			p_al = sorted(p_rec, key=lambda key: p_rec[key], reverse=True)
 			if p_rec[p_al[0]] > 0 and p_rec[p_al[1]]/(p_rec[p_al[0]] + p_rec[p_al[1]]) < r_min or len(p_al) > 2:
-				a = rec[p_al[0]]
-				b = rec[p_al[1]]
-				return [p_al[1], p_al[0], b, a]
+				a = rec[p_al[1]]
+				b = rec[p_al[0]]
+				e = p_rec[p_al[1]]
+				f = p_rec[p_al[0]]
+				return [p_al[1], p_al[0], a, b, e, f]
 	elif len(inf_s) == 3:
 		if 'Pr' in inf_s:
 			parental = pools['Pr']
@@ -483,13 +503,17 @@ def normalize(pools, REF, arg, r_min=0.03):
 				b = dom[p_al[1]]
 				c = rec[p_al[0]]
 				d = rec[p_al[1]]
-				return[p_al[0], p_al[1], a, b, c, d]
+				e = parental[p_al[0]]
+				f = parental[p_al[1]]
+				return[p_al[0], p_al[1], a, b, c, d, e, f]
 			elif 'Pr' in inf_s:
 				a = dom[p_al[1]]
 				b = dom[p_al[0]]
 				c = rec[p_al[1]]
 				d = rec[p_al[0]]
-				return[p_al[1], p_al[0], a, b, c, d]
+				e = parental[p_al[1]]
+				f = parental[p_al[0]]
+				return[p_al[1], p_al[0], a, b, c, d, e, f]
 
 def test_arg_ann(__doc__,arg):
 	if arg['--input'] == None and arg['pipe'] == True:
@@ -715,59 +739,18 @@ def find_effect(before,after,strand):
 			change = 'Nonsynonymous:missense'
 	return [before, after,change]
 
-def filter_mut(arg, al):
-	REF = al[0]
-	ALT = al[1]
-	if arg['--mutagen'] == 'EMS':
+def filter_EMS(arg, REF, ALT):
+	if arg['--mutant-pool'] == 'R':
 		if (REF == 'G' and ALT == 'A') or (REF == 'C' and ALT == 'T'):
 			return True
 		else:
 			return False
-
-def ann_calc(inp, arg):
-	'''
-	Takes the allele count and filter thresholds for:
-		max and min coverage (max_dp, min_dp)
-		max and min ratios to consider a position heterozigous (max_ratio, min_ratio)
-	Performs the necessary calcs for representation
-	Returns a list of the calcs with:
-		[
-		LogFisher of the allele count
-		Function that generates a peak in the maximum of the representation
-		p-value
-		log10 of p-value
-		]
-	'''
-	data = arg['--data']
-	inf_s = set(data)
-	if len(inf_s) == 1 and arg['--ref-genotype'] == 'miss':
-		a, b = inp[0], inp[1]
-		if a != 0 or b != 0:
-			ratio3 = max(a,b)/(a+b)
-			boost = 1/(arg['lim'] + abs(1 - 1/ratio3))
-			return [ratio3, boost]
-	elif (len(inf_s) == 1 and arg['--ref-genotype'] != 'miss') or (len(inf_s) == 2 and 'D' not in inf_s):
-		a, b = inp[0], inp[1]
-		if a != 0 or b != 0:
-			ratio1 = b/(a+b)
-			boost = 1/(arg['lim'] + abs(1 - 1/max(ratio1, 1-ratio1)))
-			return [ratio1, boost]
-	elif 'D' in inf_s and 'R' in inf_s:
-		a, b, c, d = inp[0], inp[1], inp[2], inp[3]
-		dom = a + b #allele count of the dominant pool
-		rec = c + d #allele count of the recesive pool
-		ratio3 = max(c,d)/(c+d)
-		resultado = LogFisher(a,b,c,d)
-		pva = pvalor(a,b,c,d)
-		pva10 = (log(pva)/log(10))
-		if arg['--ref-genotype'] == 'miss':
-			boost = 1/(arg['lim'] + abs(1 - 1/ratio3))
-			return [ratio3,resultado,boost,pva,pva10]
+	elif arg['--mutant-pool'] == 'D':
+		if (REF == 'A' and ALT == 'G') or (REF == 'T' and ALT == 'C'):
+			return True
 		else:
-			ratio1 = b/(a+b)
-			ratio2 = d/(c+d)
-			boost = 1/(arg['lim'] + abs(1 - 1/ratio3))
-			return [ratio1,ratio2,ratio3,resultado,boost,pva,pva10]
+			return False
+
 
 def create_df(arg):
 	data = arg['--data']
@@ -1041,97 +1024,7 @@ def write_annotate_line(arg, result):
 	n_line = arg['spacer'].join(line)+'\n'
 	write_line(n_line,arg['fsal'])
 
-def normalize_annotate(pools, REF, arg, fields, r_min=0.03):
-	inf_s = set(arg['--data'])
-	ref = arg['--ref-genotype']
-	rec = pools['R']
-	alle = [a for a,v in rec.items()]	#list of alleles ['A','G']
-	REF_idx = alle.index(REF)
 
-	if len(alle) > 2:
-		return
-	if len(inf_s) == 1:
-		if ref == 'D' or ref == 'miss':
-			a = rec[alle[REF_idx]]
-			alle.pop(REF_idx)
-			b = rec[alle[0]]
-			return [REF, alle[0], a, b]
-		elif ref == 'R':
-			b = rec[alle[REF_idx]]
-			alle.pop(REF_idx)
-			a = rec[alle[0]]
-			return [alle[0],REF,a, b]
-
-	elif len(inf_s) == 2:
-		if ref == 'miss':
-			dom = pools['D']
-			dom_list = [count for al,count in dom.items()]
-			rec_list = [count for al,count in rec.items()]
-			return[alle[0],alle[1],dom_list[0],dom_list[1],rec_list[0],rec_list[1]]
-		elif inf_s == {'R','D'} and ref == 'D':
-			dom = pools['D']
-			a = dom[alle[REF_idx]]
-			c = rec[alle[REF_idx]]
-			alle.pop(REF_idx)
-			b = dom[alle[0]]
-			d = rec[alle[0]]
-			return [REF, alle[0], a, b, c, d]
-		elif inf_s == {'R','D'} and ref == 'R':
-			dom = pools['D']
-			b = dom[alle[REF_idx]]
-			d = rec[alle[REF_idx]]
-			alle.pop(REF_idx)
-			a = dom[alle[0]]
-			c = rec[alle[0]]
-			return [alle[0], REF, a, b, c, d]
-		elif 'Pd' in inf_s:
-			p_dom = pools['Pd']
-			p_al = sorted(p_dom, key=lambda key: p_dom[key], reverse=True) #ordered from higher to lower
-			if p_dom[p_al[0]] > 0 and p_dom[p_al[1]]/(p_dom[p_al[0]] + p_dom[p_al[1]]) < r_min or len(p_al) > 2:
-				a = rec[p_al[0]]
-				b = rec[p_al[1]]
-				return [p_al[0], p_al[1], a, b]
-		elif 'Pr' in inf_s:
-			p_rec = pools['Pr']
-			p_al = sorted(p_rec, key=lambda key: p_rec[key], reverse=True)
-			if p_rec[p_al[0]] > 0 and p_rec[p_al[1]]/(p_rec[p_al[0]] + p_rec[p_al[1]]) < r_min or len(p_al) > 2:
-				a = rec[p_al[0]]
-				b = rec[p_al[1]]
-				return [p_al[1], p_al[0], a, b]
-	elif len(inf_s) == 3:
-		if 'Pr' in inf_s:
-			parental = pools['Pr'] # {'Pr':{alle1:count1,'T':10}}
-		elif 'Pd' in inf_s:
-			parental = pools['Pd']
-
-		p_al = sorted(parental, key=lambda key: parental[key], reverse=True)
-		p_al = [k for k,v in parental.items()]
-		dom = pools['D']
-
-		if 'Pd' in inf_s and ref == 'D':
-			a = dom[p_al[0]]
-			b = dom[p_al[1]]
-			c = rec[p_al[0]]
-			d = rec[p_al[1]]
-			ref_ = p_al[0]
-			alt_ = p_al[1]
-			return[ref_, alt_, a, b, c, d]
-		elif 'Pr' in inf_s and parental[p_al[1]] <= 1:
-			if p_al[0] != REF:
-				a = dom[p_al[1]]
-				b = dom[p_al[0]]
-				c = rec[p_al[1]]
-				d = rec[p_al[0]]
-				alt_ = p_al[0]
-				ref_ = p_al[1]
-			elif p_al[0] == REF:
-				a = dom[p_al[0]]
-				b = dom[p_al[1]]
-				c = rec[p_al[0]]
-				d = rec[p_al[1]]
-				ref_ = p_al[0]
-				alt_ = p_al[1]
-			return[ref_, alt_, a, b, c, d]
 
 #CHROM	POS		REF		ALT		DPr		DPalt		cRef	cAlt	type	      strand		ID		LEFT	RIGHT	Ldist   Rdist 
 # 1    1456654   C		T		1         18	ATG(Met)   CTG(Ser) Nonsynonymous   +          ATG10809 ATG..    ATG..  1500    156
