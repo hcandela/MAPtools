@@ -23,18 +23,24 @@ def mbs(argv):
                                   parental recessive(Pr) [default: D,R].
       -r, --ref-genotype STR      Which parental houses the reference, \"miss\" for missing genotype [default: D].
       -m, --mutant-pool STR       Which pool has the mutant phenotype [default: R].
-      -C, --max-depth INT         Maximum allele depth [default: 120].
-      -c, --min-depth INT         Minimum allele depth [default: 20].
-      -Q, --max-ratio INT         Maximum allele frequency in dominant pool [default: 100].
-      -q, --min-ratio INT         Minimum allele frequency in dominant pool [default: 0].
-      -M, --mutagen STR           Type of mutagen used to filter variants[default: EMS].
 
     Output Options:
       -o, --output FILE           Write output to file.
       -O, --output-type TYPE      \"txt\" tab separated, \"csv\" comma separated [default: txt]
-
+    
+    Filter Options:
+      -C, --max-depth INT         Maximum allele depth [default: 120].
+      -c, --min-depth INT         Minimum allele depth [default: 20].
+      -Q, --max-ratio INT         Maximum allele frequency in dominant pool [default: 90].
+      -q, --min-ratio INT         Minimum allele frequency in dominant pool [default: 10].
+      -e, --min-error INT         Minimum depth to consider that an allele is not a sequencing error [default: 3].
+      --EMS                       Filter out SNPs other than caused by EMS (\"G\" > \"A\" or \"C\" > \"T\").
+      --isogenic-filter           Filter out variants if Parental (-d \"Pr\"| \"Pd\") sample is provided.
+                                  
+      --het-filter                Focuses on markers that are clearly heterozygous in the dominant pool
+                                  (depth in the interval [-c,-C] and allele frequency in the interval [-q, -Q]).
+      --no-filter                 Disable all filters.                 
     """
-
     arg = docopt(mbs_doc, argv=None, help=True,version=v_mbs)
     arg['pipe'] = sys.stdin.isatty()
     arg = check_args(mbs_doc, arg)
@@ -58,14 +64,13 @@ def mbs(argv):
         else:
             fields, pools = vcf_line_parser2(line, arg)
             if (fields, pools) != (0, 0):
-                REF = fields[2]
-                al_count = normalize(pools, REF, arg)
-                if al_count != None:
-                    flag = filter_mut(arg, al_count[:2])
-                    if flag:
-                      calcs = mbs_calc(al_count[2:], arg)
-                      if calcs != None:
-                          first = new_line(fsal, arg, first, fields[:2], al_count, calcs)
+              REF = fields[2]
+              al_count = normalize(pools, REF, arg)
+              flag = filter_mbs(arg,al_count)
+              if al_count != None and flag == True:
+                calcs = mbs_calc(al_count[2:], arg)
+                if calcs != None:
+                    first = new_line(fsal, arg, first, fields[:2], al_count, calcs)
 
 
 def qtl(argv):
@@ -347,13 +352,13 @@ Output Options:
         fields, pools = vcf_line_parser2(line, arg)
         if (fields, pools) != (0,0):
           REF = fields[2]
-          all_count = normalize_annotate(pools, REF, arg, fields)
-          if all_count != None:
-            flag = filter_mut(arg, all_count[:2])
+          al_count = normalize(pools, REF, arg, fields)
+          if al_count != None:
+            flag = filter_mut(arg, al_count[:2])
             if flag:
-              calcs = ann_calc(all_count[2:], arg)
+              calcs = ann_calc(al_count[2:], arg)
               if calcs != None:
-                df = new_df_line(df,arg,fields[:2], all_count, calcs)
+                df = new_df_line(df,arg,fields[:2], al_count, calcs)
   load_reference(df,arg)
   df = df.reset_index()
   start = time.perf_counter()
