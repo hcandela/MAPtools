@@ -29,8 +29,8 @@ def mbs(argv):
       -O, --output-type TYPE      \"txt\" tab separated, \"csv\" comma separated [default: txt]
     
     Filter Options:
-      -C, --max-depth INT         Maximum allele depth [default: 120].
-      -c, --min-depth INT         Minimum allele depth [default: 20].
+      -C, --max-depth INT         Maximum allele depth [default: inf].
+      -c, --min-depth INT         Minimum allele depth [default: 0].
       -Q, --max-ratio INT         Maximum allele frequency in dominant pool [default: 90].
       -q, --min-ratio INT         Minimum allele frequency in dominant pool [default: 10].
       -e, --min-error INT         Minimum depth to consider that an allele is not a sequencing error [default: 3].
@@ -65,11 +65,12 @@ def mbs(argv):
             fields, pools = vcf_line_parser2(line, arg)
             if (fields, pools) != (0, 0):
               REF = fields[2]
-              al_count = normalize(pools, REF, arg)
-              flag = filter_mbs(arg,al_count)
-              if al_count != None and flag == True:
-                calcs = mbs_calc(al_count[2:], arg)
-                if calcs != None:
+              al_count,p_al_count = normalize(pools, REF, arg)
+              if (al_count,p_al_count) != (0,0):
+                flag = filter_mbs(arg,al_count,p_al_count)
+                if flag == True:
+                  calcs = mbs_calc(al_count[2:], arg)
+                  if calcs != None:
                     first = new_line(fsal, arg, first, fields[:2], al_count, calcs)
 
 
@@ -307,36 +308,52 @@ def annotate(argv):
   annotate_doc="""Annotate variants
 Usage:
    maptools.py annotate [options]
-   maptools.py annotate --version
-   maptools.py annotate -h
+   maptools.py annotate
 
 Options:
-   --help -h                     Show this screen.
-   --version                     Show the version.
-   --input, -i=<file>            VCF input file. If the input come from a pipe, don't use this option.
-   --gff, -g=<file>              GFF3 input file.
-   --reference, -f=<file>        FASTA reference file (The same used to align the reads).
+   -h, --help                  Show this screen.
+   -v, --version               Show the version.
+   -i, --input FILE            VCF input file. Can also come from a pipe.
+   -g, --gff FILE              GFF3 input file.
+   -f, --fasta-reference FILE  FASTA reference file (The same used to align the reads).
+
 Input Options:
-   --data, -d=<opt>              Code of genotypes ordered according VCF input file [default: D,R].
-   --ref, -r=<opt>               Which parental houses the reference [default: D].
-   --no-ref                      Don't normalize data.
-   --mutagen, -M=<opt>           Type of mutagen used to filter variants[defult: EMS].
-   --region, -R=<region>         Region of the genome to explore (... -R chrName:Startpos-Endpos)
+   -d, --data LIST             Pools genotype: dominant(D), recessive(R), parental dominant(Pd),
+                               parental recessive(Pr), wild-type recessive(Wr) and
+                               wild-type dominant(Wr) [default: D,R].
+   -r, --ref-genotype STR      Which parental houses the reference, \"miss\" for missing genotype [default: D].
+   -m, --mutant-pool STR       Which pool has the mutant phenotype [default: R].
+   -R, --region REGION         Region of the genome to explore (... -R chrName:Startpos-Endpos)
+
 Output Options:
-   --output, -o=<file>           Output file.
-   --outdir, -O=<dir>            Output directory [default: results].           
+   -o, --output FILE           Write output to file.
+   -O, --output-type TYPE      \"txt\" tab separated, \"csv\" comma separated [default: txt]
+
+Filter Options:
+  -C, --max-depth INT         Maximum allele depth [default: inf].
+  -c, --min-depth INT         Minimum allele depth [default: 0].
+  -Q, --max-ratio INT         Maximum allele frequency in dominant pool [default: 90].
+  -q, --min-ratio INT         Minimum allele frequency in dominant pool [default: 10].
+  -e, --min-error INT         Minimum depth to consider that an allele is not a sequencing error [default: 3].
+  --EMS                       Filter out SNPs other than caused by EMS (\"G\" > \"A\" or \"C\" > \"T\").
+  --isogenic-filter           Filter out variants if Parental (-d \"Pr\"| \"Pd\") sample is provided.
+                              
+  --het-filter                Focuses on markers that are clearly heterozygous in the dominant pool
+                              (depth in the interval [-c,-C] and allele frequency in the interval [-q, -Q]).
+  --no-filter                 Disable all filters.                           
   """
   arg = docopt(annotate_doc, argv=None, help=True, version=v_annotate)
   arg['pipe'] = sys.stdin.isatty()
   arg['version'] = v_annotate
-  arg = test_arg_ann(annotate_doc, arg)
+  arg['mbs'] = True
+  arg = check_args(annotate_doc, arg)
   df = create_df(arg)
   output = arg['--output']
   fsal = False
   arg['fsal'] = False
   if output != None:
-    fsal = open(arg['--outdir']+arg['--output'], 'w')
-    arg['fsal'] = fsal
+    fsal = open(arg['--output'], 'w')
+  arg['fsal'] = fsal
   
   if arg['--input']:
     inp = arg['inp']
@@ -352,11 +369,11 @@ Output Options:
         fields, pools = vcf_line_parser2(line, arg)
         if (fields, pools) != (0,0):
           REF = fields[2]
-          al_count = normalize(pools, REF, arg, fields)
-          if al_count != None:
-            flag = filter_mut(arg, al_count[:2])
+          al_count,p_al_count = normalize(pools, REF, arg, fields)
+          if (al_count,p_al_count) != (0,0):
+            flag = filter_mbs(arg, al_count, p_al_count)
             if flag:
-              calcs = ann_calc(al_count[2:], arg)
+              calcs = mbs_calc(al_count[2:], arg)
               if calcs != None:
                 df = new_df_line(df,arg,fields[:2], al_count, calcs)
   load_reference(df,arg)

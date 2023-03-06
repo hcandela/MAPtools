@@ -67,6 +67,8 @@ def check_args(__doc__,arg):
 		arg = check_mbs_args(arg)
 	if 'qtl' in arg.keys():
 		arg = check_qtl_args(arg)
+	if 'annotate' in arg.keys():
+		arg = check_annotate_args(arg)
 	return arg
 
 		
@@ -87,7 +89,24 @@ def check_save_an(arg, file_name):
 
 def check_mbs_args(arg):
 	data = arg['--data']
-	if arg['--mutant-pool'] != 'R' or arg['--mutant-pool'] != 'D':
+	data_w = data.copy()
+	wt_idx = -1
+	wt = False
+	if 'Wr' in data_w or 'Wd' in data_w:
+		if 'Wr' in data_w:
+			wt_idx = data_w.index('Wr')
+			wt = 'Wr'
+		elif 'Wd' in data_w:
+			wt_idx = data_w.index('Wd')
+			wt = 'Wd'
+		data_w.pop(wt_idx)
+	arg['data_w'] = data_w
+	arg['wt'] = wt
+	if ('Pr' in data or 'Pd' in data) and wt == True:
+		#print(wt)
+		print('Error: Do not include wild-type(\"Wr\"|\"Wd\") and parental re-sequencing (\"Pd\"|\"Pr\") in the same analysis.')
+		sys.exit()
+	if arg['--mutant-pool'] not in {'R','D'}:
 		print('Error: Select valid mutant pool -m (\"R\"|\"D\")')
 		sys.exit()
 
@@ -95,10 +114,16 @@ def check_mbs_args(arg):
 		print('Error: You should include the recessive pool (--data R,X,X')
 		sys.exit()
 	if 'Pr' in data and 'Pd' in data:
-		print('Error: You should include only one parental pool in data (--data D,R,Px or --data R,Px')
+		print('Error: You should include only one re-sequenced parental in data (--data D,R,Px or --data R,Px')
 		sys.exit()
+	if 'Wr' in data and 'Wd' in data:
+		print('Error: You should include only one re-sequenced wilt-type in data (--data D,R,Wx or --data R,Wx')
+		sys.exit()
+	if arg['--max-depth'] == 'inf':
+		arg['--max-depth'] = np.inf
+	else:
+		arg['--max-depth'] = int(arg['--max-depth'])
 	arg['--min-depth'] = int(arg['--min-depth'])
-	arg['--max-depth'] = int(arg['--max-depth'])
 	arg['--min-ratio'] = float(arg['--min-ratio'])/100
 	arg['--max-ratio'] = float(arg['--max-ratio'])/100
 	arg['--min-error'] = int(arg['--min-error'])
@@ -113,6 +138,7 @@ def check_mbs_args(arg):
 		print('Error: You should choose a correct interval of frequencies(--min_ratio 15 --max-ratio 85)')
 		sys.exit()
 	return arg
+
 def check_qtl_args(arg):
 	data = arg['--data']
 	if len(data) < 2:
@@ -333,13 +359,13 @@ def vcf_line_parser2(line, arg):
 				pool[alt[i]] = int(AD[i+1])
 			res[data[0]] = pool				#Save the pool dict naming the pool {'R':{'nt1':AD1, 'nt2':AD2 }}
 		elif len(inf_s) >= 2:
-			if inf_s == {'D','R'} or inf_s == {'D','R','Pr'} or inf_s == {'D','R','Pd'}:
+			if 'D' in inf_s and 'R' in inf_s:
 				data1 = z[inf['D']].split(':')	#save info from each pool
 				data2 = z[inf['R']].split(':')
 				GT1 = data1[GT_index].split('/')
 				GT2 = data2[GT_index].split('/')
 				gt = set(GT1+GT2)				#compare the genotypes
-				if '.' in gt:#if len(gt) == 1 or '.' in gt: #if all the genotypes are equal the line is discarded
+				if '.' in gt:#if len(gt) == 1 or '.' in gt: #if all the genotypes are identical the line is discarded
 					return 0,0
 				for p,c in inf.items():		#for each pool and column
 					ref = z[3]
@@ -349,24 +375,25 @@ def vcf_line_parser2(line, arg):
 					for i in range(len(alt)):
 						pool[alt[i]] = int(AD[i+1])
 					res[p] = pool	#{'R':{'nt1':AD1, 'nt2':AD2 }, 'D':{'nt1':AD1, 'nt2':AD2}...}
-			elif inf_s == {'R','Pr'} or inf_s == {'R','Pd'}:
-				flag = True
+			elif 'D' not in inf_s:
 				ref = z[3]
 				alt = z[4].split(',')
+				data1 = z[inf['R']].split(':')
+				GT1 = data1[GT_index].split('/')
+				gt = set(GT1)
+				if '.' in gt:
+					return 0,0
 				for p,c in inf.items():
 					AD = z[c].split(':')[AD_index].split(',')
 					pool = {ref:int(AD[0])}
 					for i in range(len(alt)):
 						pool[alt[i]] = int(AD[i+1])
 					res[p] = pool
-				flag = isogenic_filter(z,res, arg)
-				if flag == False:
-					return 0,0
 					
 		return [z[0], z[1], z[3]],res #returns chromosome, position, reference allele, and the data for each bam)
 
-def filter_mbs(arg, al_count):
-	flag = list()
+def filter_mbs(arg, al_count, p_al_count):
+	flag = [True]
 	inf_s = set(arg['--data'])
 	min_dp = arg['--min-depth']
 	max_dp = arg['--max-depth']
@@ -374,7 +401,7 @@ def filter_mbs(arg, al_count):
 		REF,ALT,a,b,c,d = al_count[0], al_count[1], al_count[2], al_count[3], al_count[4], al_count[5]
 		dom = a + b
 		rec = c + d
-		if dom <= min_dp or dom >= max_dp or rec <= min_dp or rec >= max_dp:
+		if dom <= min_dp or dom >= max_dp:# or rec <= min_dp or rec >= max_dp: #TODO
 			flag.append(False)
 		else:
 			flag.append(True)
@@ -382,8 +409,8 @@ def filter_mbs(arg, al_count):
 			flag.append(het_filter(arg,a,b))
 		if arg['--EMS']:
 			flag.append(filter_EMS(arg, REF, ALT))
-		if arg['--isogenic-filter'] and ('Pr' in inf_s or 'Pd' in inf_s):
-			e,f = al_count[6], al_count[7]
+		if arg['--isogenic-filter'] and ('Pr' in inf_s or 'Pd' in inf_s or 'Wr' in inf_s or 'Wd' in inf_s):
+			e,f = p_al_count[0], p_al_count[1]
 			flag.append(isogenic_filter(arg,c,d,e,f))
 	elif 'D' not in inf_s:
 		REF,ALT,c,d = al_count[0], al_count[1], al_count[2], al_count[3]
@@ -393,8 +420,8 @@ def filter_mbs(arg, al_count):
 			flag.append(True)
 		if arg['--EMS'] and (arg['--ref'] != 'miss' or 'Pr' in inf_s or 'Pd' in inf_s):
 			flag.append(filter_EMS(arg, REF, ALT))
-		if arg['--isogenic-filter'] and ('Pr' in inf_s or 'Pd' in inf_s):
-			e,f = al_count[4], al_count[5]
+		if arg['--isogenic-filter'] and ('Pr' in inf_s or 'Pd' in inf_s or 'Wr' in inf_s or 'Wd' in inf_s):
+			e,f = p_al_count[0], p_al_count[1]
 			flag.append(isogenic_filter(arg,c,d,e,f))
 	if False in flag:
 		return False
@@ -423,54 +450,58 @@ def isogenic_filter(arg,c,d,e,f):
 		return False
 	else: 
 		return True
+def outcross_filter(arg,c,d,e,f):
+	if f >= arg['--min-error']:
+		return False
+	else:
+		return True
 
 def normalize(pools, REF, arg, r_min=0.03):
-	data = arg['--data']
+	data = arg['data_w']
+	wt = arg['wt']
 	inf_s = set(data)
 	ref = arg['--ref-genotype']
 	rec = pools['R']
 	alle = [a for a,v in rec.items()]
-	REF_idx = alle.index(REF)
-
+	#REF_idx = alle.index(REF)
+	reorder = False
+	al_count = list()
+	wt_l = list()
 	if len(alle) > 2:
-		return
+		return 0,0
 	if len(inf_s) == 1:
 		if ref == 'D' or ref == 'miss':
-			a = rec[alle[REF_idx]]
-			alle.pop(REF_idx)
-			b = rec[alle[0]]
-			return [REF, alle[0], a, b]
-		elif ref == 'R':
-			b = rec[alle[REF_idx]]
-			alle.pop(REF_idx)
 			a = rec[alle[0]]
-			return [alle[0],REF,a, b]
+			b = rec[alle[1]]
+			al_count = [REF, alle[1], a, b]
+		elif ref == 'R':
+			reorder = True
+			b = rec[alle[0]]
+			a = rec[alle[1]]
+			al_count = [alle[1],REF,a, b]
 	elif len(inf_s) == 2:
 		if 'R' in inf_s and 'D' in inf_s and ref == 'miss':
 			dom = pools['D']
-			#p_al = sorted(dom, key=lambda key: dom[key], reverse=True)
-			a = rec[alle[REF_idx]]
-			c = rec[alle[REF_idx]]
-			alle.pop(REF_idx)
-			b = dom[alle[0]]
-			d =	rec[alle[0]]
-			return [p_al[0], p_al[1], a, b, c, d]
+			a = rec[alle[0]]
+			c = rec[alle[0]]
+			b = dom[alle[1]]
+			d =	rec[alle[1]]
+			al_count = [alle[0], alle[1], a, b, c, d]
 		elif inf_s == {'R','D'} and ref == 'D':
 			dom = pools['D']
-			a = dom[alle[REF_idx]]
-			c = rec[alle[REF_idx]]
-			alle.pop(REF_idx)
-			b = dom[alle[0]]
-			d = rec[alle[0]]
-			return [REF, alle[0], a, b, c, d]
-		elif inf_s == {'R','D'} and ref == 'R':
-			dom = pools['D']
-			b = dom[alle[REF_idx]]
-			d = rec[alle[REF_idx]]
-			alle.pop(REF_idx)
 			a = dom[alle[0]]
 			c = rec[alle[0]]
-			return [alle[0],REF, a, b, c, d]
+			b = dom[alle[1]]
+			d = rec[alle[1]]
+			al_count = [REF, alle[1], a, b, c, d]
+		elif inf_s == {'R','D'} and ref == 'R':
+			dom = pools['D']
+			reorder = True
+			b = dom[alle[0]]
+			d = rec[alle[0]]
+			a = dom[alle[1]]
+			c = rec[alle[1]]
+			al_count = [alle[1],REF, a, b, c, d]
 		elif inf_s == {'R', 'Pd'}:
 			p_dom = pools['Pd']
 			p_al = sorted(p_dom, key=lambda key: p_dom[key], reverse=True) #ordered from higher to lower
@@ -480,7 +511,7 @@ def normalize(pools, REF, arg, r_min=0.03):
 				b = rec[p_al[1]]
 				e = p_dom[p_al[0]]
 				f = p_dom[p_al[1]]
-				return [p_al[0], p_al[1], a, b, e, f]
+				al_count = [[p_al[0], p_al[1], a, b],[e,f]]
 		elif inf_s == {'R', 'Pr'}:	#TODO Possibly delete this case
 			p_rec = pools['Pr']
 			p_al = sorted(p_rec, key=lambda key: p_rec[key], reverse=True)
@@ -489,7 +520,7 @@ def normalize(pools, REF, arg, r_min=0.03):
 				b = rec[p_al[0]]
 				e = p_rec[p_al[1]]
 				f = p_rec[p_al[0]]
-				return [p_al[1], p_al[0], a, b, e, f]
+				al_count = [[p_al[1], p_al[0], a, b],[e, f]]
 	elif len(inf_s) == 3:
 		if 'Pr' in inf_s:
 			parental = pools['Pr']
@@ -505,7 +536,7 @@ def normalize(pools, REF, arg, r_min=0.03):
 				d = rec[p_al[1]]
 				e = parental[p_al[0]]
 				f = parental[p_al[1]]
-				return[p_al[0], p_al[1], a, b, c, d, e, f]
+				al_count = [[p_al[0], p_al[1], a, b, c, d],[e, f]] 
 			elif 'Pr' in inf_s:
 				a = dom[p_al[1]]
 				b = dom[p_al[0]]
@@ -513,43 +544,21 @@ def normalize(pools, REF, arg, r_min=0.03):
 				d = rec[p_al[0]]
 				e = parental[p_al[1]]
 				f = parental[p_al[0]]
-				return[p_al[1], p_al[0], a, b, c, d, e, f]
-
-def test_arg_ann(__doc__,arg):
-	if arg['--input'] == None and arg['pipe'] == True:
-		print(__doc__,end='')
-		sys.exit()
-	if arg['--input'] != None:
-		inp_f = arg['--input']
-		if arg['--input'].split('.')[-1] == 'gz':
-			try:
-				f = gzip.open(inp_f, 'rt')
-			except FileNotFoundError:
-				print('Error: The input file {} does not exit'.format(inp_f))
-				sys.exit()
-		else:
-			try:
-				f = open(inp_f, 'r')
-			except FileNotFoundError:
-				print('Error: The input file {} does not exit'.format(inp_f))
-				sys.exit()
-		arg['inp'] = f
-	wd = os.getcwd()
-	arg['--version'] = True
-	try:
-		os.makedirs(wd+'/'+arg['--outdir'])
-	except FileExistsError:
-		print('#Warning: the output directory already exists')
-		pass
-
+				al_count = [[p_al[1], p_al[0], a, b, c, d],[e, f]]
+	if wt:
+		if reorder:
+			wt_l = [pools[wt][alle[1]], pools[wt][alle[0]]]
+		elif not reorder:
+			wt_l = [pools[wt][alle[0]], pools[wt][alle[1]]]
+		al_count = [al_count, wt_l]
+	elif not wt and ('Pr' not in inf_s or 'Pd' not in inf_s):
+		al_count = [al_count, wt_l]
+	return al_count
 	
-	arg['--outdir'] = wd+'/'+arg['--outdir']+'/'
-	if arg['--output'] != None:
-		arg['--fileformat'] = '.txt'
-		arg['--output'] = arg['--output'] + arg['--fileformat']
-		arg['--output'] = check_save_an(arg, arg['--output'])
-	else:
-		arg['--output'] = None
+
+def check_annotate_args(arg):
+	arg['--version'] = True
+	wd = os.getcwd()
 	try:
 		if arg['--gff'].split('.')[-1] == 'gz':
 			gff = gzip.open(wd+'/'+arg['--gff'],'rt')
@@ -562,12 +571,11 @@ def test_arg_ann(__doc__,arg):
 		sys.exit()
 
 	try:
-		if arg['--reference'].split('.')[-1] == 'gz':
-			ref = gzip.open(wd+'/'+arg['--reference'],'rt')
+		if arg['--fasta-reference'].split('.')[-1] == 'gz':
+			ref = gzip.open(wd+'/'+arg['--fasta-reference'],'rt')
 		else:
-			ref = open(wd+'/'+arg['--reference'],'r')
-		#arg['--reference'] = ref
-		arg['--reference'] = wd+'/'+arg['--reference']
+			ref = open(wd+'/'+arg['--fasta-reference'],'r')
+		arg['--fasta-reference'] = wd+'/'+arg['--fasta-reference']
 		ref.close()
 	except FileNotFoundError:
 		print('The reference file does not exist.')
@@ -576,11 +584,6 @@ def test_arg_ann(__doc__,arg):
 	Tchrom,Treg = arg['--region'].split(':')
 	Treg = Treg.split('-')
 	arg['--region'] = [Tchrom,int(Treg[0]),int(Treg[1])]
-	arg['--data'] = arg['--data'].split(',')
-	arg['spacer'] = '\t'
-	arg['mbs'] = True
-	arg['--min-depth'] = 10
-	arg['lim'] = 1e-90
 	if 'R' in arg['--data'] and 'D' in arg['--data']:
 		header=['#CHROM','POS','REF','ALT', 'DPref_1','DPalt_1','DPref_2','DPalt_2','TYPE','ID','PARENT','STRAND',\
 			'PHASE','CODON_ref','CODON_alt','AA_ref','AA_alt','INFO']
@@ -588,8 +591,6 @@ def test_arg_ann(__doc__,arg):
 		header=['#CHROM','POS','REF','ALT', 'DPref_1','DPalt_1','TYPE','ID','PARENT','STRAND',\
 			'PHASE','CODON_ref','CODON_alt','AA_ref','AA_alt','INFO']
 	arg['header'] = header
-	if arg['--mutagen'] == None:
-		arg['--mutagen'] = 'EMS'
 	if not 'R' in arg['--data']:
 		print('Error: You should include the recessive pool (--data')
 		sys.exit()
@@ -698,8 +699,8 @@ def  find_row_name(rows, pos, key):
 def load_reference(df,arg):
 	chrom = df['#CHROM'].unique()[0]
 	flag = True
-	if arg['--reference'].split('.')[-1] == 'gz':
-		with gzip.open(arg['--reference'], 'rt') as handle:
+	if arg['--fasta-reference'].split('.')[-1] == 'gz':
+		with gzip.open(arg['--fasta-reference'], 'rt') as handle:
 			for sequ in SeqIO.parse(handle, 'fasta'):
 				if sequ.id == chrom:
 					arg['ref'] = sequ
@@ -709,7 +710,7 @@ def load_reference(df,arg):
 				print('Chromosome not found in FASTA file.')
 				sys.exit()
 	else:
-		with open(arg['--reference'], 'r') as handle:
+		with open(arg['--fasta-reference'], 'r') as handle:
 			for sequ in SeqIO.parse(handle, 'fasta'):
 				if sequ.id == chrom:
 					arg['ref'] = sequ
@@ -1064,8 +1065,8 @@ def write_argv(arg:dict,argv:str):
 	write_line(version,fsal)
 	write_line(line, fsal)
 	if argv[0] == 'annotate':
-		ref_idx = argv.index('--reference')
-		gff_idx = argv.index('--gff')
+		ref_idx = argv.index('--fasta-reference') if '--fasta-reference' in argv else argv.index('-f')
+		gff_idx = argv.index('--gff') if '--gff' in argv else argv.index('-g')
 		write_line('##reference=file://'+argv[ref_idx+1].split('/')[-1]+'\n',fsal)
 		write_line('##gff3=file://'+argv[gff_idx+1].split('/')[-1]+'\n',fsal)
 	for field in arg['header']:
