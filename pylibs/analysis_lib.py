@@ -61,6 +61,20 @@ def check_args(__doc__,arg):
 	
 		arg['--output'] = arg['outdir'] + arg['filename']
 		arg['--output'] = check_save_an(arg, arg['filename'])
+	data = arg['--data']
+	data_w = data.copy()
+	wt_idx = -1
+	wt = False
+	if 'Wr' in data_w or 'Wd' in data_w:
+		if 'Wr' in data_w:
+			wt_idx = data_w.index('Wr')
+			wt = 'Wr'
+		elif 'Wd' in data_w:
+			wt_idx = data_w.index('Wd')
+			wt = 'Wd'
+		data_w.pop(wt_idx)
+	arg['data_w'] = data_w
+	arg['wt'] = wt
 	
 	arg['lim'] = 1e-90
 	if 'mbs' in arg.keys():
@@ -89,20 +103,7 @@ def check_save_an(arg, file_name):
 
 def check_mbs_args(arg):
 	data = arg['--data']
-	data_w = data.copy()
-	wt_idx = -1
-	wt = False
-	if 'Wr' in data_w or 'Wd' in data_w:
-		if 'Wr' in data_w:
-			wt_idx = data_w.index('Wr')
-			wt = 'Wr'
-		elif 'Wd' in data_w:
-			wt_idx = data_w.index('Wd')
-			wt = 'Wd'
-		data_w.pop(wt_idx)
-	arg['data_w'] = data_w
-	arg['wt'] = wt
-	if ('Pr' in data or 'Pd' in data) and wt == True:
+	if ('Pr' in data or 'Pd' in data) and arg['wt'] == True:
 		#print(wt)
 		print('Error: Do not include wild-type(\"Wr\"|\"Wd\") and parental re-sequencing (\"Pd\"|\"Pr\") in the same analysis.')
 		sys.exit()
@@ -401,7 +402,7 @@ def filter_mbs(arg, al_count, p_al_count):
 		REF,ALT,a,b,c,d = al_count[0], al_count[1], al_count[2], al_count[3], al_count[4], al_count[5]
 		dom = a + b
 		rec = c + d
-		if dom <= min_dp or dom >= max_dp:# or rec <= min_dp or rec >= max_dp: #TODO
+		if dom <= min_dp or dom >= max_dp or rec <= min_dp or rec >= max_dp: #TODO
 			flag.append(False)
 		else:
 			flag.append(True)
@@ -412,6 +413,9 @@ def filter_mbs(arg, al_count, p_al_count):
 		if arg['--isogenic-filter'] and ('Pr' in inf_s or 'Pd' in inf_s or 'Wr' in inf_s or 'Wd' in inf_s):
 			e,f = p_al_count[0], p_al_count[1]
 			flag.append(isogenic_filter(arg,c,d,e,f))
+		if arg['--outcross-filter'] and ('Pr' in inf_s or 'Pd' in inf_s or 'Wr' in inf_s or 'Wd' in inf_s):
+			e,f = p_al_count[0], p_al_count[1]
+			flag.append(outcross_filter(arg,c,d,e,f))
 	elif 'D' not in inf_s:
 		REF,ALT,c,d = al_count[0], al_count[1], al_count[2], al_count[3]
 		if c+d <= min_dp or c+d >= max_dp:
@@ -423,6 +427,9 @@ def filter_mbs(arg, al_count, p_al_count):
 		if arg['--isogenic-filter'] and ('Pr' in inf_s or 'Pd' in inf_s or 'Wr' in inf_s or 'Wd' in inf_s):
 			e,f = p_al_count[0], p_al_count[1]
 			flag.append(isogenic_filter(arg,c,d,e,f))
+		if arg['--outcross-filter'] and ('Pr' in inf_s or 'Pd' in inf_s or 'Wr' in inf_s or 'Wd' in inf_s):
+			e,f = p_al_count[0], p_al_count[1]
+			flag.append(outcross_filter(arg,c,d,e,f))
 	if False in flag:
 		return False
 	else:
@@ -451,6 +458,7 @@ def isogenic_filter(arg,c,d,e,f):
 	else: 
 		return True
 def outcross_filter(arg,c,d,e,f):
+	#if ('Wr' in arg['--data'] or 'Pr' in arg['--data']) and arg['--mutant-pool'] == 'R': #TODO
 	if f >= arg['--min-error']:
 		return False
 	else:
@@ -465,8 +473,8 @@ def normalize(pools, REF, arg, r_min=0.03):
 	alle = [a for a,v in rec.items()]
 	#REF_idx = alle.index(REF)
 	reorder = False
-	al_count = list()
-	wt_l = list()
+	al_count = 0
+	wt_l = 0
 	if len(alle) > 2:
 		return 0,0
 	if len(inf_s) == 1:
@@ -511,7 +519,8 @@ def normalize(pools, REF, arg, r_min=0.03):
 				b = rec[p_al[1]]
 				e = p_dom[p_al[0]]
 				f = p_dom[p_al[1]]
-				al_count = [[p_al[0], p_al[1], a, b],[e,f]]
+				al_count = [p_al[0], p_al[1], a, b]
+				wt_l = [e,f]
 		elif inf_s == {'R', 'Pr'}:	#TODO Possibly delete this case
 			p_rec = pools['Pr']
 			p_al = sorted(p_rec, key=lambda key: p_rec[key], reverse=True)
@@ -520,7 +529,10 @@ def normalize(pools, REF, arg, r_min=0.03):
 				b = rec[p_al[0]]
 				e = p_rec[p_al[1]]
 				f = p_rec[p_al[0]]
-				al_count = [[p_al[1], p_al[0], a, b],[e, f]]
+				al_count = [p_al[1], p_al[0], a, b]
+				wt_l = [e, f]
+			else:
+				al_count, wt_l = 0,0
 	elif len(inf_s) == 3:
 		if 'Pr' in inf_s:
 			parental = pools['Pr']
@@ -536,7 +548,8 @@ def normalize(pools, REF, arg, r_min=0.03):
 				d = rec[p_al[1]]
 				e = parental[p_al[0]]
 				f = parental[p_al[1]]
-				al_count = [[p_al[0], p_al[1], a, b, c, d],[e, f]] 
+				al_count = [p_al[0], p_al[1], a, b, c, d]
+				wt_l = [e, f] 
 			elif 'Pr' in inf_s:
 				a = dom[p_al[1]]
 				b = dom[p_al[0]]
@@ -544,16 +557,18 @@ def normalize(pools, REF, arg, r_min=0.03):
 				d = rec[p_al[0]]
 				e = parental[p_al[1]]
 				f = parental[p_al[0]]
-				al_count = [[p_al[1], p_al[0], a, b, c, d],[e, f]]
+				al_count = [p_al[1], p_al[0], a, b, c, d]
+				wt_l = [e, f]
+		else:
+			al_count, wt_l = 0, 0
 	if wt:
 		if reorder:
 			wt_l = [pools[wt][alle[1]], pools[wt][alle[0]]]
 		elif not reorder:
 			wt_l = [pools[wt][alle[0]], pools[wt][alle[1]]]
-		al_count = [al_count, wt_l]
-	elif not wt and ('Pr' not in inf_s or 'Pd' not in inf_s):
-		al_count = [al_count, wt_l]
-	return al_count
+	#elif not wt and ('Pr' not in inf_s or 'Pd' not in inf_s):
+	#	wt_l = 0
+	return al_count, wt_l
 	
 
 def check_annotate_args(arg):

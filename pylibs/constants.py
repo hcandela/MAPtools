@@ -6,7 +6,7 @@ MUT = 'EMS'
 blind_mbs = {'dots':('#000000','black'), 'MAX_SNPidx2':('#f781bf','pink'),'log10PVALUE':('#f0e442','yellow'),'SNPidx1':('#00ffff','light blue'),'SNPidx2':('#ff9a31','orange'),'BOOST':('#00ffff','light blue')}
 norm_mbs = {'dots':('royalblue','blue'), 'MAX_SNPidx2':('#f781bf','pink'),'log10PVALUE':('tomato','red'),'SNPidx1':('limegreen','green'),'SNPidx2':('#FF33F9' ,'pink'),'BOOST':('limegreen','green')}
 
-palettes_mbs = {'2':blind_mbs,'1':norm_mbs}
+palettes_mbs = {'1':blind_mbs,'2':norm_mbs}
 #TODO - Configure qtl palettes
 norm_qtl = {'dots':('royalblue','blue'), 'MAX_SNPidx2':('limegreen','green')
 ,'log10PVALUE':('tomato','red'),'SNPidx1':('limegreen','green'),'SNPidx2':('#FAC205','yellow'),
@@ -17,7 +17,7 @@ blind_qtl={'dots':('#000000','black'), 'MAX_SNPidx2':('#f781bf','pink')
 ,'log10PVALUE':('#f0e442','yellow'),'SNPidx1':('#00ffff','light blue'),'SNPidx2':('#ff9a31','orange'),
 'DELTA':('#f781bf','pink'), 'mvg':('#f0e442','yellow'), 'ci':('#f781bf','pink')
 }
-palettes_qtl = {'2':blind_qtl,'1':norm_qtl}
+palettes_qtl = {'1':blind_qtl,'2':norm_qtl}
 
 titles_mbs = {1:('p-values of two-tailed Fisher\'s exact tests along the chromosomes ({}).','pvalues_multiH' ),
           2:('p-values of two-tailed Fisher\'s exact tests in chromosome {}.', 'pvalue_chr{}'),

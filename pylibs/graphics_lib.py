@@ -30,7 +30,7 @@ pd.options.mode.chained_assignment = None
 
 def read_header_plot(arg):
     arg['--contigs'] = dict()
-    with open(arg['<input_file>'],'r') as handle:
+    with open(arg['--input'],'r') as handle:
         for line in handle:
             if line.startswith('##maptools_mergeCommand='):
                 names = ['-w','--window']
@@ -56,9 +56,9 @@ def test_plot(arg, __doc__):
         matplotlib.font_manager.fontManager.addfont(font_file)
     plt.rcParams['font.family'] = 'Arial'
     global fields
-    inp_f = arg['<input_file>']
+    inp_f = arg['--input']
     if not inp_f:
-        print(__doc__, end='')
+        print(__doc__, end='\n')
         sys.exit()
     try:
         f = open(inp_f, 'r')
@@ -83,7 +83,7 @@ def test_plot(arg, __doc__):
         arg['--multi-chrom'] = False
     arg['--alpha'] = float(arg['--alpha'])
     arg['lim'] = 1e-90
-    arg['--fileformat'] = '.'+arg['--fileformat']
+    arg['--output-type'] = '.'+arg['--output-type']
     if arg['--moving-avg'] == None:
         arg['--moving-avg'] = False
     else:
@@ -95,7 +95,7 @@ def test_plot(arg, __doc__):
     return arg
 
 def load_dataframe_plotting(arg):
-    inp_f = arg['<input_file>']
+    inp_f = arg['--input']
     inp_ext = inp_f.split('.')[-1]
     if inp_ext == 'csv':
         sep_ = ','
@@ -300,7 +300,7 @@ def check_qtl_opts(arg):
 
 
 def check_save(arg, file_name):
-    typ = arg['--fileformat']
+    typ = arg['--output-type']
     if os.path.isfile(arg['--outdir']+file_name):
 
         expand = 0
@@ -451,7 +451,7 @@ def get_ED100_4(df, arg, rang):
 
 def plot_ED(df, arg):
     chrom = arg['--chromosomes']
-    typ = arg['--fileformat']
+    typ = arg['--output-type']
     max_y = max(df['ED100_4'])
     t,rt,_=arg['titles'][10]
     for ch in range(len(chrom)):
@@ -491,7 +491,7 @@ def plot_ED(df, arg):
 
 def plot_G(df, arg):
     chrom = arg['--chromosomes']
-    typ = arg['--fileformat']
+    typ = arg['--output-type']
     min_y, max_y =min(df['G']), max(df['G'])
     t,rt,_ = arg['titles'][12]
     for ch in range(len(chrom)):
@@ -535,7 +535,7 @@ def pval_multi_graph(df, arg):
     t, rt = arg['titles'][1]
     if arg['--captions']:
         f = create_caption(arg, rt)
-    typ = arg['--fileformat']
+    typ = arg['--output-type']
     min_y = min(df['log10PVALUE'])*1.05
     labs_list = list()
     f_name = list()
@@ -587,7 +587,7 @@ def pval_multi_graph(df, arg):
     
 def pval_mono_graph(df, arg):
     chrom=arg['--chromosomes']
-    typ=arg['--fileformat']
+    typ=arg['--output-type']
     
     min_y=min(df['log10PVALUE'])*1.05
     
@@ -649,8 +649,8 @@ def qq_plot(df, arg):
     #TODO
     df['DP']=df['DPref_1']+df['DPalt_1']+df['DPref_2']+df['DPalt_2']
     chrom=arg['--chromosomes']
-    typ=arg['--fileformat']
-    inp_file=arg['<input_file>']
+    typ=arg['--output-type']
+    inp_file=arg['--input']
     r=pd.DataFrame()
     r['A']=df.DPref_1
     r['B']=df.DPalt_1
@@ -689,7 +689,7 @@ def qq_plot(df, arg):
 
 def AF1_AF2_mono_graph(df, arg):
     chrom=arg['--chromosomes']
-    typ=arg['--fileformat']
+    typ=arg['--output-type']
 
     for i in range(len(chrom)):
         d=df[df['#CHROM'] == chrom[i]]
@@ -769,7 +769,7 @@ def AF1_AF2_mono_graph(df, arg):
 
 def AF_mono_graph(df, arg, g_type):
     chrom=arg['--chromosomes']
-    typ=arg['--fileformat']
+    typ=arg['--output-type']
     ticks_y=[0, 0.25, 0.5, 0.75, 1]
     lim_y=(0, 1)
     ylab = 'Allele Frequency'
@@ -852,7 +852,7 @@ def AF_mono_graph(df, arg, g_type):
             write_caption(f, cap,arg)
 
 def pval_multi_Vertical_graph(df, arg):
-    typ=arg['--fileformat']
+    typ=arg['--output-type']
     min_y = min(df['log10PVALUE'])*1.05
     max_x = arg['max_lenght']
     t,rt = arg['titles'][6]
@@ -915,7 +915,7 @@ def pval_multi_Vertical_graph(df, arg):
 
 
 def ED_multi_Vertical_graph(df, arg):
-    typ=arg['--fileformat']
+    typ=arg['--output-type']
     max_y = max(df['ED100_4'])
     max_x = arg['max_lenght']
     t,_,rt = arg['titles'][10]
@@ -969,7 +969,7 @@ def ED_multi_Vertical_graph(df, arg):
         write_caption(f,cap,arg)
 
 def G_multi_Vertical_graph(df, arg):
-    typ=arg['--fileformat']
+    typ=arg['--output-type']
     min_y, max_y = min(df['G']), max(df['G'])
     max_x =arg['max_lenght']
     t,_,rt = arg['titles'][12]
@@ -1024,7 +1024,7 @@ def G_multi_Vertical_graph(df, arg):
         write_caption(f,cap,arg)
 
 def AF_multi_Vertical_graph(df, arg, g_type):
-    typ=arg['--fileformat']
+    typ=arg['--output-type']
     max_x=arg['max_lenght']
     ticks_y=[0, 0.25, 0.5, 0.75, 1]
     lim_y=(0, 1)
@@ -1125,7 +1125,7 @@ def AF_multi_Vertical_graph(df, arg, g_type):
         write_caption(f, cap,arg)
 
 def AF12_multi_Vertical_graph(df, arg):
-    typ=arg['--fileformat']
+    typ=arg['--output-type']
     max_x=arg['max_lenght']
     
     ticks_y=[0, 0.25, 0.5, 0.75, 1]
@@ -1243,7 +1243,7 @@ def AF12_multi_Vertical_graph(df, arg):
 def AF1_AF2_pval_mono(df, arg):
     global fields
     chrom=arg['--chromosomes']
-    typ=arg['--fileformat']
+    typ=arg['--output-type']
     min_y=min(df['log10PVALUE'])*1.05
 
     for i in range(len(chrom)):
@@ -1336,7 +1336,7 @@ def AF1_AF2_pval_mono(df, arg):
 def qtl_mixed_plot(df, arg):
     global fields
     chrom=arg['--chromosomes']
-    typ=arg['--fileformat']
+    typ=arg['--output-type']
     t,rt = arg['titles'][13]
     for i in range(len(chrom)):
         fig, ax=plt.subplots(4, 1, figsize=(8.5, 8.5))#(7,9)paper
@@ -1439,7 +1439,7 @@ def qtl_mixed_plot(df, arg):
 def snp_index_graph(df, arg):
     global fields
     chrom=arg['--chromosomes']
-    typ=arg['--fileformat']
+    typ=arg['--output-type']
     t,rt=arg['titles'][11]
 
     for i in range(len(chrom)):
