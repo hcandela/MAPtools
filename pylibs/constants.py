@@ -86,7 +86,7 @@ lines_qtl = {-3:'Each {} dot was calculated substracting the SNP-index value of 
         
          
 }
-v_maptools='1.00'
+v_maptools='Maptools version: 1.00'
 v_annotate= 'Annotate variants version: 1.00'
 v_mbs= 'Mapping by Sequencing analysis version: 1.00'
 v_mbsplot = 'Mapping by Sequencing plots version: 1.00'

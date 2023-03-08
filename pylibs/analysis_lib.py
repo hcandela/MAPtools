@@ -18,7 +18,12 @@ import gzip
 def cmHH(command_line):
 	os.system(command_line)
 
-def check_args(__doc__,arg):
+def check_args(__doc__,arg:dict):
+	'''Check mbs, qtl and annotate arguments.
+	   		·Read input
+			·Split data
+			·Check output
+	'''
 	arg['--data'] = arg['--data'].split(',')
 	if arg['--input'] == None and arg['pipe'] == True:
 		print(__doc__, end='\n')
@@ -61,6 +66,7 @@ def check_args(__doc__,arg):
 	
 		arg['--output'] = arg['outdir'] + arg['filename']
 		arg['--output'] = check_save_an(arg, arg['filename'])
+	#Data split, when Wr or Wd is present
 	data = arg['--data']
 	data_w = data.copy()
 	wt_idx = -1
@@ -77,6 +83,7 @@ def check_args(__doc__,arg):
 	arg['wt'] = wt
 	
 	arg['lim'] = 1e-90
+	#Call to specific checking function for each command
 	if 'mbs' in arg.keys():
 		arg = check_mbs_args(arg)
 	if 'qtl' in arg.keys():
@@ -86,7 +93,9 @@ def check_args(__doc__,arg):
 	return arg
 
 		
-def check_save_an(arg, file_name):
+def check_save_an(arg:dict, file_name:str):
+	"""Check if file exists and make a copy with different name
+	"""
 	typ = arg['--output-type']
 	if os.path.isfile(arg['--output']):
 		expand = 1
@@ -101,7 +110,10 @@ def check_save_an(arg, file_name):
 	else:
 		return arg['outdir']+file_name
 
-def check_mbs_args(arg):
+def check_mbs_args(arg:dict):
+	"""Check mbs options
+	   		·Also it is used in annotate command
+	"""
 	data = arg['--data']
 	if ('Pr' in data or 'Pd' in data) and arg['wt'] == True:
 		#print(wt)
@@ -140,7 +152,8 @@ def check_mbs_args(arg):
 		sys.exit()
 	return arg
 
-def check_qtl_args(arg):
+def check_qtl_args(arg:dict):
+	"""Check qtl options"""
 	data = arg['--data']
 	if len(data) < 2:
 		print('Error: You should include a minimum of 2 pools in QTL-seq experiment (--data D,R,Px or --data D,R)')
@@ -157,27 +170,36 @@ def check_qtl_args(arg):
 		print('Error: You should choose a correct interval of depths(--min_depth 20 --max-depth 120)')
 		sys.exit()
 	return arg
-def LF(entrada):
+
+def LF(inp:int):
+	"""Calculates factorial as given number, as the summatory of the logarithms (n,1)
+	returns a float"""
 	result = 0
-	if entrada == 0:
+	if inp == 0:
 		return 0
 	else:
-		for i in range(entrada, 1, -1):
+		for i in range(inp, 1, -1):
 			if i >= 1:
 				result += log(i)
 			else:
 				break
 	return result
 
-def LogFisher(a,b,c,d):
+def LogFisher(a:int,b:int,c:int,d:int):
 	'''
-	Calculates and returns fisher statistic logarithm as float
-	Arguments: a, b, c, d. these numbers come from the allele count
+	Calculates fisher test for p-value calculation.
+		·Input: allele depths, int
+		·Output: log(fisher_test), float
 	'''
 	logfisher = (LF(a+b) + LF(c+d) + LF(a+c) + LF(b+d) - LF(a) - LF(b) - LF(c) - LF(d) - LF(a+b+c+d)) / log(10)
 	return logfisher
 
-def Gstatic(a,b,c,d):
+def Gstatic(a:int,b:int,c:int,d:int):
+	"""
+	Calculates the G statistic for qtl analysis.
+		·Input: allele depths, int
+		·Output: g, float
+	"""
 	row1 = a + b
 	row2 = c + d
 	col1 = a + c
@@ -196,6 +218,8 @@ def Gstatic(a,b,c,d):
 	return g
 	
 def pvalor(a,b,c,d):
+	"""Calculates p-value 
+	"""
 	table = np.array([[a, b], [c, d]])
 	oddsr, pvalue = fisher_exact(table, alternative='two-sided')
 	return pvalue
@@ -238,7 +262,10 @@ def mbs_calc(inp, arg):
 			return [ratio1, boost]
 	elif 'D' in inf_s and 'R' in inf_s:
 		a, b, c, d = inp[0], inp[1], inp[2], inp[3]
-		ratio3 = max(c,d)/(c+d)
+		if arg['--mutant-pool'] == 'R':
+			ratio3 = max(c,d)/(c+d)
+		else:
+			ratio3 = max(a,b)/(a+b)
 		resultado = LogFisher(a,b,c,d)
 		pva = pvalor(a,b,c,d)
 		pva10 = (log(pva)/log(10))
@@ -490,7 +517,7 @@ def normalize(pools, REF, arg, r_min=0.03):
 	elif len(inf_s) == 2:
 		if 'R' in inf_s and 'D' in inf_s and ref == 'miss':
 			dom = pools['D']
-			a = rec[alle[0]]
+			a = dom[alle[0]]
 			c = rec[alle[0]]
 			b = dom[alle[1]]
 			d =	rec[alle[1]]
@@ -574,6 +601,9 @@ def normalize(pools, REF, arg, r_min=0.03):
 def check_annotate_args(arg):
 	arg['--version'] = True
 	wd = os.getcwd()
+	if arg['--gff'] == None:
+		print('Error: Select a gff file (--gff FILE)')
+		sys.exit()
 	try:
 		if arg['--gff'].split('.')[-1] == 'gz':
 			gff = gzip.open(wd+'/'+arg['--gff'],'rt')
@@ -585,6 +615,9 @@ def check_annotate_args(arg):
 		print('The gff file does not exist.')
 		sys.exit()
 
+	if arg['--fasta-reference'] == None:
+		print('Error: Select a fasta reference file (--fasta-reference FILE)')
+		sys.exit()
 	try:
 		if arg['--fasta-reference'].split('.')[-1] == 'gz':
 			ref = gzip.open(wd+'/'+arg['--fasta-reference'],'rt')
@@ -595,10 +628,18 @@ def check_annotate_args(arg):
 	except FileNotFoundError:
 		print('The reference file does not exist.')
 		sys.exit()
-	arg['chromosomes'] = list()
-	Tchrom,Treg = arg['--region'].split(':')
-	Treg = Treg.split('-')
-	arg['--region'] = [Tchrom,int(Treg[0]),int(Treg[1])]
+	#arg['chromosomes'] = list()
+	if arg['--region'] == None:
+		print('Error: Select a region (-R chromName:startPos-endPos)')
+		sys.exit()
+	else:
+		try: #TODO - Make a regex to detect chromName:startPos-endPos if is not a match sys.exit()
+			Tchrom,Treg = arg['--region'].split(':')
+		except ValueError:
+			print('Error: Please specify region correctly (-R chromName:startPos-endPos)')
+			sys.exit() 
+		Treg = Treg.split('-')
+		arg['--region'] = [Tchrom,int(Treg[0]),int(Treg[1])]
 	if 'R' in arg['--data'] and 'D' in arg['--data']:
 		header=['#CHROM','POS','REF','ALT', 'DPref_1','DPalt_1','DPref_2','DPalt_2','TYPE','ID','PARENT','STRAND',\
 			'PHASE','CODON_ref','CODON_alt','AA_ref','AA_alt','INFO']
@@ -712,6 +753,7 @@ def  find_row_name(rows, pos, key):
 	return left, right-1
 
 def load_reference(df,arg):
+	print(df)
 	chrom = df['#CHROM'].unique()[0]
 	flag = True
 	if arg['--fasta-reference'].split('.')[-1] == 'gz':

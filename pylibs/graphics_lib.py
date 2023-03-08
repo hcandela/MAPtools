@@ -143,6 +143,8 @@ def load_dataframe(arg):
     arg['header']=arg['--fields']
     if arg['--chromosomes'] == 'all':
         arg['--chromosomes'] = list(df['#CHROM'].unique())
+    else:
+        arg['--chromosomes'] = arg['--chromosomes'].split(',')
     return arg, df
     
 def check_merge(arg,__doc__):
@@ -203,7 +205,6 @@ def check_mbs_opts(arg):
             sys.exit()
     arg['titles'] = titles_mbs
     arg['lines'] = lines_mbs
-    print(arg['--palette'])
     palette = palettes_mbs[arg['--palette']]
     arg['--palette'] = {k: v[0] for k, v in palette.items()}
     arg['color_names'] = {k: v[1] for k, v in palette.items()}
@@ -399,9 +400,10 @@ def grouped_by(df, arg):
                     res += [rSNPidx1, rSNPidx2]
                 if 'MAX_SNPidx2' in arg['--fields']:
                     rMAX_SNPidx2 = (max(rDt, rCt))/(rDt+rCt)
+                    rSNPidx1 = rBt/(rAt+rBt)
+                    rSNPidx2 = rDt/(rCt+rDt)
                     fisher = LogFisher(rAt, rBt, rCt, rDt)
-                    boost = 1/(sys.float_info.min +
-                               abs(1 - 1/max(rSNPidx2, 1-rSNPidx2)))
+                    boost = 1/(sys.float_info.min + abs(1 - 1/max(rSNPidx2, 1-rSNPidx2)))
                     res += [rMAX_SNPidx2, fisher, boost]
                 if 'DELTA' in arg['--fields']:
                     rDELTA = rSNPidx2 - rSNPidx1

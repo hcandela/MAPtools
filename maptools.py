@@ -1,19 +1,8 @@
 #!/usr/bin/env python3
-""" MBS & QTL-seq Analysis
-About:
-   Variant analyzer for MBS & QTL-seq experiment from VCF files. To be used in conjunction with bcftools mpileup and
-   bcftools call. Also it can be used giving the vcf input on stream with cat.
-   First option:
-   bcftools mpileup -f ref.fa --annotate FORMAT/AD b1.bam b2.bam ... | bcftools call (-m | -mv) -V indels | python3 maptools.py <command> <args>...
-   Second option:
-   cat mpileup_call_in.vcf | python3 maptools.py <command> <args>...
-   Third option:
-   python3 maptools.py <command> <mpileup_call_in.vcf> <args>...
+"""
 Usage:
    maptools.py <command> <args>...
    maptools.py <command>
-   maptools.py --version
-   maptools.py -h
    maptools.py
 
 Available commands:
@@ -23,6 +12,9 @@ Available commands:
    qtlplot
    merge
    annotate
+
+Version:
+   Maptools version: 1.00
 """
 
 from docopt import docopt

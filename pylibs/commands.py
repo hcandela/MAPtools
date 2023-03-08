@@ -57,7 +57,7 @@ def mbs(argv):
         inp = sys.stdin
     choose_header(arg)
     write_argv(arg, argv)
-    print(arg)
+    #print(arg)
     for line in inp:
         if line.startswith('#'):
           read_header(arg,line)
@@ -73,6 +73,7 @@ def mbs(argv):
                    flag = True
                 if flag == True:
                   calcs = mbs_calc(al_count[2:], arg)
+                  #print(calcs)
                   if calcs != None:
                     first = new_line(fsal, arg, first, fields[:2], al_count, calcs)
 
@@ -220,15 +221,15 @@ def mbs_plot(argv):
             if arg['--combine'] and arg['--moving-avg'] != False: 
               AF12_multi_Vertical_graph(df, arg)
     if arg['--allele-freq-1'] == True and arg['--allele-freq-2'] == True and arg['--pvalue'] == True:
-        print('Allele Frequencies & P-value vertical single chromosome')
+        #print('Allele Frequencies & P-value vertical single chromosome')
         AF1_AF2_pval_mono(df, arg)
     if arg['--allele-freq-1'] == True:
-        print('Allele Frequency 1 single chromosome')
+        #print('Allele Frequency 1 single chromosome')
         AF_mono_graph(df, arg, 'SNPidx1')
         if arg['--multi-chrom'] == True:
            AF_multi_Vertical_graph(df, arg, 'SNPidx1')
     if arg['--allele-freq-2'] == True:
-        print('Allele Frequency 2 single chromosome')
+        #print('Allele Frequency 2 single chromosome')
         AF_mono_graph(df, arg, 'SNPidx2')
         if arg['--multi-chrom'] == True:
            AF_multi_Vertical_graph(df, arg, 'SNPidx2')
@@ -281,7 +282,7 @@ def qtl_plot(argv):
     arg = docopt(qtlplot_doc, argv=None, help=True,version=v_qtlplot)
     arg = test_plot(arg, qtlplot_doc)
     arg = read_header_plot(arg)
-    print(arg)
+    #print(arg)
     arg, df = load_dataframe_plotting(arg)
     arg['version'] = v_qtlplot
     #print(arg)
@@ -378,7 +379,7 @@ Filter Options:
   else:
     inp = sys.stdin
   write_argv(arg, argv)
-  print(arg)
+  #print(arg)
   for line in inp:
     if line.startswith('#'):
       read_header(arg,line)
@@ -398,6 +399,9 @@ Filter Options:
               calcs = mbs_calc(al_count[2:], arg)
               if calcs != None:
                 df = new_df_line(df,arg,fields[:2], al_count, calcs)
+  if df.empty:
+     print('Warning: There is no variants to analyse. Please reduce filtering.')
+     sys.exit()
   load_reference(df,arg)
   df = df.reset_index()
   start = time.perf_counter()
