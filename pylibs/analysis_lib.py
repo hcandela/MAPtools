@@ -672,6 +672,7 @@ def load_gff(arg):
 			continue
 		else:
 			line = line.rstrip()
+			line = line.rstrip(';')
 			data = line.split('\t')
 			seqid = data[0]
 			#TODO Complete condition to cath only structures in our region
@@ -687,6 +688,9 @@ def load_gff(arg):
 					dict_att[att.split('=')[0]] = att.split('=')[1]
 				#dict_att = {dict_att[att.split('=')[0]] :att.split('=')[1] for att in attributes}
 				if type_ in gff.keys():
+					#if type_ == 'CDS' and phase == '.':
+					#	write_annotate_line('#Warning: CDS has to be an integer type phase. CDS at {}:{} discarded'.format(seqid,start),arg['fsal'])
+					#else:			
 					gff[type_].append([seqid, type_, int(start), int(end), strand, phase, dict_att['ID'], dict_att['Parent'], dict_att['Name']])
 
 	gff['gene'] = gff['gene'] + gff['ncRNA_gene'] + gff['pseudogene']	#all of these types are considered as genes
@@ -753,7 +757,6 @@ def  find_row_name(rows, pos, key):
 	return left, right-1
 
 def load_reference(df,arg):
-	print(df)
 	chrom = df['#CHROM'].unique()[0]
 	flag = True
 	if arg['--fasta-reference'].split('.')[-1] == 'gz':
