@@ -241,7 +241,7 @@ def check_mbs_opts(arg):
         if arg['--max-allele-freq2'] == True and 'MAX_SNPidx2' not in arg['--fields']:
             print('Error: is not possible make phased MAX Allele Frequency graphics with your input data. Please use -D or -R or -a option', file=sys.stderr)
             sys.exit()
-    if arg['--all'] == False and arg['--pvalue'] == False and arg['--allele-freq-1'] == False and arg['--allele-freq-2'] == False:
+    if arg['--all'] == False and arg['--pvalue'] == False and arg['--allele-freq-1'] == False and arg['--allele-freq-2'] == False and arg['--qtl-seq'] == False and arg['--g-statistic'] == False and arg['--euclidean-distance'] == False:
         print('Warning: any graphic was selected. Please use -a option to make all possible graphics with your data.', file=sys.stderr)
     return arg
 
@@ -433,10 +433,14 @@ def grouped_by(df, arg):
 
 
 def get_ED100_4(df, arg, rang):
-    chrom = df['#CHROM'].unique()
+    chrom = [ch for ch in arg['contigs'].keys()]
+    #chrom = df['#CHROM'].unique()
+    print(df)
     ED100 = np.array([])
     for ch in range(len(chrom)):
         d = df[df['#CHROM'] == chrom[ch]]
+        if len(d) < RANG:
+            continue
         d.index = np.arange(len(d))
         n = len(d)
         ED100c = np.zeros(n)
