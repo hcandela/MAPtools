@@ -26,7 +26,7 @@ def check_args(__doc__,arg:dict):
 	'''
 	arg['--data'] = arg['--data'].split(',')
 	if arg['--input'] == None and arg['pipe'] == True:
-		print(__doc__, end='\n')
+		print(__doc__, end='\n', file=sys.stderr)
 		sys.exit()
 	if arg['--input'] != None:
 		inp_f = arg['--input']
@@ -34,13 +34,13 @@ def check_args(__doc__,arg:dict):
 			try:
 				f = gzip.open(inp_f, 'rt')
 			except FileNotFoundError:
-				print('Error: The input file {} does not exist'.format(inp_f))
+				print('Error: The input file {} does not exist'.format(inp_f), file=sys.stderr)
 				sys.exit()
 		else:
 			try:
 				f = open(inp_f, 'r')
 			except FileNotFoundError:
-				print('Error: The input file {} does not exist'.format(inp_f))
+				print('Error: The input file {} does not exist'.format(inp_f), file=sys.stderr)
 				sys.exit()
 		arg['inp'] = f
 	if arg['--output-type'] in {'csv','txt'}:
@@ -50,7 +50,7 @@ def check_args(__doc__,arg:dict):
 			arg['spacer'] = '\t'
 		arg['--output-type'] = '.'+arg['--output-type']
 	else:
-		print('Error: select a valid format.')
+		print('Error: select a valid format.', file=sys.stderr)
 		sys.exit()
 	if arg['--output'] != None:
 		wd = os.getcwd()
@@ -59,7 +59,7 @@ def check_args(__doc__,arg:dict):
 		try:
 			os.makedirs(wd+'/'+outdir)
 		except FileExistsError:
-			print('#Warning: the output directory already exists')
+			print('Warning: the output directory already exists', file=sys.stderr)
 			pass
 		arg['filename'] = arg['--output'].split('/')[-1]
 		arg['outdir']=wd+'/'+outdir
@@ -117,20 +117,20 @@ def check_mbs_args(arg:dict):
 	data = arg['--data']
 	if ('Pr' in data or 'Pd' in data) and arg['wt'] == True:
 		#print(wt)
-		print('Error: Do not include wild-type(\"Wr\"|\"Wd\") and parental re-sequencing (\"Pd\"|\"Pr\") in the same analysis.')
+		print('Error: Do not include wild-type(\"Wr\"|\"Wd\") and parental re-sequencing (\"Pd\"|\"Pr\") in the same analysis.', file=sys.stderr)
 		sys.exit()
 	if arg['--mutant-pool'] not in {'R','D'}:
-		print('Error: Select valid mutant pool -m (\"R\"|\"D\")')
+		print('Error: Select valid mutant pool -m (\"R\"|\"D\")', file=sys.stderr)
 		sys.exit()
 
 	if not 'R' in data:
-		print('Error: You should include the recessive pool (--data R,X,X')
+		print('Error: You should include the recessive pool (--data R,X,X)', file=sys.stderr)
 		sys.exit()
 	if 'Pr' in data and 'Pd' in data:
-		print('Error: You should include only one re-sequenced parental in data (--data D,R,Px or --data R,Px')
+		print('Error: You should include only one re-sequenced parental in data (--data D,R,Px or --data R,Px)', file=sys.stderr)
 		sys.exit()
 	if 'Wr' in data and 'Wd' in data:
-		print('Error: You should include only one re-sequenced wilt-type in data (--data D,R,Wx or --data R,Wx')
+		print('Error: You should include only one re-sequenced wilt-type in data (--data D,R,Wx or --data R,Wx)', file=sys.stderr)
 		sys.exit()
 	if arg['--max-depth'] == 'inf':
 		arg['--max-depth'] = np.inf
@@ -143,12 +143,12 @@ def check_mbs_args(arg:dict):
 	if arg['--min-depth'] <= 0:
 		arg['--min-depth'] = 1
 	if arg['--max-depth'] <= arg['--min-depth']:
-		print('Error: You should choose a correct interval of depths(--min_depth 20 --max-depth 120)')
+		print('Error: You should choose a correct interval of depths(--min_depth 20 --max-depth 120)', file=sys.stderr)
 		sys.exit()
 	if arg['--min-ratio'] < 0:
 		arg['--min-ratio'] = 0.0
 	if arg['--max-ratio'] <= arg['--min-ratio']:
-		print('Error: You should choose a correct interval of frequencies(--min_ratio 15 --max-ratio 85)')
+		print('Error: You should choose a correct interval of frequencies(--min_ratio 15 --max-ratio 85)', file=sys.stderr)
 		sys.exit()
 	return arg
 
@@ -156,10 +156,10 @@ def check_qtl_args(arg:dict):
 	"""Check qtl options"""
 	data = arg['--data']
 	if len(data) < 2:
-		print('Error: You should include a minimum of 2 pools in QTL-seq experiment (--data D,R,Px or --data D,R)')
+		print('Error: You should include a minimum of 2 pools in QTL-seq experiment (--data D,R,Px or --data D,R)', file=sys.stderr)
 		sys.exit()
 	if 'Pr' in data and 'Pd' in data:
-		print('Error: You should include only one parental pool in data (--data D,R,Px)')
+		print('Error: You should include only one parental pool in data (--data D,R,Px)', file=sys.stderr)
 		sys.exit()
 
 	arg['--min-depth'] = int(arg['--min-depth'])
@@ -167,7 +167,7 @@ def check_qtl_args(arg:dict):
 	if arg['--min-depth'] <= 0:
 		arg['--min-depth'] = 1
 	if arg['--max-depth'] <= arg['--min-depth']:
-		print('Error: You should choose a correct interval of depths(--min_depth 20 --max-depth 120)')
+		print('Error: You should choose a correct interval of depths(--min_depth 20 --max-depth 120)', file=sys.stderr)
 		sys.exit()
 	return arg
 
@@ -340,7 +340,7 @@ def new_line(fsal, arg, first, fields, al_count, calcs):
 
 def write_line(n_line, fsal):
 	if fsal == False:
-		print(n_line, end='')
+		print(n_line, end='', file=sys.stdout)
 	else:
 		fsal.write(n_line)
 
@@ -602,7 +602,7 @@ def check_annotate_args(arg):
 	arg['--version'] = True
 	wd = os.getcwd()
 	if arg['--gff'] == None:
-		print('Error: Select a gff file (--gff FILE)')
+		print('Error: Select a gff file (--gff FILE)', file=sys.stderr)
 		sys.exit()
 	try:
 		if arg['--gff'].split('.')[-1] == 'gz':
@@ -612,11 +612,11 @@ def check_annotate_args(arg):
 		arg['--gff'] = wd+'/'+arg['--gff']
 		arg['--gff'] = gff
 	except FileNotFoundError:
-		print('The gff file does not exist.')
+		print('The gff file does not exist.', file=sys.stderr)
 		sys.exit()
 
 	if arg['--fasta-reference'] == None:
-		print('Error: Select a fasta reference file (--fasta-reference FILE)')
+		print('Error: Select a fasta reference file (--fasta-reference FILE)', file=sys.stderr)
 		sys.exit()
 	try:
 		if arg['--fasta-reference'].split('.')[-1] == 'gz':
@@ -626,20 +626,20 @@ def check_annotate_args(arg):
 		arg['--fasta-reference'] = wd+'/'+arg['--fasta-reference']
 		ref.close()
 	except FileNotFoundError:
-		print('The reference file does not exist.')
+		print('The reference file does not exist.', file=sys.stderr)
 		sys.exit()
 	#arg['chromosomes'] = list()
 	if arg['--region'] == None:
-		print('Error: Select a region (-R chromName:startPos-endPos)')
+		print('Error: Select a region (-R chromName:startPos-endPos)', file=sys.stderr)
 		sys.exit()
 	else:
-		try: #TODO - Make a regex to detect chromName:startPos-endPos if is not a match sys.exit()
+		if re.match('\S+:\d+-\d+', arg['--region']):
 			Tchrom,Treg = arg['--region'].split(':')
-		except ValueError:
-			print('Error: Please specify region correctly (-R chromName:startPos-endPos)')
-			sys.exit() 
-		Treg = Treg.split('-')
-		arg['--region'] = [Tchrom,int(Treg[0]),int(Treg[1])]
+			Treg = Treg.split('-')
+			arg['--region'] = [Tchrom,int(Treg[0]),int(Treg[1])]
+		else:
+			print('Error: Enter region correctly (-R chromName:startPos-endPos)', file=sys.stderr)
+			sys.exit()
 	if 'R' in arg['--data'] and 'D' in arg['--data']:
 		header=['#CHROM','POS','REF','ALT', 'DPref_1','DPalt_1','DPref_2','DPalt_2','TYPE','ID','PARENT','STRAND',\
 			'PHASE','CODON_ref','CODON_alt','AA_ref','AA_alt','INFO']
@@ -648,7 +648,7 @@ def check_annotate_args(arg):
 			'PHASE','CODON_ref','CODON_alt','AA_ref','AA_alt','INFO']
 	arg['header'] = header
 	if not 'R' in arg['--data']:
-		print('Error: You should include the recessive pool (--data')
+		print('Error: You should include the recessive pool (--data R,X)', file=sys.stderr)
 		sys.exit()
 	return arg
 
@@ -688,10 +688,10 @@ def load_gff(arg):
 					dict_att[att.split('=')[0]] = att.split('=')[1]
 				#dict_att = {dict_att[att.split('=')[0]] :att.split('=')[1] for att in attributes}
 				if type_ in gff.keys():
-					#if type_ == 'CDS' and phase == '.':
-					#	write_annotate_line('#Warning: CDS has to be an integer type phase. CDS at {}:{} discarded'.format(seqid,start),arg['fsal'])
-					#else:			
-					gff[type_].append([seqid, type_, int(start), int(end), strand, phase, dict_att['ID'], dict_att['Parent'], dict_att['Name']])
+					if type_ == 'CDS' and phase == '.':
+						print('##Warning: Phase has to be an integer in CDS {}:{}-{} and was discarded.\n'.format(seqid,start,end), file=sys.stderr)
+					else:			
+						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, dict_att['ID'], dict_att['Parent'], dict_att['Name']])
 
 	gff['gene'] = gff['gene'] + gff['ncRNA_gene'] + gff['pseudogene']	#all of these types are considered as genes
 	gff['gene'].sort(key=lambda row:row[2]) #ordered by pos
@@ -767,7 +767,7 @@ def load_reference(df,arg):
 					flag = False
 					break
 			if flag == True:
-				print('Chromosome not found in FASTA file.')
+				print('Error: Chromosome not found in FASTA file.', file=sys.stderr)
 				sys.exit()
 	else:
 		with open(arg['--fasta-reference'], 'r') as handle:
@@ -777,7 +777,7 @@ def load_reference(df,arg):
 					flag = False
 					break
 			if flag == True:
-				print('Chromosome not found in FASTA file.')
+				print('Chromosome not found in FASTA file.', file=sys.stderr)
 				sys.exit()
 
 
@@ -1109,7 +1109,7 @@ def read_header(arg:dict,line:str):
 	if line.startswith('#CHROM'):
 		bam_list = line.rstrip().split('\t')[9:]
 		if len(arg['--data']) > len(bam_list):
-			print('Error: The data list does not match with the number of pools used.')
+			print('Error: The data list does not match with the number of pools used.', file=sys.stderr)
 			sys.exit()
 		elif len(arg['--data']) <= len(bam_list):
 			arg['pools'] = {arg['--data'][i]:bam_list[i] for i in range(len(arg['--data']))}

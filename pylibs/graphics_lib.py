@@ -58,18 +58,18 @@ def test_plot(arg, __doc__):
     global fields
     inp_f = arg['--input']
     if not inp_f:
-        print(__doc__, end='\n')
+        print(__doc__, end='\n', file=sys.stderr)
         sys.exit()
     try:
         f = open(inp_f, 'r')
     except FileNotFoundError:
-        print('Error: The input file {} does not exist'.format(inp_f))
+        print('Error: The input file {} does not exist'.format(inp_f), file=sys.stderr)
         sys.exit()
     wd = os.getcwd()
     try:
         os.makedirs(wd+'/'+arg['--outdir'])
     except FileExistsError:
-        print('Warning: the output directory already exists')
+        print('Warning: the output directory already exists', file=sys.stderr)
         pass
     arg['--outdir'] = wd+'/'+arg['--outdir']+'/'
     if arg['--captions']:
@@ -90,7 +90,7 @@ def test_plot(arg, __doc__):
         arg['--moving-avg'] = int(arg['--moving-avg'])
         if arg['--moving-avg'] <= 0:
             print(
-                'Error: The window size  for m. avg must be an integer higher than zero.')
+                'Error: The window size  for m. avg must be an integer higher than zero.', file=sys.stderr)
             sys.exit()
     return arg
 
@@ -151,13 +151,13 @@ def check_merge(arg,__doc__):
     global fields
     inp_f = arg['--input']
     if not inp_f:
-        print(__doc__,end='\n')
+        print(__doc__,end='\n', file=sys.stderr)
         sys.exit()
 
     try:
         f = open(arg['--input'], 'r')
     except FileNotFoundError:
-        print('Error: The input file {} does not exist'.format(inp_f))
+        print('Error: The input file {} does not exist'.format(inp_f), file=sys.stderr)
         sys.exit()
     if arg['--output-type'] in {'csv','txt'}:
         if arg['--output-type'] == 'csv':
@@ -166,7 +166,7 @@ def check_merge(arg,__doc__):
             arg['spacer'] = '\t'
         arg['--output-type'] = '.' + arg['--output-type']
     else:
-        print('Error: select a valid format.')
+        print('Error: select a valid format.', file=sys.stderr)
         sys.exit()
     if arg['--output'] != None:
         wd = os.getcwd()
@@ -175,7 +175,7 @@ def check_merge(arg,__doc__):
         try:
             os.makedirs(wd+'/'+outdir)
         except FileExistsError:
-            print('Warning: the output directory already exists')
+            print('Warning: the output directory already exists', file=sys.stderr)
             pass
         arg['filename'] = arg['--output'].split('/')[-1]
         arg['outdir'] = wd+'/'+outdir
@@ -189,7 +189,7 @@ def check_merge(arg,__doc__):
     arg['lim'] = 1e-90
     arg['--window'] = int(arg['--window'])
     if arg['--window'] <= 0:
-        print('Error: The window size must be an integer higher than zero.')
+        print('Error: The window size must be an integer higher than zero.', file=sys.stderr)
         sys.exit()
     # Checking graphic types
     return arg
@@ -201,7 +201,7 @@ def check_mbs_opts(arg):
     else:
         arg['--boost'] = int(arg['--boost'])
         if arg['--boost'] <= 0:
-            print('Error: The window size for boost must be an integer higher than zero.')
+            print('Error: The window size for boost must be an integer higher than zero.', file=sys.stderr)
             sys.exit()
     arg['titles'] = titles_mbs
     arg['lines'] = lines_mbs
@@ -227,22 +227,22 @@ def check_mbs_opts(arg):
             arg['--max-allele-freq2'] = False
     else:
         if 'SNPidx1' in arg['--fields'] and 'SNPidx2' not in arg['--fields'] and arg['--combine'] == True:
-            print('Error: is not possible make combined graphics with your input data')
+            print('Error: is not possible make combined graphics with your input data', file=sys.stderr)
             sys.exit()
         if arg['--pvalue'] == True and 'log10PVALUE' not in arg['--fields']:
-            print('Error: is not possible make P-VALUE graphics with your input data')
+            print('Error: is not possible make P-VALUE graphics with your input data', file=sys.stderr)
             sys.exit()
         if arg['--allele-freq-1'] == True and 'SNPidx1' not in arg['--fields']:
-            print('Error: is not possible make phased Allele Frequency graphics with your input data. Please use -M or -a option')
+            print('Error: is not possible make phased Allele Frequency graphics with your input data. Please use -M or -a option', file=sys.stderr)
             sys.exit()
         if arg['--allele-freq-2'] == True and 'SNPidx2' not in arg['--fields']:
-            print('Error: is not possible make Allele Frequency graphics for this pool. Please use -R, -M or -a option')
+            print('Error: is not possible make Allele Frequency graphics for this pool. Please use -R, -M or -a option', file=sys.stderr)
             sys.exit()
         if arg['--max-allele-freq2'] == True and 'MAX_SNPidx2' not in arg['--fields']:
-            print('Error: is not possible make phased MAX Allele Frequency graphics with your input data. Please use -D or -R or -a option')
+            print('Error: is not possible make phased MAX Allele Frequency graphics with your input data. Please use -D or -R or -a option', file=sys.stderr)
             sys.exit()
     if arg['--all'] == False and arg['--pvalue'] == False and arg['--allele-freq-1'] == False and arg['--allele-freq-2'] == False:
-        print('Warning: any graphic was selected. Please use -a option to make all possible graphics with your data.')
+        print('Warning: any graphic was selected. Please use -a option to make all possible graphics with your data.', file=sys.stderr)
     return arg
 
 
@@ -274,28 +274,28 @@ def check_qtl_opts(arg):
             arg['--qtl-seq'] = True
     else:
         if arg['--pvalue'] == True and 'log10PVALUE' not in arg['--fields']:
-            print('Error: is not possible make P-VALUE graphics with your input data')
+            print('Error: is not possible make P-VALUE graphics with your input data', file=sys.stderr)
             sys.exit()
         if arg['--delta'] == True and 'DELTA' not in arg['--fields']:
-            print('Error: is not possible make phased SNP-idx graphics with your input data. Please use -a.')
+            print('Error: is not possible make phased SNP-idx graphics with your input data. Please use -a.', file=sys.stderr)
             sys.exit()
         if arg['--ci95'] == True and 'DELTA' not in arg['--fields']:
-            print('Error: is not possible to calculate confidense interval without DELTA field. Please use -a.')
+            print('Error: is not possible to calculate confidense interval without DELTA field. Please use -a.', file=sys.stderr)
             sys.exit()
         if arg['--euclidean-distance'] == True and 'ED' not in arg['--fields']:
-            print('Error: is not possible make Euclidean Distance graphics with your input data')
+            print('Error: is not possible make Euclidean Distance graphics with your input data', file=sys.stderr)
             sys.exit()
         if arg['--g-statistic'] == True and 'G' not in arg['--fields']:
-            print('Error: is not possible make G-statistic graphics with your input data')
+            print('Error: is not possible make G-statistic graphics with your input data', file=sys.stderr)
             sys.exit()
         if ('SNPidx1' not in arg['--fields'] or 'SNPidx2' not in arg['--fields']) and (arg['--allele-freq-H'] == True or arg['--allele-freq-L'] == True):
-            print('Error: is not possible make phased SNP-idx graphics with your input data. Please use -a or -p.')
+            print('Error: is not possible make phased SNP-idx graphics with your input data. Please use -a or -p.', file=sys.stderr)
             sys.exit()
         if arg['--combine'] == True and 'SNPidx1' not in arg['--fields'] or 'SNPidx2' not in arg['--fields']:
-            print('Error: is not possible to make combined graphics with your input data. Please use -a.')
+            print('Error: is not possible to make combined graphics with your input data. Please use -a.', file=sys.stderr)
             sys.exit()
     if arg['--all'] == False and arg['--pvalue'] == False and arg['--delta'] == False and arg['--allele-freq-H'] == False and arg['--allele-freq-L'] == False:
-        print('Warning: any graphic was selected. Please use -a option to make all possible graphics with your data.')
+        print('Warning: any graphic was selected. Please use -a option to make all possible graphics with your data.', file=sys.stderr)
 
     return arg
 

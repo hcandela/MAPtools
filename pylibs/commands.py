@@ -117,7 +117,7 @@ def qtl(argv):
         inp = sys.stdin
     choose_header(arg)
     write_argv(arg, argv)
-    print(arg)
+    #print(arg)
     for line in inp:
         if line.startswith('#'):
           read_header(arg,line)
@@ -400,9 +400,10 @@ Filter Options:
               if calcs != None:
                 df = new_df_line(df,arg,fields[:2], al_count, calcs)
   if df.empty:
-     print('Warning: There is no variants to analyse. Please reduce filtering.')
+     print('Warning: There is no variants to analyse. Please reduce filtering.', file=sys.stderr)
      sys.exit()
   load_reference(df,arg)
+  #print(str(arg['ref'].seq[13983381:13983700]))
   df = df.reset_index()
   start = time.perf_counter()
   load_gff(arg)

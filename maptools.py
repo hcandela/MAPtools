@@ -23,7 +23,7 @@ from pylibs.commands import *
 if __name__ == '__main__':
     args = docopt(__doc__, version='maptools version=0.1', options_first=True)
     if not args['<command>']:
-        print(__doc__,end='')
+        print(__doc__,end='', file=sys.stderr)
         sys.exit()
     if not args['<args>']:
         argv = [args['<command>']]
@@ -42,4 +42,5 @@ if __name__ == '__main__':
     elif args['<command>'] == 'annotate':
         annotate(argv)
     else:
-        sys.exit('%r is not a maptools command. See \'maptools --help\'.'% args['<command>'])
+        print('%r is not a maptools command. See \'maptools --help\'.'% args['<command>'], file=sys.stderr)
+        sys.exit()
