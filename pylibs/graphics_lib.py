@@ -435,7 +435,6 @@ def grouped_by(df, arg):
 def get_ED100_4(df, arg, rang):
     chrom = [ch for ch in arg['contigs'].keys()]
     #chrom = df['#CHROM'].unique()
-    print(df)
     ED100 = np.array([])
     for ch in range(len(chrom)):
         d = df[df['#CHROM'] == chrom[ch]]

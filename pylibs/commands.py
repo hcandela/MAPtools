@@ -285,7 +285,7 @@ def qtl_plot(argv):
     #print(arg)
     arg, df = load_dataframe_plotting(arg)
     arg['version'] = v_qtlplot
-    print(arg)
+    #print(arg)
     if arg['--euclidean-distance']:
         df = get_ED100_4(df, arg, RANG)
         plot_ED(df,arg)
