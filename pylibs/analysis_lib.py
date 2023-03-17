@@ -289,6 +289,8 @@ def qtl_calc(inp, arg):
 	rec = c + d
 	dp_total = dom + rec
 	if dp_total <= max_dp and dp_total >= min_dp and rec > 0 and dom > 0:
+		if b/(a+b) == d/(c+d):
+			return None
 		v1 = (c/rec, d/rec)
 		v2 = (a/dom, b/dom)
 		ed = distance.euclidean(v1,v2)
@@ -432,7 +434,10 @@ def filter_mbs(arg, al_count, p_al_count):
 		if dom <= min_dp or dom >= max_dp or rec <= min_dp or rec >= max_dp: #TODO
 			flag.append(False)
 		else:
-			flag.append(True)
+			if b/(a+b) == d/(c+d):
+				flag.append(False)
+			else:	
+				flag.append(True)
 		if arg['--het-filter']:
 			flag.append(het_filter(arg,a,b))
 		if arg['--EMS']:

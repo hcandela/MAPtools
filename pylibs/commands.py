@@ -210,6 +210,7 @@ def mbs_plot(argv):
     arg, df = load_dataframe_plotting(arg)
     #print(arg)
     arg['version'] = v_mbsplot
+    Delta2_Vertical_graph(df, arg)
     if arg['--pvalue'] == True:
         pval_mono_graph(df, arg)
         if arg['--multi-chrom'] == True:

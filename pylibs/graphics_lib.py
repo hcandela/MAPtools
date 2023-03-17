@@ -1573,6 +1573,9 @@ def plot_avg(d, arg, ax, field):
     elif field == 'G':
         d['DP']=d['DPref_1']+d['DPalt_1']+d['DPref_2']+d['DPalt_2']
         c_=arg['--palette']['mvg']
+    elif field == 'delta2':
+        d['DP']=d['DPref_1']+d['DPalt_1']+d['DPref_2']+d['DPalt_2']
+        c_=arg['--palette']['SNPidx1']
     d['prody']=d[field] * d['DP']
     d['avgy']=(d['prody'].rolling(arg['--moving-avg']).sum() / \
                d['DP'].rolling(arg['--moving-avg']).sum())
@@ -1644,3 +1647,55 @@ def write_caption(f, text, arg):
         f.write('The dots correspond to genomic regions defined by non-overlapping bins of {} consecutive markers'.format(str(arg['--window'])))
     f.write('\n')
     f.close()
+
+def Delta2_Vertical_graph(df, arg):
+    typ=arg['--output-type']
+    max_x=arg['max_lenght']
+    
+    ticks_y=[-1,-0.5,0,0.5, 1]
+    lim_y=(-1, 1)
+    #t1,rt1,_=arg['titles'][7]
+    #t2,rt2,_=arg['titles'][8]
+    labs_list = list()
+    f1_name = list()
+    f2_name = list()
+    for chrom_list in arg['chrom_lists']:
+        chrom = chrom_list
+        if len(chrom) > 1:
+            fig, ax=plt.subplots(len(chrom), 1, figsize=(10, 2.5*len(chrom)))
+        if len(chrom) == 1:
+            fig, ax=plt.subplots(2,1,figsize=(10, 2.5*2))
+        for i in range(len(chrom)):
+            d=df[df['#CHROM'] == chrom[i]]
+            x=d[['POS']]
+            d['delta2'] = d['DPref_1']/(d['DPref_1']+d['DPalt_1']) - d['DPref_2']/(d['DPref_2']+d['DPalt_2'])
+            y=d[['delta2']]
+            #AF1&2
+            ax[i].scatter(x, y, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+            ax[i].set(xlim=(0, max_x), ylim=lim_y)
+            ax[i].set_xticks(ticks=np.arange(0, max_x, 5e6))
+            ax[i].tick_params(labelbottom=False)
+            ax[i].set_ylabel(ylabel='Allele Frequency', fontsize=12, rotation=90, labelpad=15)
+            ax[i].set_title('({})'.format(arg['labs'][chrom[i]]), fontsize=18, rotation=0, x = -0.14, y=0.85) 
+            labs_list.append('({}) Chromosome {}.'.format(arg['labs'][chrom[i]],chrom[i]))  
+            ax[i].set_yticks(ticks=ticks_y)
+            ax[i].set_yticklabels(labels=ticks_y, fontsize=8)
+            if arg['--moving-avg'] != False:
+                plot_avg(d, arg, ax[i], 'delta2')
+            ax[i].spines['top'].set_visible(False)
+            ax[i].spines['right'].set_visible(False)
+            if len(chrom) == 1:
+                ax[1].remove()
+            if i == len(chrom)-1 or len(chrom) == 1:
+                ax[i].tick_params(labelbottom=True)
+                ax[i].set_xticklabels(labels=np.arange(0, max_x, 5e6), fontsize=8, color='black')
+                ax[i].xaxis.set_major_formatter(ScalarFormatter())
+                ax[i].ticklabel_format(axis='x', style='scientific', scilimits=(6, 6), useMathText=True)
+                ax[i].set_xlabel(xlabel='Chromosomal position (bp)', fontsize=15)
+
+        fig.subplots_adjust(hspace=0.1)
+        filename='delta2multiV'+typ
+        filename=check_save(arg, filename)
+        f1_name.append(filename)
+        plt.savefig(arg['--outdir']+filename)
+        plt.close()
