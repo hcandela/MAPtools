@@ -62,13 +62,14 @@ def mbs(argv):
         if line.startswith('#'):
           read_header(arg,line)
         else:
-            fields, pools = vcf_line_parser2(line, arg)
-            if (fields, pools) != (0, 0):
+            fields, pools, genotype = vcf_line_parser2(line, arg)
+            if (fields, pools, genotype) != (0, 0, 0):
               REF = fields[2]
               al_count, p_al_count = normalize(pools, REF, arg)
               if (al_count,p_al_count) != (0,0):
                 if arg['--no-filter'] == False:
-                  flag = filter_mbs(arg,al_count,p_al_count)
+                  flag = filter_mbs(arg,al_count,p_al_count, genotype)
+                  #print(genotype)
                 else:
                    flag = True
                 if flag == True:
@@ -210,7 +211,7 @@ def mbs_plot(argv):
     arg, df = load_dataframe_plotting(arg)
     #print(arg)
     arg['version'] = v_mbsplot
-    Delta2_Vertical_graph(df, arg)
+    #Delta2_Vertical_graph(df, arg)
     if arg['--pvalue'] == True:
         pval_mono_graph(df, arg)
         if arg['--multi-chrom'] == True:
@@ -387,13 +388,13 @@ Filter Options:
     else:
       line = filter_region(line, arg)
       if line != None:
-        fields, pools = vcf_line_parser2(line, arg)
-        if (fields, pools) != (0,0):
+        fields, pools, genotype = vcf_line_parser2(line, arg)
+        if (fields, pools, genotype) != (0,0,0):
           REF = fields[2]
           al_count,p_al_count = normalize(pools, REF, arg, fields)
           if (al_count,p_al_count) != (0,0):
             if arg['--no-filter'] == False:
-              flag = filter_mbs(arg, al_count, p_al_count)
+              flag = filter_mbs(arg, al_count, p_al_count, genotype)
             else:
               flag = True
             if flag:
@@ -404,7 +405,7 @@ Filter Options:
      print('Warning: There is no variants to analyse. Please reduce filtering.', file=sys.stderr)
      sys.exit()
   load_reference(df,arg)
-  #print(str(arg['ref'].seq[13983381:13983700]))
+  #print(str(arg['ref'].seq[81033575-1:81033653+5]))
   df = df.reset_index()
   start = time.perf_counter()
   load_gff(arg)

@@ -269,10 +269,10 @@ def mbs_calc(inp, arg):
 		resultado = LogFisher(a,b,c,d)
 		pva = pvalor(a,b,c,d)
 		pva10 = (log(pva)/log(10))
-		if arg['--ref-genotype'] == 'miss':
+		if arg['--ref-genotype'] == 'miss' and 'Pr' not in inf_s and 'Pd' not in inf_s:
 			boost = 1/(arg['lim'] + abs(1 - 1/ratio3))
 			return [ratio3,resultado,boost,pva,pva10]
-		else:
+		elif arg['--ref-genotype'] != 'miss' or 'Pr' in inf_s or 'Pd' in inf_s:
 			ratio1 = b/(a+b)
 			ratio2 = d/(c+d)
 			boost = 1/(arg['lim'] + abs(1 - 1/ratio3))
@@ -314,9 +314,9 @@ def choose_header(arg):
 				header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','MAX_SNPidx2','BOOST']
 			else:
 				header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','SNPidx1','BOOST']
-		elif 'D' in inf_s and 'R' in inf_s and arg['--ref-genotype'] != 'miss':
+		elif ('D' in inf_s and 'R' in inf_s) and arg['--ref-genotype'] != 'miss' or 'Pr' in inf_s or 'Pd' in inf_s:
 			header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','SNPidx1','SNPidx2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE']
-		elif 'D' in inf_s and 'R' in inf_s and arg['--ref-genotype'] == 'miss':
+		elif 'D' in inf_s and 'R' in inf_s and arg['--ref-genotype'] == 'miss' and 'Pd' not in inf_s and 'Pr' not in inf_s:
 			header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE']
 	elif 'qtl' in arg.keys():
 		if arg['--ref-genotype'] == 'miss':
@@ -363,9 +363,10 @@ def vcf_line_parser2(line, arg):
 	'''
 	z = line.split('\t')
 	alt = z[4] #alternative allele
+	genotype = dict()
 	if alt == '.':
 		#if the alternative allele is '.' indicates that there is no variation in the aligned sequences, so that position is discarded
-		return 0,0
+		return 0,0,0
 	else:
 		form = z[8].split(':')
 		GT_index = form.index('GT')
@@ -382,6 +383,10 @@ def vcf_line_parser2(line, arg):
 			data1 = z[9].split(':')			#split data from R pool
 			pool = dict()
 			AD = data1[AD_index].split(',') #obtain AD data from R pool
+			GTrec = data1[GT_index].split('/')
+			genotype['R'] = GTrec
+			if '.' in set(GTrec):
+				return 0,0,0
 			ref = z[3]
 			alt = z[4].split(',')			#alt could be more than one nt
 			pool[ref] = int(AD[0])			#generete a dict for the pool {'nt':AD1, 'nt':AD2 }
@@ -396,15 +401,17 @@ def vcf_line_parser2(line, arg):
 				GT2 = data2[GT_index].split('/')
 				gt = set(GT1+GT2)				#compare the genotypes
 				if '.' in gt:#if len(gt) == 1 or '.' in gt: #if all the genotypes are identical the line is discarded
-					return 0,0
+					return 0,0,0
 				for p,c in inf.items():		#for each pool and column
 					ref = z[3]
 					alt = z[4].split(',')
 					AD = z[c].split(':')[AD_index].split(',')
+					GT = z[c].split(':')[GT_index].split('/')
 					pool = {ref:int(AD[0])}
 					for i in range(len(alt)):
 						pool[alt[i]] = int(AD[i+1])
 					res[p] = pool	#{'R':{'nt1':AD1, 'nt2':AD2 }, 'D':{'nt1':AD1, 'nt2':AD2}...}
+					genotype[p] = GT
 			elif 'D' not in inf_s:
 				ref = z[3]
 				alt = z[4].split(',')
@@ -412,17 +419,19 @@ def vcf_line_parser2(line, arg):
 				GT1 = data1[GT_index].split('/')
 				gt = set(GT1)
 				if '.' in gt:
-					return 0,0
+					return 0,0,0
 				for p,c in inf.items():
 					AD = z[c].split(':')[AD_index].split(',')
+					GT = z[c].split(':')[GT_index].split('/')
 					pool = {ref:int(AD[0])}
 					for i in range(len(alt)):
 						pool[alt[i]] = int(AD[i+1])
 					res[p] = pool
+					genotype[p] = GT
 					
-		return [z[0], z[1], z[3]],res #returns chromosome, position, reference allele, and the data for each bam)
+		return [z[0], z[1], z[3]],res,genotype #returns chromosome, position, reference allele, and the data for each bam)
 
-def filter_mbs(arg, al_count, p_al_count):
+def filter_mbs(arg, al_count, p_al_count, genotype):
 	flag = [True]
 	inf_s = set(arg['--data'])
 	min_dp = arg['--min-depth']
@@ -433,18 +442,17 @@ def filter_mbs(arg, al_count, p_al_count):
 		rec = c + d
 		if dom <= min_dp or dom >= max_dp or rec <= min_dp or rec >= max_dp: #TODO
 			flag.append(False)
-		else:
-			if b/(a+b) == d/(c+d):
-				flag.append(False)
-			else:	
-				flag.append(True)
+		if True:
+			flag.append(gen_filter(arg, genotype))
 		if arg['--het-filter']:
-			flag.append(het_filter(arg,a,b))
+			#flag.append(het_filter(arg,a,b))
+			flag.append(het_filter2(arg,genotype))
 		if arg['--EMS']:
 			flag.append(filter_EMS(arg, REF, ALT))
 		if arg['--isogenic-filter'] and ('Pr' in inf_s or 'Pd' in inf_s or 'Wr' in inf_s or 'Wd' in inf_s):
 			e,f = p_al_count[0], p_al_count[1]
-			flag.append(isogenic_filter(arg,c,d,e,f))
+			#flag.append(isogenic_filter(arg,c,d,e,f))
+			flag.append(isogenic_filter2(arg,genotype))
 		if arg['--outcross-filter'] and ('Pr' in inf_s or 'Pd' in inf_s or 'Wr' in inf_s or 'Wd' in inf_s):
 			e,f = p_al_count[0], p_al_count[1]
 			flag.append(outcross_filter(arg,c,d,e,f))
@@ -454,11 +462,14 @@ def filter_mbs(arg, al_count, p_al_count):
 			flag.append(False)
 		else:
 			flag.append(True)
-		if arg['--EMS'] and (arg['--ref'] != 'miss' or 'Pr' in inf_s or 'Pd' in inf_s):
+		if True:
+			flag.append(gen_filter(arg, genotype))
+		if arg['--EMS'] and (arg['--ref-genotype'] != 'miss' or 'Pr' in inf_s or 'Pd' in inf_s):
 			flag.append(filter_EMS(arg, REF, ALT))
 		if arg['--isogenic-filter'] and ('Pr' in inf_s or 'Pd' in inf_s or 'Wr' in inf_s or 'Wd' in inf_s):
 			e,f = p_al_count[0], p_al_count[1]
-			flag.append(isogenic_filter(arg,c,d,e,f))
+			#flag.append(isogenic_filter(arg,c,d,e,f))
+			flag.append(isogenic_filter2(arg,genotype))
 		if arg['--outcross-filter'] and ('Pr' in inf_s or 'Pd' in inf_s or 'Wr' in inf_s or 'Wd' in inf_s):
 			e,f = p_al_count[0], p_al_count[1]
 			flag.append(outcross_filter(arg,c,d,e,f))
@@ -466,7 +477,37 @@ def filter_mbs(arg, al_count, p_al_count):
 		return False
 	else:
 		return True
-				
+
+def gen_filter(arg, genotype):
+	inf_s = set(arg['--data'])
+	GT_rec = set(genotype['R'])
+	flag = list()
+	if 'D' in inf_s and 'R' in inf_s:
+		GT_dom = genotype['D']
+		rest = inf_s - {'D','R'}
+		if len(rest) > 0:
+			p = rest.pop()
+			GT_par = set(genotype[p])
+			flag.append(False if GT_par == GT_dom == GT_rec else True)
+			flag.append(False if GT_dom == GT_rec == {'0'} else True)
+			flag.append(False if GT_dom == GT_rec == {'1'} else True)
+		elif len(rest) == 0:
+			flag.append(False if GT_dom == GT_rec == {'1'} else True)
+	elif 'D' not in inf_s:
+		rest = inf_s - {'R'}
+		if len(rest) > 0:
+			p = rest.pop()
+			GT_par = set(genotype[p])
+			if 'Pd' in inf_s or 'Wd' in inf_s:
+				flag.append(False if GT_par == GT_rec else True)
+		else:
+			flag.append(True)
+	if False in flag:
+		return False
+	else:
+		return True
+
+
 def het_filter(arg,a,b):
 	min_dp = arg['--min-depth']
 	max_dp = arg['--max-depth']
@@ -478,17 +519,52 @@ def het_filter(arg,a,b):
 	else:
 		return False
 
+def het_filter2(arg,genotype):
+	GT_dom = set(genotype['D'])
+	if GT_dom != {'0','1'}:
+		return False
+	else:
+		return True
+
+
 def isogenic_filter(arg,c,d,e,f):
 	min_dp = arg['--min-depth']
 	min_ratio = arg['--min-ratio']
 	max_ratio = arg['--max-ratio']
 	min_error = arg['--min-error']
-	if c + d >= min_dp and e + f >= min_dp and  min_ratio*c < min_dp < max_ratio*c and min_ratio*e < min_dp < max_ratio*c:
+	if c + d >= min_dp and e + f >= min_dp and  min_ratio*c < min_dp < max_ratio*c and min_ratio*e < min_dp < max_ratio*e:
 		return False
 	elif c == c+d and e >= min_error:
 		return False
 	else: 
 		return True
+	
+def isogenic_filter2(arg,genotype):
+	inf_s = set(arg['--data'])
+	GT_rec = set(genotype['R'])
+	flag = list()
+	if 'D' in inf_s and 'R' in inf_s:
+		GT_dom = set(genotype['D'])
+		rest = inf_s - {'D','R'}
+	if 'D' not in inf_s:
+		rest = inf_s - {'R'}
+	p = rest.pop()
+	GT_par = set(genotype[p])
+	if 'Pr' in inf_s:
+		flag.append(False if GT_par == {'0','1'} else True)
+		if arg['--mutant-pool'] == 'D':
+			flag.append(False if GT_par == {'1'} else True)
+	elif 'Wr' in inf_s or 'Wd' in inf_s:
+		flag.append(False if GT_par == {'0','1'} or GT_par == {'1'} else True)
+	elif 'Pd' in inf_s and arg['--mutant-pool'] == 'R':
+		flag.append(False if '1' in GT_par else True)
+	elif 'Pd' in inf_s and arg['--mutant-pool'] == 'D':
+		flag.append(False if GT_par == {'0'} else True)
+	if False in flag:
+		return False
+	else:
+		return True
+
 def outcross_filter(arg,c,d,e,f):
 	#if ('Wr' in arg['--data'] or 'Pr' in arg['--data']) and arg['--mutant-pool'] == 'R': #TODO
 	if f >= arg['--min-error']:
@@ -504,7 +580,7 @@ def normalize(pools, REF, arg, r_min=0.03):
 	rec = pools['R']
 	alle = [a for a,v in rec.items()]
 	#REF_idx = alle.index(REF)
-	reorder = False
+	arg['reorder'] = False
 	al_count = 0
 	wt_l = 0
 	if len(alle) > 2:
@@ -515,10 +591,10 @@ def normalize(pools, REF, arg, r_min=0.03):
 			b = rec[alle[1]]
 			al_count = [REF, alle[1], a, b]
 		elif ref == 'R':
-			reorder = True
 			b = rec[alle[0]]
 			a = rec[alle[1]]
 			al_count = [alle[1],REF,a, b]
+			arg['reorder'] = True
 	elif len(inf_s) == 2:
 		if 'R' in inf_s and 'D' in inf_s and ref == 'miss':
 			dom = pools['D']
@@ -536,17 +612,18 @@ def normalize(pools, REF, arg, r_min=0.03):
 			al_count = [REF, alle[1], a, b, c, d]
 		elif inf_s == {'R','D'} and ref == 'R':
 			dom = pools['D']
-			reorder = True
 			b = dom[alle[0]]
 			d = rec[alle[0]]
 			a = dom[alle[1]]
 			c = rec[alle[1]]
 			al_count = [alle[1],REF, a, b, c, d]
+			arg['reorder'] = True
 		elif inf_s == {'R', 'Pd'}:
 			p_dom = pools['Pd']
 			p_al = sorted(p_dom, key=lambda key: p_dom[key], reverse=True) #ordered from higher to lower
-			#p_al = [key for key,arg in p_dom.items()]
-			if p_dom[p_al[0]] > 0 and p_dom[p_al[1]]/(p_dom[p_al[0]] + p_dom[p_al[1]]) < r_min or len(p_al) > 2:
+			p_al2 = [key for key,arg in p_dom.items()]
+			arg['reorder'] = True if p_al != p_al2 else False
+			if p_dom[p_al[0]] > 0 and p_dom[p_al[1]]/(p_dom[p_al[0]] + p_dom[p_al[1]]) < r_min:# or len(p_al) > 2:
 				a = rec[p_al[0]]
 				b = rec[p_al[1]]
 				e = p_dom[p_al[0]]
@@ -556,7 +633,9 @@ def normalize(pools, REF, arg, r_min=0.03):
 		elif inf_s == {'R', 'Pr'}:	#TODO Possibly delete this case
 			p_rec = pools['Pr']
 			p_al = sorted(p_rec, key=lambda key: p_rec[key], reverse=True)
-			if p_rec[p_al[0]] > 0 and p_rec[p_al[1]]/(p_rec[p_al[0]] + p_rec[p_al[1]]) < r_min or len(p_al) > 2:
+			p_al2 = [key for key,arg in p_rec.items()]
+			arg['reorder'] = True if p_al != p_al2 else False
+			if p_rec[p_al[0]] > 0 and p_rec[p_al[1]]/(p_rec[p_al[0]] + p_rec[p_al[1]]) < r_min:# or len(p_al) > 2:
 				a = rec[p_al[1]]
 				b = rec[p_al[0]]
 				e = p_rec[p_al[1]]
@@ -572,7 +651,10 @@ def normalize(pools, REF, arg, r_min=0.03):
 			parental = pools['Pd']
 		p_al = sorted(parental, key=lambda key: parental[key], reverse=True)
 		dom = pools['D']
-		if parental[p_al[0]] > 0 and parental[p_al[1]]/(parental[p_al[0]] + parental[p_al[1]]) < r_min or len(p_al) > 2:
+		r_min = 0.03
+		if parental[p_al[0]] > 0 and parental[p_al[1]]/(parental[p_al[0]] + parental[p_al[1]]) < r_min:
+			p_al2 = [key for key,arg in parental.items()]
+			arg['reorder'] = True if p_al != p_al2 else False
 			if 'Pd' in inf_s:
 				a = dom[p_al[0]]
 				b = dom[p_al[1]]
@@ -594,9 +676,9 @@ def normalize(pools, REF, arg, r_min=0.03):
 		else:
 			al_count, wt_l = 0, 0
 	if wt:
-		if reorder:
+		if arg['reorder']:
 			wt_l = [pools[wt][alle[1]], pools[wt][alle[0]]]
-		elif not reorder:
+		elif not arg['reorder']:
 			wt_l = [pools[wt][alle[0]], pools[wt][alle[1]]]
 	#elif not wt and ('Pr' not in inf_s or 'Pd' not in inf_s):
 	#	wt_l = 0
@@ -826,9 +908,9 @@ def create_df(arg):
 			header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','MAX_SNPidx2','BOOST']
 		else:
 			header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','SNPidx1','BOOST']
-	elif 'D' in inf_s and 'R' in inf_s and arg['--ref-genotype'] != 'miss':
+	elif ('D' in inf_s and 'R' in inf_s) and arg['--ref-genotype'] != 'miss' or 'Pr' in inf_s or 'Pd' in inf_s:
 		header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','SNPidx1','SNPidx2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE']
-	elif 'D' in inf_s and 'R' in inf_s and arg['--ref-genotype'] == 'miss':
+	elif 'D' in inf_s and 'R' in inf_s and arg['--ref-genotype'] == 'miss' and 'Pd' not in inf_s and 'Pr' not in inf_s:
 		header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE']
 	arg['header2'] = header
 	df = pd.DataFrame(columns=header)
@@ -944,16 +1026,16 @@ def check_mutation2(row, arg):
 									if gff['CDS'][b6-1][7] == cds[7]: #if prev cds exist
 										if pos - cds[2] in {0,1,2}:
 											if cds[4] == '+':
-												result['INFO']['5_splice_site'] = 'exon-boundary:'+gff['CDS'][e6][6]
-											else:
 												result['INFO']['3_splice_site'] = 'exon-boundary:'+gff['CDS'][e6][6]
+											else:
+												result['INFO']['5_splice_site'] = 'exon-boundary:'+gff['CDS'][e6][6]
 
 									if gff['CDS'][b6+1][7] == cds[7]: #if next cds exist
 										if cds[3] - pos in {0,1,2}:
 											if cds[4] == '+':
-												result['INFO']['3_splice_site'] = 'exon-boundary:'+gff['CDS'][e6][6]
-											else:
 												result['INFO']['5_splice_site'] = 'exon-boundary:'+gff['CDS'][e6][6]
+											else:
+												result['INFO']['3_splice_site'] = 'exon-boundary:'+gff['CDS'][e6][6]
 
 									if beg < cds[2]:
 										prev_cds = gff['CDS'][e6-1]
