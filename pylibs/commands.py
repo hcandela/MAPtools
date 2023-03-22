@@ -69,7 +69,6 @@ def mbs(argv):
               if (al_count,p_al_count) != (0,0):
                 if arg['--no-filter'] == False:
                   flag = filter_mbs(arg,al_count,p_al_count, genotype)
-                  #print(genotype)
                 else:
                    flag = True
                 if flag == True:

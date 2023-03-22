@@ -244,17 +244,13 @@ def mbs_calc(inp, arg):
 	#TODO - Change boost to calculate always 
 	data = arg['--data']
 	inf_s = set(data)
-	min_dp = arg['--min-depth']
-	max_dp = arg['--max-depth']
-	min_ratio = arg['--min-ratio']
-	max_ratio = arg['--max-ratio']
 	if len(inf_s) == 1 and arg['--ref-genotype'] == 'miss':
 		a, b = inp[0], inp[1]
 		if a != 0 or b != 0:
 			ratio3 = max(a,b)/(a+b)
 			boost = 1/(arg['lim'] + abs(1 - 1/ratio3))
 			return [ratio3, boost]
-	elif (len(inf_s) == 1 and arg['--ref-genotype'] == 'miss') or (len(inf_s) == 2 and 'D' not in inf_s):
+	elif (len(inf_s) == 1 and arg['--ref-genotype'] != 'miss') or (len(inf_s) == 2 and 'D' not in inf_s):
 		a, b = inp[0], inp[1]
 		if a != 0 or b != 0:
 			ratio1 = b/(a+b)
@@ -262,14 +258,11 @@ def mbs_calc(inp, arg):
 			return [ratio1, boost]
 	elif 'D' in inf_s and 'R' in inf_s:
 		a, b, c, d = inp[0], inp[1], inp[2], inp[3]
-		if arg['--mutant-pool'] == 'R':
-			ratio3 = max(c,d)/(c+d)
-		else:
-			ratio3 = max(a,b)/(a+b)
+		ratio3 = max(c,d)/(c+d)
 		resultado = LogFisher(a,b,c,d)
 		pva = pvalor(a,b,c,d)
 		pva10 = (log(pva)/log(10))
-		if arg['--ref-genotype'] == 'miss' and 'Pr' not in inf_s and 'Pd' not in inf_s:
+		if arg['--ref-genotype'] == 'miss' and ('Pr' not in inf_s and 'Pd' not in inf_s):
 			boost = 1/(arg['lim'] + abs(1 - 1/ratio3))
 			return [ratio3,resultado,boost,pva,pva10]
 		elif arg['--ref-genotype'] != 'miss' or 'Pr' in inf_s or 'Pd' in inf_s:
@@ -310,7 +303,7 @@ def choose_header(arg):
 	inf_s = set(data)
 	if 'mbs' in arg.keys():
 		if len(inf_s) == 1 or 'D' not in inf_s:
-			if arg['--ref-genotype'] == 'miss':
+			if arg['--ref-genotype'] == 'miss' and 'Pr' not in inf_s and 'Pd' not in inf_s:
 				header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','MAX_SNPidx2','BOOST']
 			else:
 				header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','SNPidx1','BOOST']
@@ -483,7 +476,7 @@ def gen_filter(arg, genotype):
 	GT_rec = set(genotype['R'])
 	flag = list()
 	if 'D' in inf_s and 'R' in inf_s:
-		GT_dom = genotype['D']
+		GT_dom = set(genotype['D'])
 		rest = inf_s - {'D','R'}
 		if len(rest) > 0:
 			p = rest.pop()
@@ -553,7 +546,7 @@ def isogenic_filter2(arg,genotype):
 	if 'Pr' in inf_s:
 		flag.append(False if GT_par == {'0','1'} else True)
 		if arg['--mutant-pool'] == 'D':
-			flag.append(False if GT_par == {'1'} else True)
+			flag.append(False if '1' in GT_par else True)
 	elif 'Wr' in inf_s or 'Wd' in inf_s:
 		flag.append(False if GT_par == {'0','1'} or GT_par == {'1'} else True)
 	elif 'Pd' in inf_s and arg['--mutant-pool'] == 'R':
