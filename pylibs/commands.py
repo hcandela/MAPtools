@@ -35,8 +35,8 @@ def mbs(argv):
       -q, --min-ratio INT           Minimum allele frequency in dominant pool [default: 10].
       -e, --min-error INT           Minimum depth to consider that an allele is not a sequencing error [default: 3].
       --EMS                         Filter out SNPs other than caused by EMS (\"G\" > \"A\" or \"C\" > \"T\").
-      --isogenic-filter             Filter out variants if Parental (-d \"Pr\"| \"Pd\") sample is provided.
-      --outcross-filter             Filter if the variant was already present in the parental re-sequencing.                         
+      --parental-filter             Filter out variants if Parental (-d \"R\",\"Pr\"| \"Pd\"| \"Wr\"| \"Wd\")
+                                    sample is provided.
       --het-filter                  Focuses on markers that are clearly heterozygous in the dominant pool
                                     (depth in the interval [-c,-C] and allele frequency in the interval [-q, -Q]).
       --no-filter                   Disable all filters.                 
@@ -64,8 +64,8 @@ def mbs(argv):
         else:
             fields, pools, genotype = vcf_line_parser2(line, arg)
             if (fields, pools, genotype) != (0, 0, 0):
-              REF = fields[2]
-              al_count, p_al_count = normalize(pools, REF, arg)
+              DOM = fields[2]
+              al_count, p_al_count = normalize(pools, DOM, arg)
               if (al_count,p_al_count) != (0,0):
                 if arg['--no-filter'] == False:
                   flag = filter_mbs(arg,al_count,p_al_count, genotype)
@@ -124,9 +124,9 @@ def qtl(argv):
         else:
             fields, pools = vcf_line_parser2(line, arg)
             if (fields, pools) != (0, 0):
-                REF = fields[2]
+                DOM = fields[2]
                 #print(fields[1])
-                al_count, p_al_count = normalize(pools, REF, arg)
+                al_count, p_al_count = normalize(pools, DOM, arg)
                 if (al_count, p_al_count) != (0,0):
                     calcs = qtl_calc(al_count[2:], arg)
                     if calcs != None:
@@ -192,7 +192,9 @@ def mbs_plot(argv):
 
   Graphics types:
     -p, --pvalue                    Generates p-value plots.
-    --bonferroni                    Show bonferroni test line in p-value plots. 
+    --bonferroni                    Show bonferroni test line in p-value plots.
+    -d, --delta                     Generates Delta (AFreference D pool - AFreference R pool) plots.
+    --ci95                          Show the  95% cofindence interval in Delta plots.
     -D, --allele-freq-1             Generates allele frequency plots for the dominant pool (AF1).
     -R, --allele-freq-2             Generates allele frequency plots for the recessive pool (AF2).
     -X, --combine                   Combined plots with AF1 and AF2 lines. Use it together with --moving-avg.
@@ -264,7 +266,7 @@ def qtl_plot(argv):
   Graphic types:
     -p, --pvalue                    Generates p-value plots.
     --bonferroni                    Show bonferroni test line in p-value plots.
-    -d, --delta                     Generates Delta (AF High pool - AF Low pool) plots.
+    -d, --delta                     Generates Delta (AFrecessive High pool - AFrecessive Low pool) plots.
     --ci95                          Show the  95% cofindence interval in Delta plots.
     -H, --allele-freq-H             Generates the alelle frequency plots for the pool of high phenotype.
     -L, --allele-freq-L             Generates the allele frecuency plots for the pool of low phenotype.
@@ -356,8 +358,8 @@ Filter Options:
   -q, --min-ratio INT           Minimum allele frequency in dominant pool [default: 10].
   -e, --min-error INT           Minimum depth to consider that an allele is not a sequencing error [default: 3].
   --EMS                         Filter out SNPs other than caused by EMS (\"G\" > \"A\" or \"C\" > \"T\").
-  --isogenic-filter             Filter out variants if Parental (-d \"Pr\"| \"Pd\") sample is provided.
-  --outcross-filter             Filter if the variant was already present in the parental re-sequencing.                            
+  --parental-filter             Filter out variants if Parental (-d \"R\",\"Pr\"| \"Pd\"| \"Wr\"| \"Wd\")
+                                sample is provided.                            
   --het-filter                  Focuses on markers that are clearly heterozygous in the dominant pool
                                 (depth in the interval [-c,-C] and allele frequency in the interval [-q, -Q]).
   --no-filter                   Disable all filters.                           
@@ -389,8 +391,8 @@ Filter Options:
       if line != None:
         fields, pools, genotype = vcf_line_parser2(line, arg)
         if (fields, pools, genotype) != (0,0,0):
-          REF = fields[2]
-          al_count,p_al_count = normalize(pools, REF, arg, fields)
+          DOM = fields[2]
+          al_count,p_al_count = normalize(pools, DOM, arg, fields)
           if (al_count,p_al_count) != (0,0):
             if arg['--no-filter'] == False:
               flag = filter_mbs(arg, al_count, p_al_count, genotype)

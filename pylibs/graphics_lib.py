@@ -21,12 +21,12 @@ from matplotlib.ticker import (MultipleLocator,
 # warnings.filterwarnings("ignore")
 # sys.path.append(os.getcwd())
 pd.options.mode.chained_assignment = None
-# ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','MAX_SNPidx2','BOOST']
-# ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','SNPidx1','BOOST']
-# ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','SNPidx1','SNPidx2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE']
-# ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE']
-# ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','PVALUE','log10PVALUE']
-# ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','SNPidx1','SNPidx2','DELTA','PVALUE','log10PVALUE']
+# ['#CHROM','POS','REF','REC','DPdom_1','DPrec_1','MAX_SNPidx2','BOOST']
+# ['#CHROM','POS','REF','REC','DPdom_1','DPrec_1','SNPidx1','BOOST']
+# ['#CHROM','POS','REF','REC','DPdom_1','DPrec_1','DPdom_2','DPrec_2','SNPidx1','SNPidx2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE']
+# ['#CHROM','POS','REF','REC','DPdom_1','DPrec_1','DPdom_2','DPrec_2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE']
+# ['#CHROM','POS','REF','REC','DPdom_1','DPrec_1','DPdom_2','DPrec_2','PVALUE','log10PVALUE']
+# ['#CHROM','POS','REF','REC','DPdom_1','DPrec_1','DPdom_2','DPrec_2','SNPidx1','SNPidx2','DELTA','PVALUE','log10PVALUE']
 
 def read_header_plot(arg):
     arg['--contigs'] = dict()
@@ -138,8 +138,8 @@ def load_dataframe(arg):
         sep_ = '\t'
     df = pd.read_csv(inp_f, sep=sep_, dtype=fields, names=arg['header'], comment='#')
     arg['--fields'] = list(df.columns)
-    arg['--fields'].remove('REF')
-    arg['--fields'].remove('ALT')
+    arg['--fields'].remove('DOM')
+    arg['--fields'].remove('REC')
     arg['header']=arg['--fields']
     if arg['--chromosomes'] == 'all':
         arg['--chromosomes'] = list(df['#CHROM'].unique())
@@ -363,14 +363,14 @@ def grouped_by(df, arg):
 
         for g in g_list:  # for each group in group list
             res = list()
-            if 'DPref_2' not in arg['--fields'] and 'DPalt_2' not in arg['--fields']:
+            if 'DPdom_2' not in arg['--fields'] and 'DPrec_2' not in arg['--fields']:
                 rAt, rBt, rPost, rTt = 0, 0, 0, 0
             else:
                 rAt, rBt, rCt, rDt, rPost, rTt = 0, 0, 0, 0, 0, 0
             for i in g:  # for each index in group
-                if 'DPref_2' not in arg['--fields'] and 'DPalt_2' not in arg['--fields']:
-                    rA = d.loc[i].DPref_1
-                    rB = d.loc[i].DPalt_1
+                if 'DPdom_2' not in arg['--fields'] and 'DPrec_2' not in arg['--fields']:
+                    rA = d.loc[i].DPdom_1
+                    rB = d.loc[i].DPrec_1
                     rT = rA + rB
                     rPos = d.loc[i].POS*rT
                     rTt += rT
@@ -378,10 +378,10 @@ def grouped_by(df, arg):
                     rBt += rB
                     rPost += rPos
                 else:
-                    rA = d.loc[i].DPref_1
-                    rB = d.loc[i].DPalt_1
-                    rC = d.loc[i].DPref_2
-                    rD = d.loc[i].DPalt_2
+                    rA = d.loc[i].DPdom_1
+                    rB = d.loc[i].DPrec_1
+                    rC = d.loc[i].DPdom_2
+                    rD = d.loc[i].DPrec_2
                     rT = rA + rB + rC + rD
                     rPos = d.loc[i].POS*rT
                     rTt += rT
@@ -392,7 +392,7 @@ def grouped_by(df, arg):
                     rPost += rPos
             rPost = round(rPost/(rTt))
             res += [chrom[ch], rPost, rAt, rBt]
-            if 'DPref_2' in arg['--fields'] and 'DPalt_2' in arg['--fields']:
+            if 'DPdom_2' in arg['--fields'] and 'DPrec_2' in arg['--fields']:
                 res += [rCt, rDt]
                 if 'SNPidx1' in arg['--fields'] and 'SNPidx2' in arg['--fields']:
                     rSNPidx1 = rBt/(rAt+rBt)
@@ -652,15 +652,15 @@ def pval_mono_graph(df, arg):
 
 def qq_plot(df, arg):
     #TODO
-    df['DP']=df['DPref_1']+df['DPalt_1']+df['DPref_2']+df['DPalt_2']
+    df['DP']=df['DPdom_1']+df['DPrec_1']+df['DPdom_2']+df['DPrec_2']
     chrom=arg['--chromosomes']
     typ=arg['--output-type']
     inp_file=arg['--input']
     r=pd.DataFrame()
-    r['A']=df.DPref_1
-    r['B']=df.DPalt_1
-    r['C']=df.DPref_2
-    r['D']=df.DPalt_2
+    r['A']=df.DPdom_1
+    r['B']=df.DPrec_1
+    r['C']=df.DPdom_2
+    r['D']=df.DPrec_2
     r['#CHROM']=df['#CHROM']
     r['obs_logPVALUE']=-1*df.log10PVALUE
     r['e_logPVALUE']=r.apply(expected_pvalue, axis=1)
@@ -1528,9 +1528,9 @@ def snp_index_graph(df, arg):
 
 def calc_ci(d, arg, ax):
     z95=abs(st.norm.ppf(.025/arg['n_markers']))
-    d['DP']=d['DPref_1']+d['DPalt_1']+d['DPref_2']+d['DPalt_2']
-    d['DP1']=d['DPref_1']+d['DPalt_1']
-    d['DP2']=d['DPref_2']+d['DPalt_2']
+    d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
+    d['DP1']=d['DPdom_1']+d['DPrec_1']
+    d['DP2']=d['DPdom_2']+d['DPrec_2']
     d['productx']=d['POS'] * d['DP']
     d['mediamovilx']=(d['productx'].rolling(arg['--moving-avg']).sum() / d['DP'].rolling(arg['--moving-avg']).sum())
 
@@ -1550,31 +1550,31 @@ def calc_ci(d, arg, ax):
 
 def plot_avg(d, arg, ax, field):
     if field == 'SNPidx2':
-        d['DP']=d['DPref_2']+d['DPalt_2']
+        d['DP']=d['DPdom_2']+d['DPrec_2']
         c_=arg['--palette']['SNPidx2']
     elif field == 'SNPidx1':
-        d['DP']=d['DPref_1']+d['DPalt_1']
+        d['DP']=d['DPdom_1']+d['DPrec_1']
         c_=arg['--palette']['SNPidx1']
     elif field == 'MAX_SNPidx2':
         if 'SNPidx2' not in arg['--fields']:
-            d['DP']=d['DPref_1']+d['DPalt_1']
+            d['DP']=d['DPdom_1']+d['DPrec_1']
         else:
-            d['DP']=d['DPref_2']+d['DPalt_2']
+            d['DP']=d['DPdom_2']+d['DPrec_2']
         c_=arg['--palette']['MAX_SNPidx2']
     elif field == 'log10PVALUE':
-        d['DP']=d['DPref_1']+d['DPalt_1']+d['DPref_2']+d['DPalt_2']
+        d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
         c_=arg['--palette']['log10PVALUE']
     elif field == 'ED100_4':
-        d['DP']=d['DPref_1']+d['DPalt_1']+d['DPref_2']+d['DPalt_2']
+        d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
         c_=arg['--palette']['log10PVALUE']
     elif field == 'DELTA':
-        d['DP']=d['DPref_1']+d['DPalt_1']+d['DPref_2']+d['DPalt_2']
+        d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
         c_=arg['--palette']['DELTA']
     elif field == 'G':
-        d['DP']=d['DPref_1']+d['DPalt_1']+d['DPref_2']+d['DPalt_2']
+        d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
         c_=arg['--palette']['mvg']
     elif field == 'delta2':
-        d['DP']=d['DPref_1']+d['DPalt_1']+d['DPref_2']+d['DPalt_2']
+        d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
         c_=arg['--palette']['SNPidx1']
     d['prody']=d[field] * d['DP']
     d['avgy']=(d['prody'].rolling(arg['--moving-avg']).sum() / \
@@ -1586,9 +1586,9 @@ def plot_avg(d, arg, ax, field):
 
 def plot_avg_qtl_SNPidx(d, arg, ax):
     color = arg['--palette']['mvg']
-    d['DP']=d['DPref_1']+d['DPalt_1']+d['DPref_2']+d['DPalt_2']
-    d['DP1']=d['DPref_1']+d['DPalt_1']
-    d['DP2']=d['DPref_2']+d['DPalt_2']
+    d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
+    d['DP1']=d['DPdom_1']+d['DPrec_1']
+    d['DP2']=d['DPdom_2']+d['DPrec_2']
     d['productx']=d['POS'] * d['DP']
     d['mediamovilx']=(d['productx'].rolling(arg['--moving-avg']).sum() / d['DP'].rolling(arg['--moving-avg']).sum())
     #SNPidx1
@@ -1608,9 +1608,9 @@ def plot_avg_qtl_SNPidx(d, arg, ax):
 def plot_boost(d, arg, ax, max_x):
     # Mediamovil Boost
     if 'SNPidx2' not in arg['--fields']:
-        d['DP']=d['DPref_1']+d['DPalt_1']
+        d['DP']=d['DPdom_1']+d['DPrec_1']
     else:
-        d['DP']=d['DPref_2']+d['DPalt_2']
+        d['DP']=d['DPdom_2']+d['DPrec_2']
     d['BOOST']=d['BOOST'] * arg['lim']
     d['prodboost']=d['BOOST'] * d['DP']
     d['medboost']=(d['prodboost'].rolling(arg['--boost']).sum() / \
@@ -1642,10 +1642,10 @@ def create_caption(arg, res_tit):
 
 def write_caption(f, text, arg):
     for sentence in text:
-        f.write(sentence+'\n')
+        f.write(sentence+' ')
     if '--window' in arg.keys():
         f.write('The dots correspond to genomic regions defined by non-overlapping bins of {} consecutive markers'.format(str(arg['--window'])))
-    f.write('\n')
+    f.write('\n'*2)
     f.close()
 
 def Delta2_Vertical_graph(df, arg):
@@ -1668,7 +1668,7 @@ def Delta2_Vertical_graph(df, arg):
         for i in range(len(chrom)):
             d=df[df['#CHROM'] == chrom[i]]
             x=d[['POS']]
-            d['delta2'] = d['DPref_1']/(d['DPref_1']+d['DPalt_1']) - d['DPref_2']/(d['DPref_2']+d['DPalt_2'])
+            d['delta2'] = d['DPdom_1']/(d['DPdom_1']+d['DPrec_1']) - d['DPdom_2']/(d['DPdom_2']+d['DPrec_2'])
             y=d[['delta2']]
             #AF1&2
             ax[i].scatter(x, y, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
