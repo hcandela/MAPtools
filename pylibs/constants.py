@@ -98,11 +98,17 @@ variable_descriptions={
    '#CHROM':'##CHROM=<ID=*, Description=\"Chromosome name.\">\n',\
    'POS':'##POS=<ID=*, Number=1, Type=Integer, Description=\"Position in the chromosome.\">\n',\
    'DOM':'##DOM=<ID=*, Description=\"Dominant allele.\">\n',\
+   'REF':'##REF=<ID=*, Description=\"Reference allele.\">\n',\
    'REC':'##REC=<ID=*, Description=\"Recessive allele.\">\n',\
+   'ALT':'##ALT=<ID=*, Description=\"Represents allele, other than observed.\">\n',\
    'DPdom_1':'##DPdom_1=<ID=*, Number=1, Type=Integer, Description=\"Allelic depth of dominant allele in pool 1.\">\n',\
    'DPrec_1':'##DPrec_1=<ID=*, Number=1, Type=Integer, Description=\"Allelic depth of recessive allele in pool 1.\">\n',\
    'DPdom_2':'##DPdom_2=<ID=*, Number=1, Type=Integer, Description=\"Allelic depth of dominant allele in pool 2.\">\n',\
    'DPrec_2':'##DPrec_2=<ID=*, Number=1, Type=Integer, Description=\"Allelic depth of recessive allele in pool 2.\">\n',\
+   'DPref_1':'##DPref_1=<ID=*, Number=1, Type=Integer, Description=\"Allelic depth of reference allele in pool 1.\">\n',\
+   'DPalt_1':'##DPalt_1=<ID=*, Number=1, Type=Integer, Description=\"Allelic depth of alternative allele in pool 1.\">\n',\
+   'DPref_2':'##DPref_2=<ID=*, Number=1, Type=Integer, Description=\"Allelic depth of reference allele in pool 2.\">\n',\
+   'DPalt_2':'##DPalt_2=<ID=*, Number=1, Type=Integer, Description=\"Allelic depth of alternative allele in pool 2.\">\n',\
    'SNPidx1':'##SNPidx1=<ID=*, Number=1, Type=Float, Description=\"Allele frequency of pool 1.\">\n',\
    'SNPidx2':'##SNPidx2=<ID=*, Number=1, Type=Float, Description=\"Allele frequency of pool 1.\">\n',\
    'MAX_SNPidx2':'##MAX_SNPidx2=<ID=*, Number=1, Type=Float, Description=\"Maximum allele frecuency ratio of target pool.\">\n',\
@@ -118,10 +124,8 @@ variable_descriptions={
    'PARENT':'##PARENT=<ID=*, Number=0, Type=Flag, Description=\"The gene or mRNA containig the mutated element.\">\n',\
    'STRAND':'##STRAND=<ID=*, Number=0, Type=Flag, Description=\"Genome strand cointaining the element (+, -, .).\">\n',\
    'PHASE':'##PHASE=<ID=*, Number=0, Type=Integer, Description=\"CDS phase (0,1,2)\".>\n',\
-   'CODON_ref':'##CODON_ref=<ID=*, Number=0, Type=Flag, Description=\"Target codon before mutation.\">\n',\
-   'CODON_alt':'##CODON_alt=<ID=*, Number=0, Type=Flag, Description=\"Target codon after mutation.\">\n',\
-   'AA_ref':'##AA_ref=<ID=*, Number=0, Type=Flag, Description=\"Aminoacid before mutation.\">\n',\
-   'AA_alt':'##AA_alt=<ID=*, Number=0, Type=Flag, Description=\"Aminoacid after mutation.\">\n',\
+   'CODON_change':'##CODON_change=<ID=*, Number=0, Type=Flag, Description=\"Target codon before and after mutation (AGA > AAA).\">\n',\
+   'AA_change':'##AA_ref=<ID=*, Number=0, Type=Flag, Description=\"Aminoacid before and after mutation (S > F).\">\n',\
    'INFO':'##INFO=<ID=effect, Number=0, Type=Flag, Description=\"Type of aminoacid change effect in exons (Nonsynonimous or Synonimous:missense or nonsense or nonstop), in 5\'UTR (new_ATG:in_frame or out_of_frame:truncated_protein or elongated_protein) or if affects to non-coding gene (non_coding:exonic or intronic).\">\n'\
           '##INFO=<ID=left, Number=0, Type=Flag, Description=\"Gene or Exon immediately left (towards lower POS) and distance on bp(element:distance).\">\n'\
           '##INFO=<ID=right, Number=0, Type=Flag, Description=\"Gene or Exon immediately right (towards higher POS) and distance on bp(element:distance).\">\n'\
@@ -129,6 +133,3 @@ variable_descriptions={
           '##INFO=<ID=3_splice_site, Number=0, Type=Flag, Description=\"The mutation is 3 or less bp from the downstream splicing site (exon or intron _boundary:ID_CDS).">\n'\
    
 }
-#result = {'#CHROM':row['#CHROM'],'POS':row['POS'],'DOM':row['DOM'],'REC':row['REC'], 'DPdom_1':row['DPdom_1'],\
-#'DPrec_1':row['DPrec_1'], 'DPdom_2':row['DPdom_2'], 'DPrec_2':row['DPrec_2'], 'TYPE':'.', 'ID':'.','PARENT':'.','strand':'.',\
-#	'PHASE':'.','CODON_ref':'.','CODON_alt':'.','AA_ref':'.','AA_alt':'.','INFO':dict()}

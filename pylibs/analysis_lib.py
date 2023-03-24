@@ -1244,7 +1244,7 @@ def write_argv(arg:dict,argv:str):
 		write_line('##gff3=file://'+argv[gff_idx+1].split('/')[-1]+'\n',fsal)
 	for field in arg['header']:
 		if 'merge' in arg.keys():
-			if field == 'DOM' or field == 'REC':
+			if field == 'DOM' or field == 'REC' or field == 'ALT' or field == 'REF':
 				continue
 		if field in variable_descriptions.keys():
 			write_line(variable_descriptions[field], fsal)
@@ -1254,6 +1254,7 @@ def write_argv(arg:dict,argv:str):
 
 def read_header_merge(arg:dict):
 	lines = list()
+	arg['--contigs'] = list()
 	with open(arg['--input'], 'r') as handle:
 		for line in handle:
 			if line.startswith('##maptools_'):
@@ -1269,8 +1270,10 @@ def read_header_merge(arg:dict):
 				if 'mbs' in arg.keys() or 'qtl' in arg.keys() or 'merge' in arg.keys():
 					lines.append(line)
 			if line.startswith('##contig=<ID='):
-				c = line.split('##contig=<ID=')[1].split(',')[0]
-				#arg['chromosomes'].append(c)
+				s = line[line.find('<')+1:line.rfind('>')].split(',')
+				id = s[0].split('=')[1]
+				length = s[1].split('=')[1]
+				arg['--contigs'][id] = int(length)
 				lines.append(line)
 			if line.startswith('##bamFiles'):
 				lines.append(line)
@@ -1278,8 +1281,19 @@ def read_header_merge(arg:dict):
 				header = line.split('\t')
 				header = [field.rstrip() for field in header]
 				arg['header'] = header
+				arg['header2'] = header
+				if 'REF' in header and 'ALT' in header:
+					translate = {'REF':'DOM','ALT':'REC','DPref_1':'DPdom_1','DPalt_1':'DPrec_1','DPref_2':'DPdom_2','DPalt_2':'DPrec_2'}
+					header2 = [i if i not in translate.keys() else translate[i] for i in arg['header']]
+					arg['header2'] = header2
 				break
 	return lines
 
+def check_chroms(arg):
+	chromosomes = arg['--chromosomes']
+	for chrom in chromosomes:
+		if chrom not in arg['--contigs']:
+			print('Error: {} is not in the contig ID list.'.format(chrom), file=sys.stderr)
+			sys.exit()
 
 		

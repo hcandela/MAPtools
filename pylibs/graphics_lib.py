@@ -114,6 +114,7 @@ def load_dataframe_plotting(arg):
         #chroms_ = [chroms[idx] for idx in ch_idx]
         chroms_ = arg['--chromosomes'].split(',')
         arg['--chromosomes'] = chroms_
+    check_chroms(arg)
     arg['labs'] = {arg['--chromosomes'][i]:chr(97+i) for i in range(len(arg['--chromosomes']))}
     chrom_lists = [arg['--chromosomes'][i:i+6] for i in range(0, len(arg['--chromosomes']), 6)]
     arg['chrom_lists'] = chrom_lists
@@ -140,15 +141,20 @@ def load_dataframe(arg):
         sep_ = ','
     else:
         sep_ = '\t'
-    df = pd.read_csv(inp_f, sep=sep_, dtype=fields, names=arg['header'], comment='#')
+    df = pd.read_csv(inp_f, sep=sep_, dtype=fields, names=arg['header2'], comment='#')
     arg['--fields'] = list(df.columns)
-    arg['--fields'].remove('DOM')
-    arg['--fields'].remove('REC')
+    if 'DOM' in arg['--fields'] and 'REC' in arg['--fields']:
+        arg['--fields'].remove('DOM')
+        arg['--fields'].remove('REC')
+    #elif 'REF' in arg['--fields'] and 'ALT' in arg['--fields']:
+    #    arg['--fields'].remove('REF')
+    #    arg['--fields'].remove('ALT')
     arg['header']=arg['--fields']
     if arg['--chromosomes'] == 'all':
         arg['--chromosomes'] = list(df['#CHROM'].unique())
     else:
         arg['--chromosomes'] = arg['--chromosomes'].split(',')
+    check_chroms(arg)
     return arg, df
     
 def check_merge(arg,__doc__):
