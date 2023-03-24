@@ -21,7 +21,7 @@ def mbs(argv):
     Input Options:
       -d, --data LIST               Pools genotype: dominant(D), recessive(R), parental dominant(Pd) and
                                     parental recessive(Pr) [default: D,R].
-      -r, --ref-genotype STR        Which parental houses the reference, \"miss\" for missing genotype [default: D].
+      -r, --ref-genotype STR        Which parental houses the reference, \"miss\" for missing genotype [default: miss].
       -m, --mutant-pool STR         Which pool has the mutant phenotype [default: R].
 
     Output Options:
@@ -31,14 +31,14 @@ def mbs(argv):
     Filter Options:
       -C, --max-depth INT           Maximum allele depth [default: inf].
       -c, --min-depth INT           Minimum allele depth [default: 0].
-      -Q, --max-ratio INT           Maximum allele frequency in dominant pool [default: 90].
-      -q, --min-ratio INT           Minimum allele frequency in dominant pool [default: 10].
+      -Q, --max-ratio INT           Maximum allele frequency in dominant pool [default: 100].
+      -q, --min-ratio INT           Minimum allele frequency in dominant pool [default: 0].
       -e, --min-error INT           Minimum depth to consider that an allele is not a sequencing error [default: 3].
       --EMS                         Filter out SNPs other than caused by EMS (\"G\" > \"A\" or \"C\" > \"T\").
       --parental-filter             Filter out variants if Parental (-d \"R\",\"Pr\"| \"Pd\"| \"Wr\"| \"Wd\")
                                     sample is provided.
-      --het-filter                  Focuses on markers that are clearly heterozygous in the dominant pool
-                                    (depth in the interval [-c,-C] and allele frequency in the interval [-q, -Q]).
+      --het-filter                  Focuses on markers that are clearly heterozygous in the dominant pool (\"1\"/\"0\"
+                                    genotype or depth in the interval [-c,-C] and allele frequency in the interval [-q, -Q]).
       --no-filter                   Disable all filters.                 
     """
     arg = docopt(mbs_doc, argv=None, help=True,version=v_mbs)
@@ -90,11 +90,14 @@ def qtl(argv):
     -i, --input FILE                VCF input file. Can also come from a pipe.
 
   Input Options:
-    -d, --data LIST                 Pools genotype: dominant(D), recessive(R), parental dominant(Pd) and 
-                                    parental recessive(Pr) [default: D,R].
-    -r, --ref-genotype STR          Which parental houses the reference, \"miss\" for missing genotype [default: D].
-    -C, --max-depth INT             Maximum read depth [default: 120].
-    -c, --min-depth INT             Minimum read depth [default: 20].
+    -d, --data LIST                 Pools genotype: High phenotype (H) and Low phenotype (L).
+    -r, --ref-genotype STR          Which parental houses the reference: \"H\", \"L\" or \"miss\"
+                                    (for missing genotype) [default: miss].
+  
+  Filter Options:
+    -C, --max-depth INT             Maximum read depth [default: inf].
+    -c, --min-depth INT             Minimum read depth [default: 0].
+    --no-filter                     Disable all filters.
 
   Output Options:
     -o, --output FILE               Write output file.
@@ -122,16 +125,20 @@ def qtl(argv):
         if line.startswith('#'):
           read_header(arg,line)
         else:
-            fields, pools = vcf_line_parser2(line, arg)
-            if (fields, pools) != (0, 0):
+            fields, pools, genotype = vcf_line_parser2(line, arg)
+            if (fields, pools, genotype) != (0, 0, 0):
                 DOM = fields[2]
-                #print(fields[1])
                 al_count, p_al_count = normalize(pools, DOM, arg)
                 if (al_count, p_al_count) != (0,0):
-                    calcs = qtl_calc(al_count[2:], arg)
-                    if calcs != None:
-                        first = new_line(fsal, arg, first,
-                                         fields[:2], al_count, calcs)
+                    if arg['--no-filter'] == False:
+                       flag = filter_qtl(arg, al_count, genotype)
+                    else:
+                       flag = True
+                    if flag:
+                      calcs = qtl_calc(al_count[2:], arg)
+                      if calcs != None:
+                          first = new_line(fsal, arg, first,
+                                          fields[:2], al_count, calcs)
 
 def merge(argv):
   merge_doc="""
@@ -193,8 +200,6 @@ def mbs_plot(argv):
   Graphics types:
     -p, --pvalue                    Generates p-value plots.
     --bonferroni                    Show bonferroni test line in p-value plots.
-    -d, --delta                     Generates Delta (AFreference D pool - AFreference R pool) plots.
-    --ci95                          Show the  95% cofindence interval in Delta plots.
     -D, --allele-freq-1             Generates allele frequency plots for the dominant pool (AF1).
     -R, --allele-freq-2             Generates allele frequency plots for the recessive pool (AF2).
     -X, --combine                   Combined plots with AF1 and AF2 lines. Use it together with --moving-avg.
@@ -343,7 +348,7 @@ Input Options:
    -d, --data LIST               Pools genotype: dominant(D), recessive(R), parental dominant(Pd),
                                  parental recessive(Pr), wild-type recessive(Wr) and
                                  wild-type dominant(Wr) [default: D,R].
-   -r, --ref-genotype STR        Which parental houses the reference, \"miss\" for missing genotype [default: D].
+   -r, --ref-genotype STR        Which parental houses the reference, \"miss\" for missing genotype [default: miss].
    -m, --mutant-pool STR         Which pool has the mutant phenotype [default: R].
    -R, --region REGION           Region of the genome to explore (... -R chrName:Startpos-Endpos)
 

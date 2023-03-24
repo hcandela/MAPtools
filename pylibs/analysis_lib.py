@@ -101,7 +101,7 @@ def check_save_an(arg:dict, file_name:str):
 		expand = 1
 		while True:
 			expand += 1
-			nw_file_name = file_name.split(typ)[0] + '(' + str(expand) + ')' + typ
+			nw_file_name = file_name.split(typ)[0] + '_' + str(expand) + typ
 			if os.path.isfile(arg['outdir']+nw_file_name):
 				continue
 			else:
@@ -137,6 +137,7 @@ def check_mbs_args(arg:dict):
 	else:
 		arg['--max-depth'] = int(arg['--max-depth'])
 	arg['--min-depth'] = int(arg['--min-depth'])
+	arg['dp_filter'] = False if arg['--max-depth'] == np.inf and arg['--min-depth'] == 0 else True
 	arg['--min-ratio'] = float(arg['--min-ratio'])/100
 	arg['--max-ratio'] = float(arg['--max-ratio'])/100
 	arg['--min-error'] = int(arg['--min-error'])
@@ -148,22 +149,29 @@ def check_mbs_args(arg:dict):
 	if arg['--min-ratio'] < 0:
 		arg['--min-ratio'] = 0.0
 	if arg['--max-ratio'] <= arg['--min-ratio']:
-		print('Error: You should choose a correct interval of frequencies(--min_ratio 15 --max-ratio 85)', file=sys.stderr)
+		print('Error: You should choose a correct interval of frequencies(--min-ratio 15 --max-ratio 85)', file=sys.stderr)
 		sys.exit()
 	return arg
 
 def check_qtl_args(arg:dict):
 	"""Check qtl options"""
 	data = arg['--data']
+	translate = {'H':'D','L':'R'}#,'Ph':'Pd','Pl':'Pr','Wh':'Wd','Wl':'Wr'} #TODO-This version cannot use a parental or wild-type resequencing
+	arg['--data'] = [translate[i] for i in data]
+	for k,v in translate.items():
+		arg['--ref-genotype'] = arg['--ref-genotype'].replace(k,v)
 	if len(data) < 2:
-		print('Error: You should include a minimum of 2 pools in QTL-seq experiment (--data D,R,Px or --data D,R)', file=sys.stderr)
+		print('Error: You should include 2 pools in QTL-seq experiment (--data H,L)', file=sys.stderr)
 		sys.exit()
-	if 'Pr' in data and 'Pd' in data:
-		print('Error: You should include only one parental pool in data (--data D,R,Px)', file=sys.stderr)
+	if 'Pr' in data or 'Pd' in data or 'Wr' in data or 'Wd' in data:
+		print('Error: Parental re-sequencing is not available on this version (--data H,L)', file=sys.stderr)
 		sys.exit()
-
+	if arg['--max-depth'] == 'inf':
+		arg['--max-depth'] = np.inf
+	else:
+		arg['--max-depth'] = int(arg['--max-depth'])
 	arg['--min-depth'] = int(arg['--min-depth'])
-	arg['--max-depth'] = int(arg['--max-depth'])
+	arg['dp_filter'] = False if arg['--max-depth'] == np.inf and arg['--min-depth'] == 0 else True
 	if arg['--min-depth'] <= 0:
 		arg['--min-depth'] = 1
 	if arg['--max-depth'] <= arg['--min-depth']:
@@ -275,15 +283,10 @@ def qtl_calc(inp, arg):
 	data = arg['--data']
 	inf_s = set(data)
 	no_ref = arg['--ref-genotype']
-	min_dp = arg['--min-depth']
-	max_dp = arg['--max-depth']
 	a,b,c,d = inp[0], inp[1], inp[2], inp[3]
 	dom = a + b
 	rec = c + d
-	dp_total = dom + rec
-	if dp_total <= max_dp and dp_total >= min_dp and rec > 0 and dom > 0:
-		if b/(a+b) == d/(c+d):
-			return None
+	if rec > 0 and dom > 0:
 		v1 = (c/rec, d/rec)
 		v2 = (a/dom, b/dom)
 		ed = distance.euclidean(v1,v2)
@@ -313,9 +316,9 @@ def choose_header(arg):
 			header = ['#CHROM','POS','DOM','REC','DPdom_1','DPrec_1','DPdom_2','DPrec_2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE']
 	elif 'qtl' in arg.keys():
 		if arg['--ref-genotype'] == 'miss':
-			header = ['#CHROM','POS','DOM','REC','DPdom_1','DPrec_1','DPdom_2','DPrec_2','ED','G','PVALUE','log10PVALUE']
+			header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','ED','G','PVALUE','log10PVALUE']
 		if arg['--ref-genotype'] != 'miss':
-			header = ['#CHROM','POS','DOM','REC','DPdom_1','DPrec_1','DPdom_2','DPrec_2','SNPidx1','SNPidx2','DELTA','ED','G','PVALUE','log10PVALUE']
+			header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','SNPidx1','SNPidx2','DELTA','ED','G','PVALUE','log10PVALUE']
 	arg['header'] = header
 
 
@@ -433,12 +436,13 @@ def filter_mbs(arg, al_count, p_al_count, genotype):
 		REF,ALT,a,b,c,d = al_count[0], al_count[1], al_count[2], al_count[3], al_count[4], al_count[5]
 		dom = a + b
 		rec = c + d
-		if dom <= min_dp or dom >= max_dp or rec <= min_dp or rec >= max_dp: #TODO
-			flag.append(False)
 		flag.append(genotype_filter(arg, genotype))
+		if arg['dp_filter']:
+			if dom <= min_dp or dom >= max_dp or rec <= min_dp or rec >= max_dp: #TODO
+				flag.append(False)
 		if arg['--het-filter']:
 			#flag.append(het_filter(arg,a,b))
-			flag.append(het_filter2(arg,genotype))
+			flag.append(het_filter2(arg,genotype,a,b))
 		if arg['--EMS']:
 			flag.append(filter_EMS(arg, REF, ALT))
 		if arg['--parental-filter'] and ('Pr' in inf_s or 'Pd' in inf_s or 'Wr' in inf_s or 'Wd' in inf_s):
@@ -448,15 +452,36 @@ def filter_mbs(arg, al_count, p_al_count, genotype):
 
 	elif 'D' not in inf_s:
 		REF,ALT,c,d = al_count[0], al_count[1], al_count[2], al_count[3]
-		if c+d <= min_dp or c+d >= max_dp:
-			flag.append(False)
 		flag.append(genotype_filter(arg, genotype))
+		if arg['dp_filter']:
+			if c+d <= min_dp or c+d >= max_dp:
+				flag.append(False)
 		if arg['--EMS'] and (arg['--ref-genotype'] != 'miss' or 'Pr' in inf_s or 'Pd' in inf_s):
 			flag.append(filter_EMS(arg, REF, ALT))
 		if arg['--parental-filter'] and ('Pr' in inf_s or 'Pd' in inf_s or 'Wr' in inf_s or 'Wd' in inf_s):
 			#e,f = p_al_count[0], p_al_count[1]
 			#flag.append(isogenic_filter(arg,c,d,e,f))
 			flag.append(parental_filter(arg,genotype))
+	if False in flag:
+		return False
+	else:
+		return True
+
+def filter_qtl(arg, al_count, genotype):
+	flag = [True]
+	inf_s = set(arg['--data'])
+	min_dp = arg['--min-depth']
+	max_dp = arg['--max-depth']
+	a,b,c,d = int(al_count[2]), int(al_count[3]), int(al_count[4]), int(al_count[5])
+	high = a + b
+	low = c + d
+	dp = high + low
+	GT_H = set(genotype['D'])
+	GT_L = set(genotype['R'])
+	flag.append(False if GT_H == GT_L == {'1'} else True)
+	if arg['dp_filter']:
+		flag.append(True if dp <= max_dp and dp >= min_dp else False)
+	#flag.append(False if b/(a+b) == d/(c+d) else True)
 	if False in flag:
 		return False
 	else:
@@ -491,9 +516,15 @@ def het_filter(arg,a,b):
 	else:
 		return False
 
-def het_filter2(arg,genotype):
+def het_filter2(arg, genotype, a, b):
+	min_ratio = arg['--min-ratio']
+	max_ratio = arg['--max-ratio']
 	GT_dom = set(genotype['D'])
-	if GT_dom != {'0','1'}:
+	dom = a + b
+	flag = list()
+	flag.append(False if GT_dom != {'0','1'} else True)
+	flag.append(True if (a/dom) <= max_ratio and (a/dom) >= min_ratio else False)
+	if False in flag:
 		return False
 	else:
 		return True
@@ -552,8 +583,11 @@ def outcross_filter(arg,c,d,e,f):
 
 def normalize(pools, REF, arg, r_min=0.03):
 	data = arg['data_w']
-	wt = arg['wt']
 	inf_s = set(data)
+	if 'qtl' in arg.keys():
+		data = arg['--data']
+		inf_s = set(data)
+	wt = arg['wt']
 	ref = arg['--ref-genotype']
 	rec = pools['R']
 	alle = [a for a,v in rec.items()]
@@ -659,7 +693,6 @@ def normalize(pools, REF, arg, r_min=0.03):
 		elif arg['reorder'] == 0:
 			wt_l = [pools[wt][alle[0]], pools[wt][alle[1]]]
 	#elif not wt and ('Pr' not in inf_s or 'Pd' not in inf_s):
-	#	wt_l = 0
 	return al_count, wt_l
 	
 

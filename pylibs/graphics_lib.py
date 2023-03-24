@@ -46,6 +46,10 @@ def read_header_plot(arg):
                 arg['--contigs'][id] = int(length)
             if line.startswith('#CHROM'):
                 arg['header'] = line.rstrip().split('\t')
+                if 'qtlplot' in arg.keys():
+                    translate = {'REF':'DOM','ALT':'REC','DPref_1':'DPdom_1','DPalt_1':'DPrec_1','DPref_2':'DPdom_2','DPalt_2':'DPrec_2'}
+                    header2 = [i if i not in translate.keys() else translate[i] for i in arg['header']]
+                    arg['header'] = header2
                 break
     return arg
 
@@ -90,7 +94,7 @@ def test_plot(arg, __doc__):
         arg['--moving-avg'] = int(arg['--moving-avg'])
         if arg['--moving-avg'] <= 0:
             print(
-                'Error: The window size  for m. avg must be an integer higher than zero.', file=sys.stderr)
+                'Error: The window size for moving average (-A) must be an integer higher than zero.', file=sys.stderr)
             sys.exit()
     return arg
 
@@ -307,7 +311,7 @@ def check_save(arg, file_name):
         expand = 0
         while True:
             expand += 1
-            nw_file_name = file_name.split(typ)[0] + '(' + str(expand) + ')' + typ
+            nw_file_name = file_name.split(typ)[0] + '_' + str(expand) + typ
             if os.path.isfile(arg['--outdir']+nw_file_name):
                 continue
             else:
