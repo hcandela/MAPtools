@@ -19,8 +19,9 @@ def mbs(argv):
       -i, --input FILE              VCF input file. Can also come from a pipe.
 
     Input Options:
-      -d, --data LIST               Pools genotype: dominant(D), recessive(R), parental dominant(Pd) and
-                                    parental recessive(Pr) [default: D,R].
+      -d, --data LIST               Pools genotype: dominant(D), recessive(R), parental dominant(Pd),
+                                    parental recessive(Pr), wild-type recessive (Wr) and wild-type
+                                    dominant (Wd) [default: D,R].
       -r, --ref-genotype STR        Which parental houses the reference, \"miss\" for missing genotype [default: miss].
       -m, --mutant-pool STR         Which pool has the mutant phenotype [default: R].
 
@@ -33,7 +34,6 @@ def mbs(argv):
       -c, --min-depth INT           Minimum allele depth [default: 0].
       -Q, --max-ratio INT           Maximum allele frequency in dominant pool [default: 100].
       -q, --min-ratio INT           Minimum allele frequency in dominant pool [default: 0].
-      -e, --min-error INT           Minimum depth to consider that an allele is not a sequencing error [default: 3].
       --EMS                         Filter out SNPs other than caused by EMS (\"G\" > \"A\" or \"C\" > \"T\").
       --parental-filter             Filter out variants if Parental (-d \"R\",\"Pr\"| \"Pd\"| \"Wr\"| \"Wd\")
                                     sample is provided.
@@ -293,7 +293,7 @@ def qtl_plot(argv):
     #print(arg)
     arg, df = load_dataframe_plotting(arg)
     arg['version'] = v_qtlplot
-    print(arg)
+    #print(arg)
     if arg['--euclidean-distance']:
         df = get_ED100_4(df, arg, RANG)
         plot_ED(df,arg)
@@ -332,7 +332,7 @@ def qtl_plot(argv):
         AF_mono_graph(df, arg, 'SNPidx2')   
         
 def annotate(argv):
-  annotate_doc="""Annotate variants
+  annotate_doc="""
 Usage:
    maptools.py annotate [options]
    maptools.py annotate
@@ -359,9 +359,8 @@ Output Options:
 Filter Options:
   -C, --max-depth INT           Maximum allele depth [default: inf].
   -c, --min-depth INT           Minimum allele depth [default: 0].
-  -Q, --max-ratio INT           Maximum allele frequency in dominant pool [default: 90].
-  -q, --min-ratio INT           Minimum allele frequency in dominant pool [default: 10].
-  -e, --min-error INT           Minimum depth to consider that an allele is not a sequencing error [default: 3].
+  -Q, --max-ratio INT           Maximum allele frequency in dominant pool [default: 100].
+  -q, --min-ratio INT           Minimum allele frequency in dominant pool [default: 0].
   --EMS                         Filter out SNPs other than caused by EMS (\"G\" > \"A\" or \"C\" > \"T\").
   --parental-filter             Filter out variants if Parental (-d \"R\",\"Pr\"| \"Pd\"| \"Wr\"| \"Wd\")
                                 sample is provided.                            

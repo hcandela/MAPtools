@@ -140,7 +140,7 @@ def check_mbs_args(arg:dict):
 	arg['dp_filter'] = False if arg['--max-depth'] == np.inf and arg['--min-depth'] == 0 else True
 	arg['--min-ratio'] = float(arg['--min-ratio'])/100
 	arg['--max-ratio'] = float(arg['--max-ratio'])/100
-	arg['--min-error'] = int(arg['--min-error'])
+	#arg['--min-error'] = int(arg['--min-error'])
 	if arg['--min-depth'] <= 0:
 		arg['--min-depth'] = 1
 	if arg['--max-depth'] <= arg['--min-depth']:
@@ -534,13 +534,13 @@ def isogenic_filter(arg,c,d,e,f):
 	min_dp = arg['--min-depth']
 	min_ratio = arg['--min-ratio']
 	max_ratio = arg['--max-ratio']
-	min_error = arg['--min-error']
+	#min_error = arg['--min-error']
 	if c + d >= min_dp and e + f >= min_dp and  min_ratio*c < min_dp < max_ratio*c and min_ratio*e < min_dp < max_ratio*e:
 		return False
-	elif c == c+d and e >= min_error:
-		return False
-	else: 
-		return True
+	#elif c == c+d and e >= min_error:
+	#	return False
+	#else: 
+	#	return True
 	
 def parental_filter(arg,genotype):
 	inf_s = set(arg['--data'])
@@ -1254,7 +1254,7 @@ def write_argv(arg:dict,argv:str):
 
 def read_header_merge(arg:dict):
 	lines = list()
-	arg['--contigs'] = list()
+	arg['--contigs'] = dict()
 	with open(arg['--input'], 'r') as handle:
 		for line in handle:
 			if line.startswith('##maptools_'):
@@ -1292,7 +1292,7 @@ def read_header_merge(arg:dict):
 def check_chroms(arg):
 	chromosomes = arg['--chromosomes']
 	for chrom in chromosomes:
-		if chrom not in arg['--contigs']:
+		if chrom not in arg['--contigs'].keys():
 			print('Error: {} is not in the contig ID list.'.format(chrom), file=sys.stderr)
 			sys.exit()
 

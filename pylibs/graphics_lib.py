@@ -110,8 +110,6 @@ def load_dataframe_plotting(arg):
     if arg['--chromosomes'] == 'all':
         arg['--chromosomes'] = list(chroms)
     else:
-        #ch_idx = [int(c) - 1 for c in arg['--chromosomes'].split(',')]
-        #chroms_ = [chroms[idx] for idx in ch_idx]
         chroms_ = arg['--chromosomes'].split(',')
         arg['--chromosomes'] = chroms_
     check_chroms(arg)
