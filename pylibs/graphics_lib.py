@@ -21,12 +21,12 @@ from matplotlib.ticker import (MultipleLocator,
 # warnings.filterwarnings("ignore")
 # sys.path.append(os.getcwd())
 pd.options.mode.chained_assignment = None
-# ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','MAX_SNPidx2','BOOST']
-# ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','SNPidx1','BOOST']
-# ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','SNPidx1','SNPidx2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE']
-# ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE']
-# ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','PVALUE','log10PVALUE']
-# ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','SNPidx1','SNPidx2','DELTA','PVALUE','log10PVALUE']
+# ['#CHROM','POS','REF','REC','DPdom_1','DPrec_1','MAX_SNPidx2','BOOST']
+# ['#CHROM','POS','REF','REC','DPdom_1','DPrec_1','SNPidx1','BOOST']
+# ['#CHROM','POS','REF','REC','DPdom_1','DPrec_1','DPdom_2','DPrec_2','SNPidx1','SNPidx2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE']
+# ['#CHROM','POS','REF','REC','DPdom_1','DPrec_1','DPdom_2','DPrec_2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE']
+# ['#CHROM','POS','REF','REC','DPdom_1','DPrec_1','DPdom_2','DPrec_2','PVALUE','log10PVALUE']
+# ['#CHROM','POS','REF','REC','DPdom_1','DPrec_1','DPdom_2','DPrec_2','SNPidx1','SNPidx2','DELTA','PVALUE','log10PVALUE']
 
 def read_header_plot(arg):
     arg['--contigs'] = dict()
@@ -46,6 +46,10 @@ def read_header_plot(arg):
                 arg['--contigs'][id] = int(length)
             if line.startswith('#CHROM'):
                 arg['header'] = line.rstrip().split('\t')
+                if 'qtlplot' in arg.keys():
+                    translate = {'REF':'DOM','ALT':'REC','DPref_1':'DPdom_1','DPalt_1':'DPrec_1','DPref_2':'DPdom_2','DPalt_2':'DPrec_2'}
+                    header2 = [i if i not in translate.keys() else translate[i] for i in arg['header']]
+                    arg['header'] = header2
                 break
     return arg
 
@@ -58,18 +62,18 @@ def test_plot(arg, __doc__):
     global fields
     inp_f = arg['--input']
     if not inp_f:
-        print(__doc__, end='\n')
+        print(__doc__, end='\n', file=sys.stderr)
         sys.exit()
     try:
         f = open(inp_f, 'r')
     except FileNotFoundError:
-        print('Error: The input file {} does not exist'.format(inp_f))
+        print('Error: The input file {} does not exist'.format(inp_f), file=sys.stderr)
         sys.exit()
     wd = os.getcwd()
     try:
         os.makedirs(wd+'/'+arg['--outdir'])
     except FileExistsError:
-        print('Warning: the output directory already exists')
+        print('Warning: the output directory already exists', file=sys.stderr)
         pass
     arg['--outdir'] = wd+'/'+arg['--outdir']+'/'
     if arg['--captions']:
@@ -90,7 +94,7 @@ def test_plot(arg, __doc__):
         arg['--moving-avg'] = int(arg['--moving-avg'])
         if arg['--moving-avg'] <= 0:
             print(
-                'Error: The window size  for m. avg must be an integer higher than zero.')
+                'Error: The window size for moving average (-A) must be an integer higher than zero.', file=sys.stderr)
             sys.exit()
     return arg
 
@@ -138,8 +142,8 @@ def load_dataframe(arg):
         sep_ = '\t'
     df = pd.read_csv(inp_f, sep=sep_, dtype=fields, names=arg['header'], comment='#')
     arg['--fields'] = list(df.columns)
-    arg['--fields'].remove('REF')
-    arg['--fields'].remove('ALT')
+    arg['--fields'].remove('DOM')
+    arg['--fields'].remove('REC')
     arg['header']=arg['--fields']
     if arg['--chromosomes'] == 'all':
         arg['--chromosomes'] = list(df['#CHROM'].unique())
@@ -151,13 +155,13 @@ def check_merge(arg,__doc__):
     global fields
     inp_f = arg['--input']
     if not inp_f:
-        print(__doc__,end='\n')
+        print(__doc__,end='\n', file=sys.stderr)
         sys.exit()
 
     try:
         f = open(arg['--input'], 'r')
     except FileNotFoundError:
-        print('Error: The input file {} does not exist'.format(inp_f))
+        print('Error: The input file {} does not exist'.format(inp_f), file=sys.stderr)
         sys.exit()
     if arg['--output-type'] in {'csv','txt'}:
         if arg['--output-type'] == 'csv':
@@ -166,7 +170,7 @@ def check_merge(arg,__doc__):
             arg['spacer'] = '\t'
         arg['--output-type'] = '.' + arg['--output-type']
     else:
-        print('Error: select a valid format.')
+        print('Error: select a valid format.', file=sys.stderr)
         sys.exit()
     if arg['--output'] != None:
         wd = os.getcwd()
@@ -175,7 +179,7 @@ def check_merge(arg,__doc__):
         try:
             os.makedirs(wd+'/'+outdir)
         except FileExistsError:
-            print('Warning: the output directory already exists')
+            print('Warning: the output directory already exists', file=sys.stderr)
             pass
         arg['filename'] = arg['--output'].split('/')[-1]
         arg['outdir'] = wd+'/'+outdir
@@ -189,7 +193,7 @@ def check_merge(arg,__doc__):
     arg['lim'] = 1e-90
     arg['--window'] = int(arg['--window'])
     if arg['--window'] <= 0:
-        print('Error: The window size must be an integer higher than zero.')
+        print('Error: The window size must be an integer higher than zero.', file=sys.stderr)
         sys.exit()
     # Checking graphic types
     return arg
@@ -201,7 +205,7 @@ def check_mbs_opts(arg):
     else:
         arg['--boost'] = int(arg['--boost'])
         if arg['--boost'] <= 0:
-            print('Error: The window size for boost must be an integer higher than zero.')
+            print('Error: The window size for boost must be an integer higher than zero.', file=sys.stderr)
             sys.exit()
     arg['titles'] = titles_mbs
     arg['lines'] = lines_mbs
@@ -227,22 +231,22 @@ def check_mbs_opts(arg):
             arg['--max-allele-freq2'] = False
     else:
         if 'SNPidx1' in arg['--fields'] and 'SNPidx2' not in arg['--fields'] and arg['--combine'] == True:
-            print('Error: is not possible make combined graphics with your input data')
+            print('Error: is not possible make combined graphics with your input data', file=sys.stderr)
             sys.exit()
         if arg['--pvalue'] == True and 'log10PVALUE' not in arg['--fields']:
-            print('Error: is not possible make P-VALUE graphics with your input data')
+            print('Error: is not possible make P-VALUE graphics with your input data', file=sys.stderr)
             sys.exit()
         if arg['--allele-freq-1'] == True and 'SNPidx1' not in arg['--fields']:
-            print('Error: is not possible make phased Allele Frequency graphics with your input data. Please use -M or -a option')
+            print('Error: is not possible make phased Allele Frequency graphics with your input data. Please use -M or -a option', file=sys.stderr)
             sys.exit()
         if arg['--allele-freq-2'] == True and 'SNPidx2' not in arg['--fields']:
-            print('Error: is not possible make Allele Frequency graphics for this pool. Please use -R, -M or -a option')
+            print('Error: is not possible make Allele Frequency graphics for this pool. Please use -R, -M or -a option', file=sys.stderr)
             sys.exit()
         if arg['--max-allele-freq2'] == True and 'MAX_SNPidx2' not in arg['--fields']:
-            print('Error: is not possible make phased MAX Allele Frequency graphics with your input data. Please use -D or -R or -a option')
+            print('Error: is not possible make phased MAX Allele Frequency graphics with your input data. Please use -D or -R or -a option', file=sys.stderr)
             sys.exit()
-    if arg['--all'] == False and arg['--pvalue'] == False and arg['--allele-freq-1'] == False and arg['--allele-freq-2'] == False:
-        print('Warning: any graphic was selected. Please use -a option to make all possible graphics with your data.')
+    if arg['--all'] == False and arg['--pvalue'] == False and arg['--allele-freq-1'] == False and arg['--allele-freq-2'] == False and arg['--qtl-seq'] == False and arg['--g-statistic'] == False and arg['--euclidean-distance'] == False:
+        print('Warning: any graphic was selected. Please use -a option to make all possible graphics with your data.', file=sys.stderr)
     return arg
 
 
@@ -274,28 +278,28 @@ def check_qtl_opts(arg):
             arg['--qtl-seq'] = True
     else:
         if arg['--pvalue'] == True and 'log10PVALUE' not in arg['--fields']:
-            print('Error: is not possible make P-VALUE graphics with your input data')
+            print('Error: is not possible make P-VALUE graphics with your input data', file=sys.stderr)
             sys.exit()
         if arg['--delta'] == True and 'DELTA' not in arg['--fields']:
-            print('Error: is not possible make phased SNP-idx graphics with your input data. Please use -a.')
+            print('Error: is not possible make phased SNP-idx graphics with your input data. Please use -a.', file=sys.stderr)
             sys.exit()
         if arg['--ci95'] == True and 'DELTA' not in arg['--fields']:
-            print('Error: is not possible to calculate confidense interval without DELTA field. Please use -a.')
+            print('Error: is not possible to calculate confidense interval without DELTA field. Please use -a.', file=sys.stderr)
             sys.exit()
         if arg['--euclidean-distance'] == True and 'ED' not in arg['--fields']:
-            print('Error: is not possible make Euclidean Distance graphics with your input data')
+            print('Error: is not possible make Euclidean Distance graphics with your input data', file=sys.stderr)
             sys.exit()
         if arg['--g-statistic'] == True and 'G' not in arg['--fields']:
-            print('Error: is not possible make G-statistic graphics with your input data')
+            print('Error: is not possible make G-statistic graphics with your input data', file=sys.stderr)
             sys.exit()
         if ('SNPidx1' not in arg['--fields'] or 'SNPidx2' not in arg['--fields']) and (arg['--allele-freq-H'] == True or arg['--allele-freq-L'] == True):
-            print('Error: is not possible make phased SNP-idx graphics with your input data. Please use -a or -p.')
+            print('Error: is not possible make phased SNP-idx graphics with your input data. Please use -a or -p.', file=sys.stderr)
             sys.exit()
         if arg['--combine'] == True and 'SNPidx1' not in arg['--fields'] or 'SNPidx2' not in arg['--fields']:
-            print('Error: is not possible to make combined graphics with your input data. Please use -a.')
+            print('Error: is not possible to make combined graphics with your input data. Please use -a.', file=sys.stderr)
             sys.exit()
     if arg['--all'] == False and arg['--pvalue'] == False and arg['--delta'] == False and arg['--allele-freq-H'] == False and arg['--allele-freq-L'] == False:
-        print('Warning: any graphic was selected. Please use -a option to make all possible graphics with your data.')
+        print('Warning: any graphic was selected. Please use -a option to make all possible graphics with your data.', file=sys.stderr)
 
     return arg
 
@@ -307,7 +311,7 @@ def check_save(arg, file_name):
         expand = 0
         while True:
             expand += 1
-            nw_file_name = file_name.split(typ)[0] + '(' + str(expand) + ')' + typ
+            nw_file_name = file_name.split(typ)[0] + '_' + str(expand) + typ
             if os.path.isfile(arg['--outdir']+nw_file_name):
                 continue
             else:
@@ -363,14 +367,14 @@ def grouped_by(df, arg):
 
         for g in g_list:  # for each group in group list
             res = list()
-            if 'DPref_2' not in arg['--fields'] and 'DPalt_2' not in arg['--fields']:
+            if 'DPdom_2' not in arg['--fields'] and 'DPrec_2' not in arg['--fields']:
                 rAt, rBt, rPost, rTt = 0, 0, 0, 0
             else:
                 rAt, rBt, rCt, rDt, rPost, rTt = 0, 0, 0, 0, 0, 0
             for i in g:  # for each index in group
-                if 'DPref_2' not in arg['--fields'] and 'DPalt_2' not in arg['--fields']:
-                    rA = d.loc[i].DPref_1
-                    rB = d.loc[i].DPalt_1
+                if 'DPdom_2' not in arg['--fields'] and 'DPrec_2' not in arg['--fields']:
+                    rA = d.loc[i].DPdom_1
+                    rB = d.loc[i].DPrec_1
                     rT = rA + rB
                     rPos = d.loc[i].POS*rT
                     rTt += rT
@@ -378,10 +382,10 @@ def grouped_by(df, arg):
                     rBt += rB
                     rPost += rPos
                 else:
-                    rA = d.loc[i].DPref_1
-                    rB = d.loc[i].DPalt_1
-                    rC = d.loc[i].DPref_2
-                    rD = d.loc[i].DPalt_2
+                    rA = d.loc[i].DPdom_1
+                    rB = d.loc[i].DPrec_1
+                    rC = d.loc[i].DPdom_2
+                    rD = d.loc[i].DPrec_2
                     rT = rA + rB + rC + rD
                     rPos = d.loc[i].POS*rT
                     rTt += rT
@@ -392,7 +396,7 @@ def grouped_by(df, arg):
                     rPost += rPos
             rPost = round(rPost/(rTt))
             res += [chrom[ch], rPost, rAt, rBt]
-            if 'DPref_2' in arg['--fields'] and 'DPalt_2' in arg['--fields']:
+            if 'DPdom_2' in arg['--fields'] and 'DPrec_2' in arg['--fields']:
                 res += [rCt, rDt]
                 if 'SNPidx1' in arg['--fields'] and 'SNPidx2' in arg['--fields']:
                     rSNPidx1 = rBt/(rAt+rBt)
@@ -433,10 +437,13 @@ def grouped_by(df, arg):
 
 
 def get_ED100_4(df, arg, rang):
-    chrom = df['#CHROM'].unique()
+    chrom = [ch for ch in arg['contigs'].keys()]
+    #chrom = df['#CHROM'].unique()
     ED100 = np.array([])
     for ch in range(len(chrom)):
         d = df[df['#CHROM'] == chrom[ch]]
+        if len(d) < RANG:
+            continue
         d.index = np.arange(len(d))
         n = len(d)
         ED100c = np.zeros(n)
@@ -649,15 +656,15 @@ def pval_mono_graph(df, arg):
 
 def qq_plot(df, arg):
     #TODO
-    df['DP']=df['DPref_1']+df['DPalt_1']+df['DPref_2']+df['DPalt_2']
+    df['DP']=df['DPdom_1']+df['DPrec_1']+df['DPdom_2']+df['DPrec_2']
     chrom=arg['--chromosomes']
     typ=arg['--output-type']
     inp_file=arg['--input']
     r=pd.DataFrame()
-    r['A']=df.DPref_1
-    r['B']=df.DPalt_1
-    r['C']=df.DPref_2
-    r['D']=df.DPalt_2
+    r['A']=df.DPdom_1
+    r['B']=df.DPrec_1
+    r['C']=df.DPdom_2
+    r['D']=df.DPrec_2
     r['#CHROM']=df['#CHROM']
     r['obs_logPVALUE']=-1*df.log10PVALUE
     r['e_logPVALUE']=r.apply(expected_pvalue, axis=1)
@@ -1525,9 +1532,9 @@ def snp_index_graph(df, arg):
 
 def calc_ci(d, arg, ax):
     z95=abs(st.norm.ppf(.025/arg['n_markers']))
-    d['DP']=d['DPref_1']+d['DPalt_1']+d['DPref_2']+d['DPalt_2']
-    d['DP1']=d['DPref_1']+d['DPalt_1']
-    d['DP2']=d['DPref_2']+d['DPalt_2']
+    d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
+    d['DP1']=d['DPdom_1']+d['DPrec_1']
+    d['DP2']=d['DPdom_2']+d['DPrec_2']
     d['productx']=d['POS'] * d['DP']
     d['mediamovilx']=(d['productx'].rolling(arg['--moving-avg']).sum() / d['DP'].rolling(arg['--moving-avg']).sum())
 
@@ -1547,29 +1554,32 @@ def calc_ci(d, arg, ax):
 
 def plot_avg(d, arg, ax, field):
     if field == 'SNPidx2':
-        d['DP']=d['DPref_2']+d['DPalt_2']
+        d['DP']=d['DPdom_2']+d['DPrec_2']
         c_=arg['--palette']['SNPidx2']
     elif field == 'SNPidx1':
-        d['DP']=d['DPref_1']+d['DPalt_1']
+        d['DP']=d['DPdom_1']+d['DPrec_1']
         c_=arg['--palette']['SNPidx1']
     elif field == 'MAX_SNPidx2':
         if 'SNPidx2' not in arg['--fields']:
-            d['DP']=d['DPref_1']+d['DPalt_1']
+            d['DP']=d['DPdom_1']+d['DPrec_1']
         else:
-            d['DP']=d['DPref_2']+d['DPalt_2']
+            d['DP']=d['DPdom_2']+d['DPrec_2']
         c_=arg['--palette']['MAX_SNPidx2']
     elif field == 'log10PVALUE':
-        d['DP']=d['DPref_1']+d['DPalt_1']+d['DPref_2']+d['DPalt_2']
+        d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
         c_=arg['--palette']['log10PVALUE']
     elif field == 'ED100_4':
-        d['DP']=d['DPref_1']+d['DPalt_1']+d['DPref_2']+d['DPalt_2']
+        d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
         c_=arg['--palette']['log10PVALUE']
     elif field == 'DELTA':
-        d['DP']=d['DPref_1']+d['DPalt_1']+d['DPref_2']+d['DPalt_2']
+        d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
         c_=arg['--palette']['DELTA']
     elif field == 'G':
-        d['DP']=d['DPref_1']+d['DPalt_1']+d['DPref_2']+d['DPalt_2']
+        d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
         c_=arg['--palette']['mvg']
+    elif field == 'delta2':
+        d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
+        c_=arg['--palette']['SNPidx1']
     d['prody']=d[field] * d['DP']
     d['avgy']=(d['prody'].rolling(arg['--moving-avg']).sum() / \
                d['DP'].rolling(arg['--moving-avg']).sum())
@@ -1580,9 +1590,9 @@ def plot_avg(d, arg, ax, field):
 
 def plot_avg_qtl_SNPidx(d, arg, ax):
     color = arg['--palette']['mvg']
-    d['DP']=d['DPref_1']+d['DPalt_1']+d['DPref_2']+d['DPalt_2']
-    d['DP1']=d['DPref_1']+d['DPalt_1']
-    d['DP2']=d['DPref_2']+d['DPalt_2']
+    d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
+    d['DP1']=d['DPdom_1']+d['DPrec_1']
+    d['DP2']=d['DPdom_2']+d['DPrec_2']
     d['productx']=d['POS'] * d['DP']
     d['mediamovilx']=(d['productx'].rolling(arg['--moving-avg']).sum() / d['DP'].rolling(arg['--moving-avg']).sum())
     #SNPidx1
@@ -1602,9 +1612,9 @@ def plot_avg_qtl_SNPidx(d, arg, ax):
 def plot_boost(d, arg, ax, max_x):
     # Mediamovil Boost
     if 'SNPidx2' not in arg['--fields']:
-        d['DP']=d['DPref_1']+d['DPalt_1']
+        d['DP']=d['DPdom_1']+d['DPrec_1']
     else:
-        d['DP']=d['DPref_2']+d['DPalt_2']
+        d['DP']=d['DPdom_2']+d['DPrec_2']
     d['BOOST']=d['BOOST'] * arg['lim']
     d['prodboost']=d['BOOST'] * d['DP']
     d['medboost']=(d['prodboost'].rolling(arg['--boost']).sum() / \
@@ -1636,8 +1646,60 @@ def create_caption(arg, res_tit):
 
 def write_caption(f, text, arg):
     for sentence in text:
-        f.write(sentence+'\n')
+        f.write(sentence+' ')
     if '--window' in arg.keys():
         f.write('The dots correspond to genomic regions defined by non-overlapping bins of {} consecutive markers'.format(str(arg['--window'])))
-    f.write('\n')
+    f.write('\n'*2)
     f.close()
+
+def Delta2_Vertical_graph(df, arg):
+    typ=arg['--output-type']
+    max_x=arg['max_lenght']
+    
+    ticks_y=[-1,-0.5,0,0.5, 1]
+    lim_y=(-1, 1)
+    #t1,rt1,_=arg['titles'][7]
+    #t2,rt2,_=arg['titles'][8]
+    labs_list = list()
+    f1_name = list()
+    f2_name = list()
+    for chrom_list in arg['chrom_lists']:
+        chrom = chrom_list
+        if len(chrom) > 1:
+            fig, ax=plt.subplots(len(chrom), 1, figsize=(10, 2.5*len(chrom)))
+        if len(chrom) == 1:
+            fig, ax=plt.subplots(2,1,figsize=(10, 2.5*2))
+        for i in range(len(chrom)):
+            d=df[df['#CHROM'] == chrom[i]]
+            x=d[['POS']]
+            d['delta2'] = d['DPdom_1']/(d['DPdom_1']+d['DPrec_1']) - d['DPdom_2']/(d['DPdom_2']+d['DPrec_2'])
+            y=d[['delta2']]
+            #AF1&2
+            ax[i].scatter(x, y, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+            ax[i].set(xlim=(0, max_x), ylim=lim_y)
+            ax[i].set_xticks(ticks=np.arange(0, max_x, 5e6))
+            ax[i].tick_params(labelbottom=False)
+            ax[i].set_ylabel(ylabel='Allele Frequency', fontsize=12, rotation=90, labelpad=15)
+            ax[i].set_title('({})'.format(arg['labs'][chrom[i]]), fontsize=18, rotation=0, x = -0.14, y=0.85) 
+            labs_list.append('({}) Chromosome {}.'.format(arg['labs'][chrom[i]],chrom[i]))  
+            ax[i].set_yticks(ticks=ticks_y)
+            ax[i].set_yticklabels(labels=ticks_y, fontsize=8)
+            if arg['--moving-avg'] != False:
+                plot_avg(d, arg, ax[i], 'delta2')
+            ax[i].spines['top'].set_visible(False)
+            ax[i].spines['right'].set_visible(False)
+            if len(chrom) == 1:
+                ax[1].remove()
+            if i == len(chrom)-1 or len(chrom) == 1:
+                ax[i].tick_params(labelbottom=True)
+                ax[i].set_xticklabels(labels=np.arange(0, max_x, 5e6), fontsize=8, color='black')
+                ax[i].xaxis.set_major_formatter(ScalarFormatter())
+                ax[i].ticklabel_format(axis='x', style='scientific', scilimits=(6, 6), useMathText=True)
+                ax[i].set_xlabel(xlabel='Chromosomal position (bp)', fontsize=15)
+
+        fig.subplots_adjust(hspace=0.1)
+        filename='delta2multiV'+typ
+        filename=check_save(arg, filename)
+        f1_name.append(filename)
+        plt.savefig(arg['--outdir']+filename)
+        plt.close()

@@ -21,7 +21,7 @@ def mbs(argv):
     Input Options:
       -d, --data LIST               Pools genotype: dominant(D), recessive(R), parental dominant(Pd) and
                                     parental recessive(Pr) [default: D,R].
-      -r, --ref-genotype STR        Which parental houses the reference, \"miss\" for missing genotype [default: D].
+      -r, --ref-genotype STR        Which parental houses the reference, \"miss\" for missing genotype [default: miss].
       -m, --mutant-pool STR         Which pool has the mutant phenotype [default: R].
 
     Output Options:
@@ -31,14 +31,14 @@ def mbs(argv):
     Filter Options:
       -C, --max-depth INT           Maximum allele depth [default: inf].
       -c, --min-depth INT           Minimum allele depth [default: 0].
-      -Q, --max-ratio INT           Maximum allele frequency in dominant pool [default: 90].
-      -q, --min-ratio INT           Minimum allele frequency in dominant pool [default: 10].
+      -Q, --max-ratio INT           Maximum allele frequency in dominant pool [default: 100].
+      -q, --min-ratio INT           Minimum allele frequency in dominant pool [default: 0].
       -e, --min-error INT           Minimum depth to consider that an allele is not a sequencing error [default: 3].
       --EMS                         Filter out SNPs other than caused by EMS (\"G\" > \"A\" or \"C\" > \"T\").
-      --isogenic-filter             Filter out variants if Parental (-d \"Pr\"| \"Pd\") sample is provided.
-      --outcross-filter             Filter if the variant was already present in the parental re-sequencing.                         
-      --het-filter                  Focuses on markers that are clearly heterozygous in the dominant pool
-                                    (depth in the interval [-c,-C] and allele frequency in the interval [-q, -Q]).
+      --parental-filter             Filter out variants if Parental (-d \"R\",\"Pr\"| \"Pd\"| \"Wr\"| \"Wd\")
+                                    sample is provided.
+      --het-filter                  Focuses on markers that are clearly heterozygous in the dominant pool (\"1\"/\"0\"
+                                    genotype or depth in the interval [-c,-C] and allele frequency in the interval [-q, -Q]).
       --no-filter                   Disable all filters.                 
     """
     arg = docopt(mbs_doc, argv=None, help=True,version=v_mbs)
@@ -62,13 +62,13 @@ def mbs(argv):
         if line.startswith('#'):
           read_header(arg,line)
         else:
-            fields, pools = vcf_line_parser2(line, arg)
-            if (fields, pools) != (0, 0):
-              REF = fields[2]
-              al_count, p_al_count = normalize(pools, REF, arg)
+            fields, pools, genotype = vcf_line_parser2(line, arg)
+            if (fields, pools, genotype) != (0, 0, 0):
+              DOM = fields[2]
+              al_count, p_al_count = normalize(pools, DOM, arg)
               if (al_count,p_al_count) != (0,0):
                 if arg['--no-filter'] == False:
-                  flag = filter_mbs(arg,al_count,p_al_count)
+                  flag = filter_mbs(arg,al_count,p_al_count, genotype)
                 else:
                    flag = True
                 if flag == True:
@@ -90,11 +90,14 @@ def qtl(argv):
     -i, --input FILE                VCF input file. Can also come from a pipe.
 
   Input Options:
-    -d, --data LIST                 Pools genotype: dominant(D), recessive(R), parental dominant(Pd) and 
-                                    parental recessive(Pr) [default: D,R].
-    -r, --ref-genotype STR          Which parental houses the reference, \"miss\" for missing genotype [default: D].
-    -C, --max-depth INT             Maximum read depth [default: 120].
-    -c, --min-depth INT             Minimum read depth [default: 20].
+    -d, --data LIST                 Pools genotype: High phenotype (H) and Low phenotype (L).
+    -r, --ref-genotype STR          Which parental houses the reference: \"H\", \"L\" or \"miss\"
+                                    (for missing genotype) [default: miss].
+  
+  Filter Options:
+    -C, --max-depth INT             Maximum read depth [default: inf].
+    -c, --min-depth INT             Minimum read depth [default: 0].
+    --no-filter                     Disable all filters.
 
   Output Options:
     -o, --output FILE               Write output file.
@@ -117,21 +120,25 @@ def qtl(argv):
         inp = sys.stdin
     choose_header(arg)
     write_argv(arg, argv)
-    print(arg)
+    #print(arg)
     for line in inp:
         if line.startswith('#'):
           read_header(arg,line)
         else:
-            fields, pools = vcf_line_parser2(line, arg)
-            if (fields, pools) != (0, 0):
-                REF = fields[2]
-                #print(fields[1])
-                al_count, p_al_count = normalize(pools, REF, arg)
+            fields, pools, genotype = vcf_line_parser2(line, arg)
+            if (fields, pools, genotype) != (0, 0, 0):
+                DOM = fields[2]
+                al_count, p_al_count = normalize(pools, DOM, arg)
                 if (al_count, p_al_count) != (0,0):
-                    calcs = qtl_calc(al_count[2:], arg)
-                    if calcs != None:
-                        first = new_line(fsal, arg, first,
-                                         fields[:2], al_count, calcs)
+                    if arg['--no-filter'] == False:
+                       flag = filter_qtl(arg, al_count, genotype)
+                    else:
+                       flag = True
+                    if flag:
+                      calcs = qtl_calc(al_count[2:], arg)
+                      if calcs != None:
+                          first = new_line(fsal, arg, first,
+                                          fields[:2], al_count, calcs)
 
 def merge(argv):
   merge_doc="""
@@ -192,7 +199,7 @@ def mbs_plot(argv):
 
   Graphics types:
     -p, --pvalue                    Generates p-value plots.
-    --bonferroni                    Show bonferroni test line in p-value plots. 
+    --bonferroni                    Show bonferroni test line in p-value plots.
     -D, --allele-freq-1             Generates allele frequency plots for the dominant pool (AF1).
     -R, --allele-freq-2             Generates allele frequency plots for the recessive pool (AF2).
     -X, --combine                   Combined plots with AF1 and AF2 lines. Use it together with --moving-avg.
@@ -210,6 +217,7 @@ def mbs_plot(argv):
     arg, df = load_dataframe_plotting(arg)
     #print(arg)
     arg['version'] = v_mbsplot
+    #Delta2_Vertical_graph(df, arg)
     if arg['--pvalue'] == True:
         pval_mono_graph(df, arg)
         if arg['--multi-chrom'] == True:
@@ -263,7 +271,7 @@ def qtl_plot(argv):
   Graphic types:
     -p, --pvalue                    Generates p-value plots.
     --bonferroni                    Show bonferroni test line in p-value plots.
-    -d, --delta                     Generates Delta (AF High pool - AF Low pool) plots.
+    -d, --delta                     Generates Delta (AFrecessive High pool - AFrecessive Low pool) plots.
     --ci95                          Show the  95% cofindence interval in Delta plots.
     -H, --allele-freq-H             Generates the alelle frequency plots for the pool of high phenotype.
     -L, --allele-freq-L             Generates the allele frecuency plots for the pool of low phenotype.
@@ -340,7 +348,7 @@ Input Options:
    -d, --data LIST               Pools genotype: dominant(D), recessive(R), parental dominant(Pd),
                                  parental recessive(Pr), wild-type recessive(Wr) and
                                  wild-type dominant(Wr) [default: D,R].
-   -r, --ref-genotype STR        Which parental houses the reference, \"miss\" for missing genotype [default: D].
+   -r, --ref-genotype STR        Which parental houses the reference, \"miss\" for missing genotype [default: miss].
    -m, --mutant-pool STR         Which pool has the mutant phenotype [default: R].
    -R, --region REGION           Region of the genome to explore (... -R chrName:Startpos-Endpos)
 
@@ -355,8 +363,8 @@ Filter Options:
   -q, --min-ratio INT           Minimum allele frequency in dominant pool [default: 10].
   -e, --min-error INT           Minimum depth to consider that an allele is not a sequencing error [default: 3].
   --EMS                         Filter out SNPs other than caused by EMS (\"G\" > \"A\" or \"C\" > \"T\").
-  --isogenic-filter             Filter out variants if Parental (-d \"Pr\"| \"Pd\") sample is provided.
-  --outcross-filter             Filter if the variant was already present in the parental re-sequencing.                            
+  --parental-filter             Filter out variants if Parental (-d \"R\",\"Pr\"| \"Pd\"| \"Wr\"| \"Wd\")
+                                sample is provided.                            
   --het-filter                  Focuses on markers that are clearly heterozygous in the dominant pool
                                 (depth in the interval [-c,-C] and allele frequency in the interval [-q, -Q]).
   --no-filter                   Disable all filters.                           
@@ -386,13 +394,13 @@ Filter Options:
     else:
       line = filter_region(line, arg)
       if line != None:
-        fields, pools = vcf_line_parser2(line, arg)
-        if (fields, pools) != (0,0):
-          REF = fields[2]
-          al_count,p_al_count = normalize(pools, REF, arg, fields)
+        fields, pools, genotype = vcf_line_parser2(line, arg)
+        if (fields, pools, genotype) != (0,0,0):
+          DOM = fields[2]
+          al_count,p_al_count = normalize(pools, DOM, arg, fields)
           if (al_count,p_al_count) != (0,0):
             if arg['--no-filter'] == False:
-              flag = filter_mbs(arg, al_count, p_al_count)
+              flag = filter_mbs(arg, al_count, p_al_count, genotype)
             else:
               flag = True
             if flag:
@@ -400,9 +408,10 @@ Filter Options:
               if calcs != None:
                 df = new_df_line(df,arg,fields[:2], al_count, calcs)
   if df.empty:
-     print('Warning: There is no variants to analyse. Please reduce filtering.')
+     print('Warning: There is no variants to analyse. Please reduce filtering.', file=sys.stderr)
      sys.exit()
   load_reference(df,arg)
+  #print(str(arg['ref'].seq[81033575-1:81033653+5]))
   df = df.reset_index()
   start = time.perf_counter()
   load_gff(arg)
