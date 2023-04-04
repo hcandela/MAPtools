@@ -15,8 +15,6 @@ annotate - evaluates the effect of SNPs contained within a specified interval.
 Installation
 To install MAPtools, follow these steps:
 
-
-
 Usage
 To use MAPtools, run one of the following commands:
 
@@ -46,22 +44,32 @@ All contributions are welcome and appreciated!
 License
 MAPtools is distributed under the MIT License. See LICENSE for more information.
 
-
 Overview
-
 MAPtools is a set of tools to facilitate the analysis of mapping-by-sequencing and QTL-seq studies.
-
-
 
 Getting started
 
-Use bowtie2 to map the reads from each pool to the reference genome.
+Use bowtie2 to map the reads from each pool to the reference genome:
 
-Use the sort command of SAMtools to sort the output by coordinate and convert it to BAM format.
+bowtie2-build genome.fasta GENOMEINDEX
+bowtie2 -x GENOMEINDEX -U dominant_pool.fastq.gz --no-unal -S dominant.sam
+bowtie2 -x GENOMEINDEX -U recessive_pool.fastq.gz --no-unal -S recessive.sam
 
-Process the resulting BAM files with the mpileup and call commands of BCFtools.
+Use the sort command of SAMtools to sort the output files by coordinate and convert them to BAM format:
 
-Use MAPtools to process the BCF or VCF files produced by BCFtools.
+samtools sort -o dominant.bam dominant.sam
+samtools sort -o recessive.bam recessive.sam
+
+Process the resulting BAM files with the mpileup and call commands of BCFtools:
+
+bcftools mpileup -f genome.fasta --annotate FORMAT/AD dominant.bam recessive.bam | bcftools call -mv -V indels -o output.vcf
+
+Use MAPtools to process the BCF or VCF files produced by BCFtools:
+
+cat output.vcf | maptools mbs -d D,R -r R -m D -o mbs_results.txt
+maptools merge -i mbs_results.txt -w 2 -o reprocessed_results.txt
+
+cat output.vcf | maptools annotate -g genome.gff3 -f genoma.fasta -d D,R -r D -m R -o annotation.txt -R 1:1-10000000
 
 
 Citation
