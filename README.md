@@ -14,48 +14,49 @@ MAPtools consists of several commands that are used in a similar way to the comm
 *   ``merge``: reanalyzes data using pseudomarkers created by combining the results of multiple individual markers (similar to counting haplotype alleles instead of marker alleles). The results of ``merge`` can also be represented with ``mbsplot`` and ``qtlplot``, depending on whether they are of type ``mbs`` or ``qtl``.
 *   ``annotate``: evaluates the effect of SNPs contained within a specified interval.
 
-Installation
+## **Installation**
 To install MAPtools, follow these steps:
 
-Usage
+## **Usage**
 To use MAPtools, run one of the following commands:
 
-## Analyze results of mapping-by-sequencing
-MAPtools mbs [options] <input_file>
+*   ### **Analyze results of mapping-by-sequencing**
+    `` maptools.py mbs [options] ``
 
-## Generate figures from results of mapping-by-sequencing analysis
-MAPtools mbsplot [options] <input_file>
+*   ### **Generate figures from results of mapping-by-sequencing analysis**
+    `` maptools.py mbsplot [options] ``
 
-## Analyze results of qtl-seq
-MAPtools qtl [options] <input_file>
+*   ### **Analyze results of qtl-seq**
+    `` maptools.py qtl [options] ``
 
-## Generate figures from results of qtl-seq analysis
-MAPtools qtlplot [options] <input_file>
+*   ### **Generate figures from results of qtl-seq analysis**
+    `` maptools.py qtlplot [options] ``
 
-## Reanalyze data using pseudomarkers created by combining the results of multiple individual markers
-MAPtools merge [options] <input_file>
+*   ### **Reanalyze data using pseudomarkers created by combining the results of multiple individual markers**
+    `` maptools.py merge [options] ``
 
-# Evaluate the effect of SNPs contained within a specified interval
-MAPtools annotate [options] <input_file>
+*   ### **Evaluate the effect of SNPs contained within a specified interval**
+    `` maptools.py annotate [options] ``
+
 For more information on each command and its options, run the command with the --help option.
 
-Contributing
+## **Contributing**
 If you would like to contribute to MAPtools, please follow these steps:
 All contributions are welcome and appreciated!
 
-License
+## **License**
 MAPtools is distributed under the MIT License. See LICENSE for more information.
 
-Overview
+## **Overview**
 MAPtools is a set of tools to facilitate the analysis of mapping-by-sequencing and QTL-seq studies.
 
-Getting started
+## **Getting started**
 
 Use bowtie2 to map the reads from each pool to the reference genome:
 
-bowtie2-build genome.fasta GENOMEINDEX
+``bowtie2-build genome.fasta GENOMEINDEX
 bowtie2 -x GENOMEINDEX -U dominant_pool.fastq.gz --no-unal -S dominant.sam
-bowtie2 -x GENOMEINDEX -U recessive_pool.fastq.gz --no-unal -S recessive.sam
+bowtie2 -x GENOMEINDEX -U recessive_pool.fastq.gz --no-unal -S recessive.sam``
 
 Use the sort command of SAMtools to sort the output files by coordinate and convert them to BAM format:
 
