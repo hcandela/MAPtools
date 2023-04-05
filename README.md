@@ -66,7 +66,8 @@ bcftools mpileup -f genome.fasta --annotate FORMAT/AD dominant.bam recessive.bam
 
 Use MAPtools to process the BCF or VCF files produced by BCFtools:
 
-cat output.vcf | maptools mbs -d D,R -r R -m D -o mbs_results.txt
+`` cat output.vcf | maptools mbs -d D,R -r R -m D -o mbs_results.txt ``
+
 maptools merge -i mbs_results.txt -w 2 -o reprocessed_results.txt
 
 cat output.vcf | maptools annotate -g genome.gff3 -f genoma.fasta -d D,R -r D -m R -o annotation.txt -R 1:1-10000000
