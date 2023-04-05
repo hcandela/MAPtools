@@ -54,29 +54,37 @@ MAPtools is a set of tools to facilitate the analysis of mapping-by-sequencing a
 
 Use bowtie2 to map the reads from each pool to the reference genome:
 
-``bowtie2-build genome.fasta GENOMEINDEX
+```
+bowtie2-build genome.fasta GENOMEINDEX
+
 bowtie2 -x GENOMEINDEX -U dominant_pool.fastq.gz --no-unal -S dominant.sam
-bowtie2 -x GENOMEINDEX -U recessive_pool.fastq.gz --no-unal -S recessive.sam``
+
+bowtie2 -x GENOMEINDEX -U recessive_pool.fastq.gz --no-unal -S recessive.sam
+```
 
 Use the sort command of SAMtools to sort the output files by coordinate and convert them to BAM format:
-
+```
 samtools sort -o dominant.bam dominant.sam
-samtools sort -o recessive.bam recessive.sam
 
+samtools sort -o recessive.bam recessive.sam
+```
 Process the resulting BAM files with the mpileup and call commands of BCFtools:
 
+```
 bcftools mpileup -f genome.fasta --annotate FORMAT/AD dominant.bam recessive.bam | bcftools call -mv -V indels -o output.vcf
+```
 
 Use MAPtools to process the BCF or VCF files produced by BCFtools:
 
-`` cat output.vcf | maptools mbs -d D,R -r R -m D -o mbs_results.txt ``
+```
+cat output.vcf | maptools mbs -d D,R -r R -m D -o mbs_results.txt
 
 maptools merge -i mbs_results.txt -w 2 -o reprocessed_results.txt
 
 cat output.vcf | maptools annotate -g genome.gff3 -f genoma.fasta -d D,R -r D -m R -o annotation.txt -R 1:1-10000000
+```
 
-
-Citation
+## **Citation**
 
 César Martínez-Guardiola, Ricardo Parreño, Héctor Candela (2023).
 MAPtools: a Command-Line Tool for Mapping-by-Sequencing and QTL-Seq Analysis and Visualization.
