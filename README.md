@@ -16,6 +16,9 @@ MAPtools consists of several commands that are used in a similar way to the comm
 
 ## **Installation**
 To install MAPtools, follow these steps:
+```
+git clone https://github.com/hcandela/MAPtools.git
+```
 
 ## **Usage**
 To use MAPtools, run one of the following commands:
