@@ -3,6 +3,7 @@ from pylibs.constants import *
 import warnings
 import matplotlib.backends.backend_pdf
 import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
 import numpy as np
 import pandas as pd
 import logging
@@ -55,10 +56,12 @@ def read_header_plot(arg):
 
                 
 def test_plot(arg, __doc__):
-    font_files = matplotlib.font_manager.findSystemFonts()
-    for font_file in font_files:
-        matplotlib.font_manager.fontManager.addfont(font_file)
-    plt.rcParams['font.family'] = 'Arial'
+    families = sorted(set([f.name for f in fm.fontManager.ttflist]))
+    fonts = ["Arial","Liberation Sans", "Ubuntu", "DejaVu Sans", "Ubuntu", "Free Sans", "Droid Sans Fallback"]
+    for font in fonts:
+        if font in families:
+            break
+    plt.rcParams['font.family'] = font
     global fields
     inp_f = arg['--input']
     if not inp_f:
@@ -249,7 +252,7 @@ def check_mbs_opts(arg):
         if arg['--max-allele-freq2'] == True and 'MAX_SNPidx2' not in arg['--fields']:
             print('Error: is not possible make phased MAX Allele Frequency graphics with your input data. Please use -D or -R or -a option', file=sys.stderr)
             sys.exit()
-    if arg['--all'] == False and arg['--pvalue'] == False and arg['--allele-freq-1'] == False and arg['--allele-freq-2'] == False and arg['--qtl-seq'] == False and arg['--g-statistic'] == False and arg['--euclidean-distance'] == False:
+    if arg['--all'] == False and arg['--pvalue'] == False and arg['--allele-freq-1'] == False and arg['--allele-freq-2']:
         print('Warning: any graphic was selected. Please use -a option to make all possible graphics with your data.', file=sys.stderr)
     return arg
 
@@ -302,7 +305,7 @@ def check_qtl_opts(arg):
         if arg['--combine'] == True and 'SNPidx1' not in arg['--fields'] or 'SNPidx2' not in arg['--fields']:
             print('Error: is not possible to make combined graphics with your input data. Please use -a.', file=sys.stderr)
             sys.exit()
-    if arg['--all'] == False and arg['--pvalue'] == False and arg['--delta'] == False and arg['--allele-freq-H'] == False and arg['--allele-freq-L'] == False:
+    if arg['--all'] == False and arg['--pvalue'] == False and arg['--delta'] == False and arg['--allele-freq-H'] == False and arg['--allele-freq-L'] == False and arg['--qtl-seq'] == False and arg['--g-statistic'] == False and arg['--euclidean-distance'] == False:
         print('Warning: any graphic was selected. Please use -a option to make all possible graphics with your data.', file=sys.stderr)
 
     return arg
