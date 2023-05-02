@@ -275,18 +275,20 @@ def mbs_calc(inp, arg):
 			return [ratio1, boost]
 	elif 'D' in inf_s and 'R' in inf_s:
 		a, b, c, d = inp[0], inp[1], inp[2], inp[3]
-		ratio3 = max(c,d)/(c+d)
-		resultado = LogFisher(a,b,c,d)
-		pva = pvalor(a,b,c,d)
-		pva10 = (log(pva)/log(10))
-		if arg['--ref-genotype'] == 'miss' and ('Pr' not in inf_s and 'Pd' not in inf_s):
-			boost = 1/(arg['lim'] + abs(1 - 1/ratio3))
-			return [ratio3,resultado,boost,pva,pva10]
-		elif arg['--ref-genotype'] != 'miss' or 'Pr' in inf_s or 'Pd' in inf_s:
-			ratio1 = b/(a+b)
-			ratio2 = d/(c+d)
-			boost = 1/(arg['lim'] + abs(1 - 1/ratio3))
-			return [ratio1,ratio2,ratio3,resultado,boost,pva,pva10]
+		if (a+b) > 0 and (c+d) > 0:
+			ratio3 = max(c,d)/(c+d)
+			resultado = LogFisher(a,b,c,d)
+			pva = pvalor(a,b,c,d)
+			pva10 = (log(pva)/log(10))
+			if arg['--ref-genotype'] == 'miss' and ('Pr' not in inf_s and 'Pd' not in inf_s):
+				boost = 1/(arg['lim'] + abs(1 - 1/ratio3))
+				return [ratio3,resultado,boost,pva,pva10]
+			elif arg['--ref-genotype'] != 'miss' or 'Pr' in inf_s or 'Pd' in inf_s:
+				#if (a+b) > 0 and (c+d) > 0:
+				ratio1 = b/(a+b)
+				ratio2 = d/(c+d)
+				boost = 1/(arg['lim'] + abs(1 - 1/ratio3))
+				return [ratio1,ratio2,ratio3,resultado,boost,pva,pva10]
 
 def qtl_calc(inp, arg):
 	data = arg['--data']
@@ -302,7 +304,7 @@ def qtl_calc(inp, arg):
 		g = Gstatic(a,b,c,d)
 		pva = pvalor(a,b,c,d)
 		pva10 = (log(pva)/log(10))
-		if no_ref == 'miss':
+		if no_ref == 'miss' and 'Pd' not in data and 'Pr' not in data:
 			return [ed,g,pva,pva10]
 		else:
 			ratio1 = b/(a+b)

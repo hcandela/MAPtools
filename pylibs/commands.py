@@ -90,7 +90,9 @@ def qtl(argv):
     -i, --input FILE                VCF input file. Can also come from a pipe.
 
   Input Options:
-    -d, --data LIST                 Pools genotype: High phenotype (H) and Low phenotype (L).
+    -d, --data LIST                 Pools genotype: High (H), Low (L), parental high(Ph),
+                                    parental low(Pl), wild-type high (Wh) and wild-type
+                                    low(Wl) [default: H,L].
     -r, --ref-genotype STR          Which parental houses the reference: \"H\", \"L\" or \"miss\"
                                     (for missing genotype) [default: miss].
   
@@ -416,6 +418,8 @@ Filter Options:
   load_gff(arg)
   write_annotate_header(arg)
   for idx, row in df.iterrows():
+    if len(row['DOM']) > 1 or len(row['REC']) > 1:
+       continue
     check_mutation2(row,arg)
   finish = time.perf_counter()
   #print(f'Variant annotation finished in {round(finish-start, 2)} second(s)')
