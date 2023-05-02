@@ -25,6 +25,11 @@ def check_args(__doc__,arg:dict):
 			·Check output
 	'''
 	arg['--data'] = arg['--data'].split(',')
+	if 'qtl' in arg.keys():
+		translate = {'H':'D','L':'R','Ph':'Pd','Pl':'Pr','Wh':'Wd','Wl':'Wr'}
+		arg['--data'] = [translate[i] for i in arg['--data']]
+		for k,v in translate.items():
+			arg['--ref-genotype'] = arg['--ref-genotype'].replace(k,v)
 	if arg['--input'] == None and arg['pipe'] == True:
 		print(__doc__, end='\n', file=sys.stderr)
 		sys.exit()
@@ -156,15 +161,19 @@ def check_mbs_args(arg:dict):
 def check_qtl_args(arg:dict):
 	"""Check qtl options"""
 	data = arg['--data']
-	translate = {'H':'D','L':'R'}#,'Ph':'Pd','Pl':'Pr','Wh':'Wd','Wl':'Wr'} #TODO-This version cannot use a parental or wild-type resequencing
-	arg['--data'] = [translate[i] for i in data]
-	for k,v in translate.items():
-		arg['--ref-genotype'] = arg['--ref-genotype'].replace(k,v)
-	if len(data) < 2:
-		print('Error: You should include 2 pools in QTL-seq experiment (--data H,L)', file=sys.stderr)
+	if ('Pr' in data or 'Pd' in data) and arg['wt'] == True:
+		#print(wt)
+		print('Error: Do not include wild-type(\"Wh\"|\"Wl\") and parental re-sequencing (\"Ph\"|\"Pl\") in the same analysis.', file=sys.stderr)
 		sys.exit()
-	if 'Pr' in data or 'Pd' in data or 'Wr' in data or 'Wd' in data:
-		print('Error: Parental re-sequencing is not available on this version (--data H,L)', file=sys.stderr)
+
+	if 'D' not in data or 'R' not in data:
+		print('Error: You should include the 2 pools in QTL-seq experiment (--data H,L)', file=sys.stderr)
+		sys.exit()
+	if 'Pr' in data and 'Pd' in data:
+		print('Error: You should include only one re-sequenced parental in data (--data H,L,Px)', file=sys.stderr)
+		sys.exit()
+	if 'Wr' in data and 'Wd' in data:
+		print('Error: You should include only one re-sequenced wilt-type in data (--data H,L,Wx)', file=sys.stderr)
 		sys.exit()
 	if arg['--max-depth'] == 'inf':
 		arg['--max-depth'] = np.inf
@@ -315,9 +324,9 @@ def choose_header(arg):
 		elif 'D' in inf_s and 'R' in inf_s and arg['--ref-genotype'] == 'miss' and 'Pd' not in inf_s and 'Pr' not in inf_s:
 			header = ['#CHROM','POS','DOM','REC','DPdom_1','DPrec_1','DPdom_2','DPrec_2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE']
 	elif 'qtl' in arg.keys():
-		if arg['--ref-genotype'] == 'miss':
+		if arg['--ref-genotype'] == 'miss' and 'Pr' not in inf_s and 'Pd' not in inf_s:
 			header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','ED','G','PVALUE','log10PVALUE']
-		if arg['--ref-genotype'] != 'miss':
+		if arg['--ref-genotype'] != 'miss' or 'Pr' in inf_s or 'Pd' in inf_s:
 			header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','SNPidx1','SNPidx2','DELTA','ED','G','PVALUE','log10PVALUE']
 	arg['header'] = header
 
@@ -1209,6 +1218,10 @@ def read_header(arg:dict,line:str):
 	if line.startswith('##bcftoolsVersion='):
 		write_line(line,fsal)
 	if line.startswith('##bcftoolsCommand='):
+		write_line(line,fsal)
+	if line.startswith('##GATKCommandLine='):
+		write_line(line,fsal)
+	if line.startswith('##source=HaplotypeCaller'):
 		write_line(line,fsal)
 	if line.startswith('##bcftools_callCommand='):
 		write_line(line.split(';')[0]+'\n',fsal)
