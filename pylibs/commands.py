@@ -419,6 +419,7 @@ Filter Options:
   write_annotate_header(arg)
   for idx, row in df.iterrows():
     if len(row['DOM']) > 1 or len(row['REC']) > 1:
+       check_indel(row, arg)
        continue
     check_mutation2(row,arg)
   finish = time.perf_counter()

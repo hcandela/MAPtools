@@ -1013,6 +1013,54 @@ def check_nc_gene(arg,gff,type_, b, e, pos,result, row):
 				write_annotate_line(arg, result, row)
 				result['INFO'] = dict()
 			
+def check_indel(row, arg):
+	result = {h:row[h] for h in arg['header2'] if h in arg['header2'] and h in arg['header']}
+	result2 = {h:'.' for h in arg['header'] if h not in arg['header2']}
+	result2['INFO'] = dict()
+	result.update(result2)
+	reorder = row['reorder']
+	ref = row['DOM'] if reorder == 0 else row['REC']
+	alt = row['REC'] if reorder == 0 else row['DOM']
+	pos = int(row['POS'])
+	coor_i = int(row['POS'])
+	coor_f = int(row['POS']) + len(ref) - 1
+	if len(alt) > len(ref):
+		indel = 'insertion'+':'+str(len(alt) - len(ref))
+	elif len(alt) < len(ref):
+		indel = 'deletion'+':'+str(len(ref) - len(alt))
+	result['CODON_ref'], result['CODON_alt'], result['AA_ref'], result['AA_alt'] = '.','.','.','.'
+	gff = arg['gff']
+	bi,ei = find_row(gff['gene'], coor_i, 0, len(gff['gene']))
+	bf,ef = find_row(gff['gene'], coor_f, 0, len(gff['gene']))
+	if ei < bi and ef < bf:
+		dis1 = gff['gene'][bi][2] - pos
+		dis2 = pos - gff['gene'][ef][3]
+		result['TYPE'] = 'intergenic'
+		result['INFO']['INDEL'] = indel
+		result['INFO']['left'] = gff['gene'][ef][6] +':'+ str(dis2)
+		result['INFO']['right'] = gff['gene'][bi][6] +':'+ str(dis1)
+		write_annotate_line(arg, result, row)
+		result['INFO'] = dict()
+		
+	else:
+		#print(gff['gene'][bi:ei+1],bi,ei,'|',gff['gene'][bf:ef+1],bf,ef,'|',pos)
+		for gene in gff['gene'][bi:ef+1]:
+			gene_id = gene[6]
+			bi1, ei1 = find_row_name(gff['mRNA'], gene_id, 7)
+			bi2,ei2 = find_row(gff['mRNA'], coor_i, bi1, ei1+1)
+			bf2,ef2 = find_row(gff['mRNA'], coor_f, bi1, ei1+1)
+			if gff['mRNA'][bi2:ef2+1]:
+				for mRNA in gff['mRNA'][bi2:ef2+1]:
+					mRNA_id = mRNA[6]
+					result['INFO']['INDEL'] = indel
+					result['ID'],result['PARENT'],result['TYPE'],result['STRAND'] = mRNA_id,'.','mRNA',mRNA[4]
+					write_annotate_line(arg, result, row)
+					result['INFO'] = dict()
+			else:
+				result['ID'],result['PARENT'],result['TYPE'],result['STRAND'] = gene_id,'.','gene',gene[4]
+				result['INFO']['INDEL'] = indel
+				write_annotate_line(arg, result, row)
+				result['INFO'] = dict()
 
 def check_mutation2(row, arg):
 	result = {h:row[h] for h in arg['header2'] if h in arg['header2'] and h in arg['header']}
