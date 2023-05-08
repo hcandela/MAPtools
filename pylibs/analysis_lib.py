@@ -900,8 +900,7 @@ def find_effect(before_nt,after_nt,strand, tab):
 	after_nt = Seq(after_nt)
 	after_N = after_nt
 	if len(after_nt)%3 != 0:
-		c = len(after_nt)%3
-		n = 1 if c == 2 else 2
+		n = 3 - len(after_nt)%3
 		after_N = after_nt + Seq('N')*n
 	if strand == '-':
 		before_nt = before_nt.reverse_complement()
@@ -1077,6 +1076,72 @@ def check_deletion(row, arg, ref, alt):
 
 	result['CODON_ref'], result['CODON_alt'], result['AA_ref'], result['AA_alt'] = '.','.','.','.'
 	gff = arg['gff']
+	bi,ei = find_row(gff['gene'], coor_i, 0, len(gff['gene']))
+	bf,ef = find_row(gff['gene'], coor_f, 0, len(gff['gene']))
+	print(coor_i, bi, ei, coor_f, bf, ef)
+
+	if ei < bi and ef < bf and ei == ef and bi == bf:
+		dis1 = gff['gene'][bi][2] - coor_f
+		dis2 = coor_i - gff['gene'][ei][3]
+		result['TYPE'] = 'intergenic'
+		result['INFO']['left'] = gff['gene'][ei][6] +':'+ str(dis2)
+		result['INFO']['right'] = gff['gene'][bi][6] +':'+ str(dis1)
+		result['INFO']['effect'] = 'Deletion'
+		write_annotate_line(arg, result, row)
+		result['INFO'] = dict()
+		print('Delecion intergenica', gff['gene'][ei][6], dis2, gff['gene'][bi][6], dis1)
+	
+	elif ei < bi and ef < bf and ei != ef and bi != bf:
+		genes_deleted = [gene[6] for gene in gff['gene'][bi:ef+1]]
+		result['TYPE'] = 'big_deletion'
+		result['INFO']['effect'] = 'genes_deleted:' + ','.join(genes_deleted)
+		write_annotate_line(arg, result, row)
+		result['INFO'] = dict()
+		print(pos,'big deletion')
+	elif bi > ei and bf == ef:
+		if len(gff['gene'][bi:ef+1]) > 1:
+			genes_deleted = [gene[6] for gene in gff['gene'][bi:ef+1]]
+			result['TYPE'] = 'big_deletion'
+			result['INFO']['effect'] = 'genes_deleted:' + ','.join(genes_deleted)
+			write_annotate_line(arg, result, row)
+			result['INFO'] = dict()
+		else:
+			gene = gff['gene'][bi:ef+1][0]
+			result['TYPE'] = 'gene'
+			result['ID'] = gene[6]
+			result['STRAND'] = gene[4]
+			size_deleted = coor_f - gene[2]
+			result['INFO']['effect'] = '5_UTR_deletion:' + str(size_deleted)
+			write_annotate_line(arg, result, row)
+			result['INFO'] = dict()
+			print('genic deletion 5\'UTR')
+	elif bf > ef and bi == ei:
+		if len(gff['gene'][bi:ef+1]) > 1:
+			genes_deleted = [gene[6] for gene in gff['gene'][bi:ef+1]]
+			result['TYPE'] = 'big_deletion'
+			result['INFO']['effect'] = 'genes_deleted:' + ','.join(genes_deleted)
+			write_annotate_line(arg, result, row)
+			result['INFO'] = dict()
+		else:
+			gene = gff['gene'][bi:ef+1][0]
+			result['TYPE'] = 'gene'
+			result['ID'] = gene[6]
+			result['STRAND'] = gene[4]
+			size_deleted = gene[3] - coor_i
+			result['INFO']['effect'] = '3_UTR_deletion:' + str(size_deleted)
+			write_annotate_line(arg, result, row)
+			result['INFO'] = dict()
+			print('genic deletion 3\'UTR')
+	elif bf == ef and bi == ei and bi == bf:
+		gene = gff['gene'][bi:ef+1][0]
+		result['TYPE'] = 'gene'
+		result['ID'] = gene[6]
+		result['STRAND'] = gene[4]
+		size_deleted = gene[3] - coor_i
+		result['INFO']['effect'] = '3_UTR_deletion:' + str(size_deleted)
+		write_annotate_line(arg, result, row)
+		result['INFO'] = dict()
+		print('genic deletion 3\'UTR')
 	
 
 
@@ -1242,8 +1307,8 @@ def check_insertion(row, arg):
 		dis1 = gff['gene'][b][2] - pos
 		dis2 = pos - gff['gene'][e][3]
 		result['TYPE'] = 'intergenic'
-		result['INFO']['left'] = gff['gene'][e][6] +':'+ str(dis2)
-		result['INFO']['right'] = gff['gene'][b][6] +':'+ str(dis1)
+		result['INFO']['left'] = gff['gene'][e][6] +':'+ str(dis2) if e != -1 else '.'
+		result['INFO']['right'] = gff['gene'][b][6] +':'+ str(dis1) if b <= len(gff['gene']) else '.'
 		write_annotate_line(arg, result, row)
 		result['INFO'] = dict()
 
@@ -1409,8 +1474,8 @@ def check_mutation2(row, arg):
 		dis1 = gff['gene'][b][2] - pos
 		dis2 = pos - gff['gene'][e][3]
 		result['TYPE'] = 'intergenic'
-		result['INFO']['left'] = gff['gene'][e][6] +':'+ str(dis2)
-		result['INFO']['right'] = gff['gene'][b][6] +':'+ str(dis1)
+		result['INFO']['left'] = gff['gene'][e][6] +':'+ str(dis2) if e != -1 else '.'
+		result['INFO']['right'] = gff['gene'][b][6] +':'+ str(dis1) if b <= len(gff['gene']) else '.'
 		write_annotate_line(arg, result, row)
 		result['INFO'] = dict()
 
