@@ -94,6 +94,7 @@ def check_args(__doc__,arg:dict):
 	if 'qtl' in arg.keys():
 		arg = check_qtl_args(arg)
 	if 'annotate' in arg.keys():
+		arg['--contigs'] = dict()
 		arg = check_annotate_args(arg)
 	return arg
 
@@ -708,6 +709,7 @@ def normalize(pools, REF, arg, r_min=0.03):
 	
 
 def check_annotate_args(arg):
+	arg['--transl-table'] = int(arg['--transl-table'])
 	arg['--version'] = True
 	wd = os.getcwd()
 	if arg['--gff'] == None:
@@ -745,24 +747,19 @@ def check_annotate_args(arg):
 		if re.match('\S+:\d+-\d+', arg['--region']):
 			Tchrom,Treg = arg['--region'].split(':')
 			Treg = Treg.split('-')
-			if Tchrom not in arg['--contigs'].keys():
-				print('Error: Enter a valid chromosome name (-R chromName:startPos-endPos)', file=sys.stderr)
-				sys.exit()
 			if int(Treg[0]) > int(Treg[1]):
 				print('Error: Enter a valid region (-R chromName:startPos-endPos)', file=sys.stderr)
 				sys.exit()
-			maxim = min(int(Tchrom[1]), arg['--contigs'][Tchrom])
-			minim = max(1, int(Tchrom[0]))
-			arg['--region'] = [Tchrom,minim,maxim]
+			arg['--region'] = [Tchrom,int(Treg[0]),int(Treg[1])]
 		else:
 			print('Error: Enter region correctly (-R chromName:startPos-endPos)', file=sys.stderr)
 			sys.exit()
 	if 'R' in arg['--data'] and 'D' in arg['--data']:
 		header=['#CHROM','POS','DOM','REC', 'DPdom_1','DPrec_1','DPdom_2','DPrec_2','TYPE','ID','PARENT','STRAND',\
-			'PHASE','CODON_change','AA_change','INFO']
+			'CODON_change','AA_change','INFO']
 	else:
 		header=['#CHROM','POS','DOM','REC', 'DPdom_1','DPrec_1','TYPE','ID','PARENT','STRAND',\
-			'PHASE','CODON_change','AA_change','INFO']
+			'CODON_change','AA_change','INFO']
 	arg['header'] = header
 	if not 'R' in arg['--data']:
 		print('Error: You should include the recessive pool (--data R,X)', file=sys.stderr)
@@ -898,15 +895,20 @@ def load_reference(df,arg):
 				sys.exit()
 
 
-def find_effect(before_nt,after_nt,strand):
+def find_effect(before_nt,after_nt,strand, tab):
 	before_nt = Seq(before_nt)
 	after_nt = Seq(after_nt)
-	
+	after_N = after_nt
+	if len(after_nt)%3 != 0:
+		c = len(after_nt)%3
+		n = 1 if c == 2 else 2
+		after_N = after_nt + Seq('N')*n
 	if strand == '-':
 		before_nt = before_nt.reverse_complement()
-		after_nt = after_nt.reverse_complement()
-	before = before_nt.translate(table=1)
-	after = after_nt.translate(table=1)
+		after_nt = after_N.reverse_complement()
+	
+	before = before_nt.translate(table=tab)
+	after = after_N.translate(table=tab)
 	change = list()
 	if (before[0] == after[0]) and len(before_nt) == len(after_nt):
 		change.append('Synonymous:.')
@@ -1011,7 +1013,7 @@ def find_new_ATG(arg, pos, five, row):
 			return '.:.:.'
 
 def check_nc_gene(arg,gff,type_, b, e, pos,result, row):
-	result['PHASE'],result['CODON_ref'], result['CODON_alt'], result['AA_ref'],result['AA_alt']= '.','.','.','.','.'
+	result['CODON_ref'], result['CODON_alt'], result['AA_ref'],result['AA_alt']= '.','.','.','.'
 	if gff[type_][b:e+1]:
 		for ncRNA in gff[type_][b:e+1]:
 			ncRNA_id = ncRNA[6]
@@ -1046,6 +1048,7 @@ def is_indel(row,arg):
 		row['DOM'] = ref
 		row['REC'] = alt
 		arg['indel'] = [indel, len(ref) - len(alt)]
+		check_deletion(row, arg, ref, alt)
 	arg['indel'] = list()
 
 
@@ -1063,53 +1066,18 @@ def check_borders(gff, coor_i, coor_f, ini, fin, typ):
 	return left, right, bi, ei, bf, ef
 
 
-#def check_del(row, arg, ref, alt):
-#	result = {h:row[h] for h in arg['header2'] if h in arg['header2'] and h in arg['header']}
-#	result2 = {h:'.' for h in arg['header'] if h not in arg['header2']}
-#	result2['INFO'] = dict()
-#	result.update(result2)
-#	pos = int(row['POS'])
-#	coor_i = int(row['POS'])
-#	coor_f = int(row['POS']) + len(ref) - 1
-#	indel = arg['indel'][0]+':'+str(arg['indel'][0])
-#
-#	result['CODON_ref'], result['CODON_alt'], result['AA_ref'], result['AA_alt'] = '.','.','.','.'
-#	gff = arg['gff']
-#	left, right, bi, ei, bf, ef = check_borders(gff, coor_i, coor_f, 0, len(gff['gene']),'gene')
-#
-#	if len(gff['gene'][bi:ef+1]) > 1:
-#		result['INFO']['INDEL'] = indel
-#		result['ID'],result['PARENT'],result['TYPE'],result['STRAND'] = '.','.','multi_genic','.'
-#		effect = ':'.join([gene[6] for gene in gff['gene'][bi:ef+1]])
-#		result['INFO']['effect'] = effect
-#		write_annotate_line(arg, result, row)
-#		result['INFO'] = dict()
-#		
-#	elif left and right:
-#		gene = gff['gene'][bi:ef+1]
-#		gene_id = gene[6]
-#		b1,e1 = find_row_name(gff['mRNA'], gene_id, 7)
-#		bi1,ei1 = find_row(gff['mRNA'], coor_i, b1, e1+1)
-#		bf1,ef1 = find_row(gff['mRNA'], coor_f, b1, e1+1)
-#		if gff['mRNA'][bi1:ef1+1]:
-#			for mRNA in gff['mRNA'][bi1:ef1+1]:
-#				mRNA_id = mRNA[6]
-#				result['STRAND'] = mRNA[4]
-#				b2,e2 = find_row_name(gff['exon'], mRNA_id, 7)
-#				left, right, bi2, ei2, bf2, ef2 = check_borders(gff, coor_i, coor_f, b2, e2,'exon')
-#				if left and right:
-#					
-#				
-#
-#		else:
-#			print('non conding gene')
-#
-#	elif left or right:
-#		genes = gff['gene'][bi:ei+1] if left == True else gff['gene'][bf:ef+1]
-#		print(genes)
-#	elif not left and not right:
-#		genes =[]
-#		print(genes)
+def check_deletion(row, arg, ref, alt):
+	result = {h:row[h] for h in arg['header2'] if h in arg['header2'] and h in arg['header']}
+	result2 = {h:'.' for h in arg['header'] if h not in arg['header2']}
+	result2['INFO'] = dict()
+	result.update(result2)
+	pos = int(row['POS'])
+	coor_i = int(pos)
+	coor_f = int(pos) + len(ref) - 1
+
+	result['CODON_ref'], result['CODON_alt'], result['AA_ref'], result['AA_alt'] = '.','.','.','.'
+	gff = arg['gff']
+	
 
 
 def check_insertion(row, arg):
@@ -1143,7 +1111,7 @@ def check_insertion(row, arg):
 							if gff['CDS'][b6:e6+1]:
 								for cds in gff['CDS'][b6:e6+1]:
 									cds_id = cds[6]
-									result['PHASE'],result['TYPE'] = cds[5],'CDS'
+									result['TYPE'] = 'CDS'
 									beg, end = codon_coords(pos,cds[2],cds[3],cds[4],int(cds[5])) #target pos, cds start, cds end, cds strand, cds phase
 									if gff['CDS'][b6-1][7] == cds[7]: #if prev cds exist
 										if pos - cds[2] in {0,1,2}:
@@ -1170,13 +1138,13 @@ def check_insertion(row, arg):
 										rest = cds[2] - beg
 										codon_ref = seq_cds_p[-rest:] + arg['ref'].seq[n_beg-1: end]
 										codon_alt = codon_ref[:pos-beg] + row['REC'] + codon_ref[pos-beg+1:]
-										aa_before, aa_after,change = find_effect(codon_ref,codon_alt,cds[4])
+										aa_before, aa_after,change = find_effect(codon_ref,codon_alt,cds[4], arg['--transl-table'])
 										result['CODON_ref'],result['CODON_alt'],result['AA_ref'],result['AA_alt'] = codon_ref, codon_alt, aa_before, aa_after
 										result['INFO']['effect'] = change
 										result['PARENT'] = mRNA_id
 										write_annotate_line(arg, result, row)
 										result['INFO'] = dict()
-										result['PHASE'],result['CODON_ref'], result['CODON_alt'], result['AA_ref'],result['AA_alt']= '.','.','.','.','.'
+										result['CODON_ref'], result['CODON_alt'], result['AA_ref'],result['AA_alt']= '.','.','.','.'
 									elif end > cds[3]:
 										next_cds = gff['CDS'][e6+1]
 										n_beg = next_cds[2]
@@ -1187,24 +1155,24 @@ def check_insertion(row, arg):
 										rest = end - cds[3]
 										codon_ref = arg['ref'].seq[beg-1: p_end] + seq_cds_n[:rest]
 										codon_alt = codon_ref[:pos-beg]+row['REC']+codon_ref[pos-beg+1:]
-										aa_before, aa_after,change = find_effect(codon_ref,codon_alt,cds[4])
+										aa_before, aa_after,change = find_effect(codon_ref,codon_alt,cds[4], arg['--transl-table'])
 										result['CODON_ref'],result['CODON_alt'],result['AA_ref'],result['AA_alt'] = codon_ref, codon_alt, aa_before, aa_after
 										result['PARENT'] = mRNA_id
 										result['INFO']['effect'] = change
 										write_annotate_line(arg, result, row)
 										result['INFO'] = dict()
-										result['PHASE'],result['CODON_ref'], result['CODON_alt'], result['AA_ref'],result['AA_alt']= '.','.','.','.','.'
+										result['CODON_ref'], result['CODON_alt'], result['AA_ref'],result['AA_alt']= '.','.','.','.'
 									else:
 										codon = arg['ref'].seq[beg-1:end]
 										before = codon[:pos-beg]+row['DOM']+codon[pos-beg+1:]
 										after = codon[:pos-beg]+row['REC']+codon[pos-beg+1:]
-										aa_before, aa_after,change = find_effect(before,after,cds[4])
+										aa_before, aa_after,change = find_effect(before,after,cds[4], arg['--transl-table'])
 										result['PARENT'] = mRNA_id
 										result['CODON_ref'],result['CODON_alt'],result['AA_ref'],result['AA_alt'] = before, after, aa_before, aa_after
 										result['INFO']['effect'] = change
 										write_annotate_line(arg, result, row)
 										result['INFO'] = dict()
-										result['PHASE'],result['CODON_ref'], result['CODON_alt'], result['AA_ref'],result['AA_alt']= '.','.','.','.','.'
+										result['CODON_ref'], result['CODON_alt'], result['AA_ref'],result['AA_alt']= '.','.','.','.'
 							elif gff['five_prime_UTR'][b8:e8+1]:
 								#five =  gff['five_prime_UTR'][b8:e8+1][0]
 								for five in  gff['five_prime_UTR'][b8:e8+1]:
@@ -1310,7 +1278,7 @@ def check_mutation2(row, arg):
 							if gff['CDS'][b6:e6+1]:
 								for cds in gff['CDS'][b6:e6+1]:
 									cds_id = cds[6]
-									result['PHASE'],result['TYPE'] = cds[5],'CDS'
+									result['TYPE'] = 'CDS'
 									beg, end = codon_coords(pos,cds[2],cds[3],cds[4],int(cds[5])) #target pos, cds start, cds end, cds strand, cds phase
 									if gff['CDS'][b6-1][7] == cds[7]: #if prev cds exist
 										if pos - cds[2] in {0,1,2}:
@@ -1337,13 +1305,13 @@ def check_mutation2(row, arg):
 										rest = cds[2] - beg
 										codon_ref = seq_cds_p[-rest:] + arg['ref'].seq[n_beg-1: end]
 										codon_alt = codon_ref[:pos-beg]+row['REC']+codon_ref[pos-beg+1:]
-										aa_before, aa_after,change = find_effect(codon_ref,codon_alt,cds[4])
+										aa_before, aa_after,change = find_effect(codon_ref,codon_alt,cds[4], arg['--transl-table'])
 										result['CODON_ref'],result['CODON_alt'],result['AA_ref'],result['AA_alt'] = codon_ref, codon_alt, aa_before, aa_after
 										result['INFO']['effect'] = change
 										result['PARENT'] = mRNA_id
 										write_annotate_line(arg, result, row)
 										result['INFO'] = dict()
-										result['PHASE'],result['CODON_ref'], result['CODON_alt'], result['AA_ref'],result['AA_alt']= '.','.','.','.','.'
+										result['CODON_ref'], result['CODON_alt'], result['AA_ref'],result['AA_alt']= '.','.','.','.'
 									elif end > cds[3]:
 										next_cds = gff['CDS'][e6+1]
 										n_beg = next_cds[2]
@@ -1354,24 +1322,24 @@ def check_mutation2(row, arg):
 										rest = end - cds[3]
 										codon_ref = arg['ref'].seq[beg-1: p_end] + seq_cds_n[:rest]
 										codon_alt = codon_ref[:pos-beg]+row['REC']+codon_ref[pos-beg+1:]
-										aa_before, aa_after,change = find_effect(codon_ref,codon_alt,cds[4])
+										aa_before, aa_after,change = find_effect(codon_ref,codon_alt,cds[4], arg['--transl-table'])
 										result['CODON_ref'],result['CODON_alt'],result['AA_ref'],result['AA_alt'] = codon_ref, codon_alt, aa_before, aa_after
 										result['PARENT'] = mRNA_id
 										result['INFO']['effect'] = change
 										write_annotate_line(arg, result, row)
 										result['INFO'] = dict()
-										result['PHASE'],result['CODON_ref'], result['CODON_alt'], result['AA_ref'],result['AA_alt']= '.','.','.','.','.'
+										result['CODON_ref'], result['CODON_alt'], result['AA_ref'],result['AA_alt']= '.','.','.','.'
 									else:
 										codon = arg['ref'].seq[beg-1:end]
 										before = codon[:pos-beg]+row['DOM']+codon[pos-beg+1:]
 										after = codon[:pos-beg]+row['REC']+codon[pos-beg+1:]
-										aa_before, aa_after,change = find_effect(before,after,cds[4])
+										aa_before, aa_after,change = find_effect(before,after,cds[4], arg['--transl-table'])
 										result['PARENT'] = mRNA_id
 										result['CODON_ref'],result['CODON_alt'],result['AA_ref'],result['AA_alt'] = before, after, aa_before, aa_after
 										result['INFO']['effect'] = change
 										write_annotate_line(arg, result, row)
 										result['INFO'] = dict()
-										result['PHASE'],result['CODON_ref'], result['CODON_alt'], result['AA_ref'],result['AA_alt']= '.','.','.','.','.'
+										result['CODON_ref'], result['CODON_alt'], result['AA_ref'],result['AA_alt']= '.','.','.','.'
 							elif gff['five_prime_UTR'][b8:e8+1]:
 								#five =  gff['five_prime_UTR'][b8:e8+1][0]
 								for five in  gff['five_prime_UTR'][b8:e8+1]:
@@ -1497,21 +1465,30 @@ def read_header(arg:dict,line:str):
 			write_line(line,fsal)       
 	if line.startswith('##contig=<ID='):
 		c = line.split('##contig=<ID=')[1].split(',')[0]
+		s = line[line.find('<')+1:line.rfind('>')].split(',')
 		id = s[0].split('=')[1]
 		length = s[1].split('=')[1]
-		s = line[line.find('<')+1:line.rfind('>')].split(',')
 		arg['--contigs'][id] = int(length)
 		arg['chromosomes'].append(c)
 		write_line(line,fsal)
 	if line.startswith('#CHROM'):
 		bam_list = line.rstrip().split('\t')[9:]
 		if len(arg['--data']) > len(bam_list):
-			print('Error: The data list does not match with the number of pools used.', file=sys.stderr)
+			print('Error: The \"--data\" list does not match with the number of pools used.', file=sys.stderr)
 			sys.exit()
 		elif len(arg['--data']) <= len(bam_list):
 			arg['pools'] = {arg['--data'][i]:bam_list[i] for i in range(len(arg['--data']))}
 			pools = '##bamFiles:genotypes='+','.join(':'.join((key,val)) for (key, val) in arg['pools'].items()) + '\n'
 			write_line(pools, fsal)
+		if 'annotate' in arg.keys():
+			chrom, pos_i, pos_f = arg['--region'][0], arg['--region'][1], arg['--region'][2]
+			if chrom not in arg['--contigs'].keys():
+				print('Error: Enter a valid chromosome name (-R chromName:startPos-endPos)', file=sys.stderr)
+				sys.exit()
+			maxim = min(pos_f, arg['--contigs'][chrom])
+			minim = max(1, pos_i)
+			arg['--region'] = [chrom, minim, maxim]
+
 
 def write_argv(arg:dict,argv:str):
 	fsal = arg['fsal']

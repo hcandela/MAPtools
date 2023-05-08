@@ -352,11 +352,12 @@ Input Options:
                                  wild-type dominant(Wr) [default: D,R].
    -r, --ref-genotype STR        Which parental houses the reference, \"miss\" for missing genotype [default: miss].
    -m, --mutant-pool STR         Which pool has the mutant phenotype [default: R].
-   -R, --region REGION           Region of the genome to explore (... -R chrName:Startpos-Endpos)
+   -R, --region REGION           Region of the genome to explore (... -R chrName:Startpos-Endpos).
+   -t, --transl-table INT        Translation table [default: 1].
 
 Output Options:
    -o, --output FILE             Write output to file.
-   -O, --output-type TYPE        \"txt\" tab separated, \"csv\" comma separated [default: txt]
+   -O, --output-type TYPE        \"txt\" tab separated, \"csv\" comma separated [default: txt].
 
 Filter Options:
   -C, --max-depth INT           Maximum allele depth [default: inf].
@@ -366,7 +367,7 @@ Filter Options:
   --EMS                         Filter out SNPs other than caused by EMS (\"G\" > \"A\" or \"C\" > \"T\").
   --parental-filter             Filter out variants if Parental (-d \"R\",\"Pr\"| \"Pd\"| \"Wr\"| \"Wd\")
                                 sample is provided.                            
-  --het-filter                  Focuses on markers that are clearly heterozygous in the dominant pool
+  --het-filter                  Focuses on markers that are clearly heterozygous in the dominant pool.
                                 (depth in the interval [-c,-C] and allele frequency in the interval [-q, -Q]).
   --no-filter                   Disable all filters.                           
   """

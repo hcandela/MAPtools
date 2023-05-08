@@ -123,7 +123,6 @@ variable_descriptions={
    'ID':'##ID=<ID=*, Number=0, Type=Flag, Description=\"ID of mutated element.\">\n',\
    'PARENT':'##PARENT=<ID=*, Number=0, Type=Flag, Description=\"The gene or mRNA containig the mutated element.\">\n',\
    'STRAND':'##STRAND=<ID=*, Number=0, Type=Flag, Description=\"Genome strand cointaining the element (+, -, .).\">\n',\
-   'PHASE':'##PHASE=<ID=*, Number=0, Type=Integer, Description=\"CDS phase (0,1,2)\".>\n',\
    'CODON_change':'##CODON_change=<ID=*, Number=0, Type=Flag, Description=\"Target codon before and after mutation (AGA > AAA).\">\n',\
    'AA_change':'##AA_change=<ID=*, Number=0, Type=Flag, Description=\"Aminoacid before and after mutation (S > F).\">\n',\
    'INFO':'##INFO=<ID=effect, Number=0, Type=Flag, Description=\"Type of aminoacid change effect in exons (Nonsynonymous or Synonymous:missense or nonsense or nonstop), in 5\'UTR (new_ATG:in_frame or out_of_frame:truncated_protein or elongated_protein) or if affects to non-coding gene (non_coding:exonic or intronic).\">\n'\
