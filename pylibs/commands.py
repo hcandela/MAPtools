@@ -427,3 +427,11 @@ Filter Options:
   #print(f'Variant annotation finished in {round(finish-start, 2)} second(s)')
   
   ##
+def citation(argv):
+  cite_doc="""
+If you find MAPtools useful, please include the following citation in your scientific manuscripts:
+
+Martínez-Guardiola, C., Parreño, R. and Candela, H. (2023). MAPtools: Command-Line Tools for
+Mapping-by-Sequencing and QTL-Seq Analysis and Visualization. Submitted.                     
+  """
+  print(cite_doc, file=sys.stderr)

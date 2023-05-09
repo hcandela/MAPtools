@@ -41,6 +41,8 @@ if __name__ == '__main__':
         merge(argv)
     elif args['<command>'] == 'annotate':
         annotate(argv)
+    elif args['<command>'] == 'citation':
+        citation(argv)
     else:
         print('%r is not a maptools command. See \'maptools --help\'.'% args['<command>'], file=sys.stderr)
         sys.exit()
