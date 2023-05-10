@@ -815,7 +815,7 @@ def load_gff(arg):
 	gff['five_prime_UTR'].sort(key=lambda row:(row[7], row[2])) #ordered by parent and pos
 	gff['three_prime_UTR'].sort(key=lambda row:(row[7], row[2])) #ordered by parent and pos
 	gff['genes_structures'].sort(key=lambda row:(row[7], row[2]))
-	ordered = ['gene', 'mRNA', 'exon', 'CDS', 'five_prime_UTR', 'three_prime_UTR']
+	ordered = ['gene', 'mRNA', 'exon', 'CDS', 'five_prime_UTR', 'three_prime_UTR','genes_structures']
 	for type_ in gff: #the rest of types are ordered only by pos
 		if type_ not in ordered:
 			gff[type_].sort(key=lambda row:row[2])
@@ -1039,11 +1039,13 @@ def is_indel(row,arg):
 		ref,alt=NWSellers(ref, alt, 0, -1)
 		row['DOM'] = ref
 		row['REC'] = alt
+		arg['variant'] = 'insertion'
 		check_insertion(row, arg)
 	elif len(alt) < len(ref):
 		alt,ref=NWSellers(alt, ref, 0, -1)
 		row['DOM'] = ref
 		row['REC'] = alt
+		arg['variant'] = 'deletion'
 		check_deletion(row, arg, ref, alt)
 	arg['indel'] = list()
 
@@ -1053,7 +1055,6 @@ def check_deletion(row, arg, ref, alt):
 	result2 = {h:'.' for h in arg['header'] if h not in arg['header2']}
 	result2['INFO'] = dict()
 	result.update(result2)
-	result['INFO']['variant_type'] = 'deletion'
 	pos = int(row['POS'])
 	coor_i = int(pos)
 	coor_f = int(pos) + len(ref) - 1
@@ -1076,7 +1077,7 @@ def check_deletion(row, arg, ref, alt):
 	
 	elif ei < bi and ef < bf and ei != ef and bi != bf:	#INTERGENIC, COMPLETE GENES DELETION
 		genes_deleted = [gene[6] for gene in gff['gene'][bi:ef+1]]
-		result['TYPE'] = 'big_deletion'
+		result['TYPE'] = 'multi_gene'
 		result['INFO']['effect'] = 'genes_deleted:' + ','.join(genes_deleted)
 		write_annotate_line(arg, result, row)
 		result['INFO'] = dict()
@@ -1086,16 +1087,14 @@ def check_deletion(row, arg, ref, alt):
 			genes_deleted = gff['gene'][bi:ef+1]
 			c_deleted = [g[6] for g in genes_deleted[:-1]]
 			gene = genes_deleted[-1] 
-			result['TYPE'] = 'big_deletion'
-			result['INFO']['effect'] = list()
+			result['TYPE'] = 'multi_gene'
 			size_deleted = coor_f - gene[2]
 			if gene[4] == '+':
-				result['INFO']['effect'].append('5\'_deletion:'+gene[6]+':'+str(size_deleted))
+				result['INFO']['5_prime_deletion'] = gene[6]+':'+str(size_deleted)
 			else:
-				result['INFO']['effect'].append('3\'_deletion:'+gene[6]+':'+str(size_deleted))
+				result['INFO']['3_prime_deletion'] = gene[6]+':'+str(size_deleted)
 			
-			result['INFO']['effect'].append('completely_deleted:' + ','.join(c_deleted))
-			result['INFO']['effect'] = ';'.join(result['INFO']['effect'])
+			result['INFO']['effect'] = 'genes_deleted:' + ','.join(c_deleted)
 			write_annotate_line(arg, result, row)
 			result['INFO'] = dict()
 		else:
@@ -1105,10 +1104,10 @@ def check_deletion(row, arg, ref, alt):
 			result['STRAND'] = gene[4]
 			size_deleted = coor_f - gene[2]
 			if result['STRAND'] == '+':
-				result['INFO']['effect'] = '5\'_deletion:' + str(size_deleted)
+				result['INFO']['5_prime_deletion'] = gene[6] + ':' + str(size_deleted)
 				write_annotate_line(arg, result, row)
 			else:
-				result['INFO']['effect'] = '3\'_deletion:' + str(size_deleted)
+				result['INFO']['3_prime_deletion'] = gene[6] + ':' + str(size_deleted)
 				write_annotate_line(arg, result, row)
 			result['INFO'] = dict()
 			#print('genic deletion 5\'UTR')
@@ -1116,16 +1115,15 @@ def check_deletion(row, arg, ref, alt):
 		if len(gff['gene'][bi:ef+1]) > 1:
 			genes_deleted = gff['gene'][bi:ef+1]
 			c_deleted = [g[6] for g in genes_deleted[1:]]
-			result['TYPE'] = 'big_deletion'
+			result['TYPE'] = 'multi_gene'
 			gene = genes_deleted[0]
-			result['INFO']['effect'] = list()
 			size_deleted = gene[3] - coor_i
 			if gene[4] == '+':
-				result['INFO']['effect'].append('3\'_deletion:'+gene[6]+':'+str(size_deleted))
+				result['INFO']['3_prime_deletion'] = gene[6]+':'+str(size_deleted)
 			else:
-				result['INFO']['effect'].append('5\'_deletion:'+gene[6]+':'+str(size_deleted))
-			result['INFO']['effect'].append('completely_deleted:' + ','.join(c_deleted))
-			result['INFO']['effect'] = ';'.join(result['INFO']['effect'])
+				result['INFO']['5_prime_deletion'] = gene[6]+':'+str(size_deleted)
+
+			result['INFO']['effect'] = 'genes_deleted:' + ','.join(c_deleted)
 			write_annotate_line(arg, result, row)
 			result['INFO'] = dict()
 		else:
@@ -1135,10 +1133,10 @@ def check_deletion(row, arg, ref, alt):
 			result['STRAND'] = gene[4]
 			size_deleted = gene[3] - coor_i
 			if result['STRAND'] == '+':
-				result['INFO']['effect'] = '3\'_deletion:' + str(size_deleted)
+				result['INFO']['3_prime_deletion'] = gene[6]+':'+ str(size_deleted)
 				write_annotate_line(arg, result, row)
 			else:
-				result['INFO']['effect'] = '5\'_deletion:' + str(size_deleted)
+				result['INFO']['5_prime_deletion'] = gene[6]+':'+ str(size_deleted)
 				write_annotate_line(arg, result, row)
 			result['INFO'] = dict()
 			#print('genic deletion 3\'UTR')
@@ -1146,25 +1144,23 @@ def check_deletion(row, arg, ref, alt):
 		genes = gff['gene'][bi:ef+1]
 		if len(genes) > 1:
 			genes_deleted = [gene[6] for gene in genes[1:-1]]
-			result['TYPE'] = 'big_deletion'
-			result['INFO']['effect'] = list()
+			result['TYPE'] = 'multi_gene'
 			gene_left = genes[0]
 			gene_right = genes[-1]
 			size_deleted_l = gene_left[3] - coor_i
 			size_deleted_r = coor_f - gene_right[2]
 			if gene_left[4] == '+':
-				result['INFO']['effect'].append('3\'_deletion:'+gene_left[6]+':'+str(size_deleted_l))
+				result['INFO']['3_prime_deletion'] = gene_left[6]+':'+str(size_deleted_l)
 			elif gene_left[4] == '-':
-				result['INFO']['effect'].append('5\'_deletion:'+gene_left[6]+':'+str(size_deleted_l))
+				result['INFO']['5_prime_deletion'] = gene_left[6]+':'+str(size_deleted_l)
 
 			if gene_right[4] == '+':
-				result['INFO']['effect'].append('5\'_deletion:'+gene_right[6]+':'+str(size_deleted_r))
+				result['INFO']['5_prime_deletion'] = gene_right[6]+':'+str(size_deleted_r)
 			elif gene_right[4] == '-':
-				result['INFO']['effect'].append('3\'_deletion:'+gene_right[6]+':'+str(size_deleted_r))
+				result['INFO']['3_prime_deletion'] = gene_right[6]+':'+str(size_deleted_r)
 			
 			if genes_deleted:
-				result['INFO']['effect'].append('completely_deleted:'+','.join(genes_deleted))
-			result['INFO']['effect'] = ';'.join(result['INFO']['effect'])
+				result['INFO']['effect'] = 'genes_deleted:'+','.join(genes_deleted)
 			write_annotate_line(arg, result, row)
 			result['INFO'] = dict()
 			#print('big genic deletion')
@@ -1178,13 +1174,10 @@ def check_deletion(row, arg, ref, alt):
 			b1f,e1f = find_row(gff['mRNA'], coor_f, b1, e1+1)
 			if gff['mRNA'][b1i:e1f+1]:
 				for mRNA in gff['mRNA'][b1i:e1f+1]:
-					if coor_i <= mRNA[3] and coor_f >= mRNA[2]:	#check if deletion is in ranga for this iso-form
+					if coor_i <= mRNA[3] and coor_f >= mRNA[2]:	#check if deletion is in range for this iso-form
 						genic_deletion(arg, result, row, coor_i, coor_f, mRNA)
 			else:
-				result['INFO']['effect'] = 'genic_deletion:'+ str(coor_i) +'-'+ str(coor_f)
-				result['ID'] = gene_id
-				write_annotate_line(arg, result, row)
-				result['INFO'] = dict()
+				find_nc_gene(arg, gff, gene_id, pos, result, row)
 
 def genic_deletion(arg, result, row, coor_i, coor_f, mRNA):
 	gff = arg['gff']
@@ -1192,13 +1185,13 @@ def genic_deletion(arg, result, row, coor_i, coor_f, mRNA):
 	b,e = find_row_name(gff['exon'], mRNA_id, 7)
 	bi,ei = find_row(gff['exon'], coor_i, b, e+1)
 	bf,ef = find_row(gff['exon'], coor_f, b, e+1)
-	if ei < bi and ef < bf and ei == ef and bi == bf:
+	result['PARENT'] = mRNA_id
+	if ei < bi and ef < bf and ei == ef and bi == bf:	#Complete intronic deletion
 		print('intronic deletion', end='\t')
 		print(bi, ei, coor_i, bf, ef, coor_f, mRNA_id)
 		result['TYPE'] = 'intron'
 		dis1 = gff['exon'][bi][2] - coor_f
 		dis2 = coor_i - gff['exon'][ei][3]
-		result['PARENT'] = mRNA_id
 		result['INFO']['left'] = gff['exon'][ei][8] +':'+ str(dis2)
 		result['INFO']['right'] = gff['exon'][bi][8] +':'+ str(dis1)
 		if dis2 in {1,2,3}:
@@ -1213,35 +1206,194 @@ def genic_deletion(arg, result, row, coor_i, coor_f, mRNA):
 				result['INFO']['5_splice_site'] = 'intron-boundary:'+gff['exon'][bi][8]
 		write_annotate_line(arg, result, row)
 		result['INFO'] = dict()
-	elif ei < bi and ef < bf and ei != ef and bi != bf:
+	elif ei < bi and ef < bf and ei != ef and bi != bf:	#complete exon deletion
 		print('complete exon(s) deleted', end='\t')
 		print(bi, ei, coor_i, bf, ef, coor_f, mRNA_id)
-		exons_deleted = [gene[6] for gene in gff['exon'][bi:ef+1]]
+		exons_deleted = [exon[8] for exon in gff['exon'][bi:ef+1]]
 		result['TYPE'] = 'exon'
 		result['INFO']['effect'] = 'exons_deleted:' + ','.join(exons_deleted)
 		write_annotate_line(arg, result, row)
 		result['INFO'] = dict()
-	elif bi > ei and bf == ef:
+
+	elif bi > ei and bf == ef:	#LEFT INTRON, RIGHT EXON
 		print('deleted left part of exon', end='\t')
 		print(bi, ei, coor_i, bf, ef, coor_f, mRNA_id)
-		b2, e2 = find_row_name(gff['genes_structure'], mRNA_id, 7)
-		b2i, e2i = find_row(gff['genes_structure'], coor_i, b2, e2+1)
-		b2i, e2i = find_row(gff['genes_structure'], coor_f, b2, e2+1)
-	elif bf > ef and bi == ei:
+		if len(gff['exon'][bi:ef+1]) > 1:
+			exons_deleted = gff['exon'][bi:ef+1]
+			c_deleted = [e[8] for e in exons_deleted[:-1]]
+			exon = exons_deleted[-1]
+			result['TYPE'] = 'multi_exon'
+			result['STRAND'] = exon[4]
+			if exon[4] == '+':
+				result['INFO']['3_splice_site_deletion'] = 'intron-boundary:'+exon[8]
+			else:
+				result['INFO']['5_splice_site_deletion'] = 'intron-boundary:'+exon[8]
+			
+			result['INFO']['effect'] = 'exons_deleted:' + ','.join(c_deleted)
+			write_annotate_line(arg, result, row)
+			result['INFO'] = dict()
+		elif len(gff['exon'][bi:ef+1]) == 1:
+			exon = gff['exon'][bi:ef+1][0]
+			result['TYPE'] = 'exon'
+			result['STRAND'] = exon[4]
+			if exon[4] == '+':
+				result['INFO']['3_splice_site_deletion'] = 'intron-boundary:'+exon[8]
+			else:
+				result['INFO']['5_splice_site_deletion'] = 'intron-boundary:'+exon[8]
+			
+			write_annotate_line(arg, result, row)
+			result['INFO'] = dict()
+
+	elif bf > ef and bi == ei:	#LEFT EXON, RIGHT INTRON
 		print('deleted right part of exon', end='\t')
 		print(bi, ei, coor_i, bf, ef, coor_f, mRNA_id)
+		if len(gff['exon'][bi:ef+1]) > 1:
+			exons_deleted = gff['exon'][bi:ef+1]
+			c_deleted = [e[8] for e in exons_deleted[1:]]
+			exon = exons_deleted[0]
+			result['TYPE'] = 'multi_exon'
+			result['STRAND'] = exon[4]
+			if exon[4] == '+':
+				result['INFO']['5_splice_site_deletion'] = 'intron-boundary:'+exon[8]
+			else:
+				result['INFO']['3_splice_site_deletion'] = 'intron-boundary:'+exon[8]
+			
+			result['INFO']['effect'] = 'exons_deleted:' + ','.join(c_deleted)
+			write_annotate_line(arg, result, row)
+			result['INFO'] = dict()
+		elif len(gff['exon'][bi:ef+1]) == 1:
+			exon = gff['exon'][bi:ef+1][0]
+			result['TYPE'] = 'exon'
+			result['STRAND'] = exon[4]
+			if exon[4] == '+':
+				result['INFO']['5_splice_site_deletion'] = 'intron-boundary:'+exon[8]
+			else:
+				result['INFO']['3_splice_site_deletion'] = 'intron-boundary:'+exon[8]
+			
+			write_annotate_line(arg, result, row)
+			result['INFO'] = dict()
 	elif bf == ef and bi == ei:
 		print('deletion in an exon', end='\t')
 		print(bi, ei, coor_i, bf, ef, coor_f, mRNA_id)
+		print(gff['exon'][bi:ef+1])
+		if bi != bf:
+			exons = gff['exon'][bi:ef+1]
+			exons_deleted = [exon[8] for exon in exons[1:-1]]
+			result['TYPE'] = 'multi_exon'
+			exon_left = exons[0]
+			exon_right = exons[-1]
+			#size_deleted_l = gene_left[3] - coor_i
+			#size_deleted_r = coor_f - gene_right[2]
+			if exon_left[4] == '+':
+				result['INFO']['5_splice_site_deletion'] ='intron_boundary:'+ exon_left[8]
+			elif exon_left[4] == '-':
+				result['INFO']['3_splice_site_deletion'] ='intron_boundary:'+ exon_left[8]
+			if exon_right[4] == '+':
+				result['INFO']['3_splice_site_deletion'] ='intron_boundary:'+ exon_right[8]
+			elif exon_right[4] == '-':
+				result['INFO']['5_splice_site_deletion'] ='intron_boundary:'+ exon_right[8]
 
-#def gene_structure_deletion():
+			if exons_deleted:
+				result['INFO']['effect'] = 'exons_deleted:'+','.join(exons_deleted)
+			write_annotate_line(arg, result, row)
+			result['INFO'] = dict()
+		elif bi == bf:
+			print(coor_i, coor_f)
+			b2, e2 = find_row_name(gff['genes_structures'], mRNA_id, 7)
+			b2i, e2i = find_row(gff['genes_structures'], coor_i, b2, e2+1)
+			b2f, e2f = find_row(gff['genes_structures'], coor_f, b2, e2+1)
+			print(b2i, e2i, coor_i, b2f, e2f, coor_f)
+			if gff['genes_structures'][b2i:e2i+1] and gff['genes_structures'][b2f:e2f+1]:
+				left = gff['genes_structures'][b2i:e2i+1][0]
+				right = gff['genes_structures'][b2f:e2f+1][0]
+				if left == right and left[1] == 'three_prime_UTR':
+					print('three_prime_UTR deletion')
+					result['TYPE'] = 'three_prime_UTR'
+					result['PARENT'] = mRNA_id
+					write_annotate_line(arg, result, row)
+					result['INFO'] = dict()
+				elif left == right and left[1] == 'five_prime_UTR':
+					result['TYPE'] = 'five_prime_UTR'		
+					result['INFO']['effect'] = '.:.:.'
+					result['PARENT'] = mRNA_id
+					write_annotate_line(arg, result, row)
+					result['INFO'] = dict()
+				elif left == right and left[1] == 'CDS':
+					result['TYPE'] = 'CDS'
+					deletion = coor_f - coor_i
+					if deletion % 3 == 0:
+						result['INFO']['effect'] ='Deletion:in-frame'
+					else:
+						result['INFO']['effect'] ='Deletion:frameshift'
+					write_annotate_line(arg, result, row)
+					result['INFO'] = dict()
+				elif left[1] == 'CDS' and right[1] == 'three_prime_UTR':
+					print('left CDS right 3 prime', '+', 'strand', right[4])
+					result['TYPE'] = 'gene'
+					result['STRAND'] = '+'
+					deletion = right[2] - coor_i #left[3] - coor_i
+					if deletion % 3 == 0:
+						result['INFO']['effect'] ='Deletion:in-frame'
+					else:
+						result['INFO']['effect'] ='Deletion:frameshift'
+					result['INFO']['left'] = 'CDS'
+					result['INFO']['right'] = 'three_prime_UTR'
+					write_annotate_line(arg, result, row)
+					result['INFO'] = dict()
+				elif right[1] == 'CDS' and left[1] == 'three_prime_UTR':
+					print('right CDS left 3 prime', '-', 'strand', right[4])
+					result['TYPE'] = 'gene'
+					result['STRAND'] = '-'
+					deletion = coor_f - left[3]# coor_f - right[2]
+					if deletion % 3 == 0:
+						result['INFO']['effect'] ='Deletion:in-frame'
+					else:
+						result['INFO']['effect'] ='Deletion:frameshift'
+					result['INFO']['left'] = 'three_prime_UTR'
+					result['INFO']['right'] = 'CDS'
+					write_annotate_line(arg, result, row)
+					result['INFO'] = dict()
+				elif right[1] == 'CDS' and left[1] == 'five_prime_UTR':
+					print('right CDS left 5 prime', '+', 'strand', right[4])
+					result['TYPE'] = 'gene'
+					result['STRAND'] = '+'
+					deletion = coor_f - left[3] #coor_f - right[2]
+					if deletion % 3 == 0:
+						result['INFO']['effect'] ='Deletion:in-frame'
+					else:
+						result['INFO']['effect'] ='Deletion:frameshift'
+					result['INFO']['left'] = 'five_prime_UTR'
+					result['INFO']['right'] = 'CDS'
+					write_annotate_line(arg, result, row)
+					result['INFO'] = dict()
+				elif left[1] == 'CDS' and right[1] == 'five_prime_UTR':
+					print('left CDS right 5 prime', '-', 'strand', right[4])
+					result['TYPE'] = 'gene'
+					result['STRAND'] = '-'
+					deletion = right[2] - coor_i #left[3] - coor_i
+					if deletion % 3 == 0:
+						result['INFO']['effect'] ='Deletion:in-frame'
+					else:
+						result['INFO']['effect'] ='Deletion:frameshift'
+					result['INFO']['left'] = 'CDS'
+					result['INFO']['right'] = 'five_prime_UTR'
+					write_annotate_line(arg, result, row)
+					result['INFO'] = dict()
+
+def find_nc_gene(arg, gff, gene_id, pos, result, row):
+	nc_genes = ['miRNA', 'tRNA', 'ncRNA', 'ncRNA_gene', 'lnc_RNA', 'snoRNA', 'snRNA',\
+		 'rRNA', 'pseudogene', 'pseudogenic_transcript', 'pre_miRNA', 'SRP_RNA']
+	for type_ in nc_genes:
+		b, e = find_row_name(gff[type_], gene_id, 7)
+		b2,e2 = find_row(gff[type_], pos, b, e+1)
+		check_nc_gene(arg,gff,type_, b2, e2, pos,result,row)
+
 
 def check_insertion(row, arg):
 	result = {h:row[h] for h in arg['header2'] if h in arg['header2'] and h in arg['header']}
 	result2 = {h:'.' for h in arg['header'] if h not in arg['header2']}
 	result2['INFO'] = dict()
 	result.update(result2)
-	result['INFO']['variant_type'] = 'insertion'
 	result['CODON_ref'], result['CODON_alt'], result['AA_ref'], result['AA_alt'] = '.','.','.','.'
 	gff = arg['gff']
 	pos = int(row['POS'])
@@ -1363,37 +1515,8 @@ def check_insertion(row, arg):
 									result['INFO']['5_splice_site'] = 'intron-boundary:'+gff['exon'][b4][8]
 							write_annotate_line(arg, result, row)
 							result['INFO'] = dict()
-			
-			b11,e11 = find_row_name(gff['tRNA'], gene_id, 7) #tRNA
-			b12,e12 = find_row(gff['tRNA'], pos, b11, e11+1)
-			check_nc_gene(arg,gff,'tRNA', b12, e12, pos,result,row)
-			b13,e13 = find_row_name(gff['rRNA'], gene_id, 7) #rRNA
-			b14,e14 = find_row(gff['rRNA'], pos, b13, e13+1)
-			check_nc_gene(arg,gff,'rRNA', b14, e14, pos,result,row)
-			b15,e15 = find_row_name(gff['ncRNA'], gene_id, 7) #ncRNA
-			b16,e16 = find_row(gff['ncRNA'], pos, b15, e15+1)
-			check_nc_gene(arg,gff,'ncRNA', b16, e16, pos,result,row)
-			b17,e17 = find_row_name(gff['lnc_RNA'], gene_id, 7) #lncRNA
-			b18,e18 = find_row(gff['lnc_RNA'], pos, b17, e17+1)
-			check_nc_gene(arg,gff,'lnc_RNA', b18, e18, pos,result,row)
-			b19,e19 = find_row_name(gff['miRNA'], gene_id, 7) #miRNA
-			b20,e20 = find_row(gff['miRNA'], pos, b19, e19+1)
-			check_nc_gene(arg,gff,'miRNA', b20, e20, pos,result,row)
-			b21,e21 = find_row_name(gff['pre_miRNA'], gene_id, 7) #pre_miRNA
-			b22,e22 = find_row(gff['pre_miRNA'], pos, b21, e21+1)
-			check_nc_gene(arg,gff,'pre_miRNA', b22, e22, pos,result,row)
-			b23,e23 = find_row_name(gff['snRNA'], gene_id, 7) #snRNA
-			b24,e24 = find_row(gff['snRNA'], pos, b23, e23+1)
-			check_nc_gene(arg,gff,'snRNA', b24, e24, pos,result,row)
-			b25,e25 = find_row_name(gff['snoRNA'], gene_id, 7) #snoRNA
-			b26,e26 = find_row(gff['snoRNA'], pos, b25, e25+1)
-			check_nc_gene(arg,gff,'snoRNA', b26, e26, pos,result,row)
-			b27,e27 = find_row_name(gff['pseudogenic_transcript'], gene_id, 7) #pseudogenic_transcript
-			b28,e28 = find_row(gff['pseudogenic_transcript'], pos, b27, e27+1)
-			check_nc_gene(arg,gff,'pseudogenic_transcript', b28, e28, pos,result,row)
-			b29,e29 = find_row_name(gff['SRP_RNA'], gene_id, 7) #SRP_RNA
-			b30,e30 = find_row(gff['SRP_RNA'], pos, b29, e29+1)
-			check_nc_gene(arg,gff,'SRP_RNA', b30, e30, pos,result,row)
+
+			find_nc_gene(arg, gff, gene_id, pos, result, row)
 
 	else:
 		dis1 = gff['gene'][b][2] - pos
@@ -1409,7 +1532,6 @@ def check_mutation2(row, arg):
 	result2 = {h:'.' for h in arg['header'] if h not in arg['header2']}
 	result2['INFO'] = dict()
 	result.update(result2)
-	result['INFO']['variant_type'] = 'substitution'
 	result['CODON_ref'], result['CODON_alt'], result['AA_ref'], result['AA_alt'] = '.','.','.','.'
 	gff = arg['gff']
 	pos = int(row['POS'])
@@ -1532,36 +1654,7 @@ def check_mutation2(row, arg):
 							write_annotate_line(arg, result, row)
 							result['INFO'] = dict()
 			
-			b11,e11 = find_row_name(gff['tRNA'], gene_id, 7) #tRNA
-			b12,e12 = find_row(gff['tRNA'], pos, b11, e11+1)
-			check_nc_gene(arg,gff,'tRNA', b12, e12, pos,result,row)
-			b13,e13 = find_row_name(gff['rRNA'], gene_id, 7) #rRNA
-			b14,e14 = find_row(gff['rRNA'], pos, b13, e13+1)
-			check_nc_gene(arg,gff,'rRNA', b14, e14, pos,result,row)
-			b15,e15 = find_row_name(gff['ncRNA'], gene_id, 7) #ncRNA
-			b16,e16 = find_row(gff['ncRNA'], pos, b15, e15+1)
-			check_nc_gene(arg,gff,'ncRNA', b16, e16, pos,result,row)
-			b17,e17 = find_row_name(gff['lnc_RNA'], gene_id, 7) #lncRNA
-			b18,e18 = find_row(gff['lnc_RNA'], pos, b17, e17+1)
-			check_nc_gene(arg,gff,'lnc_RNA', b18, e18, pos,result,row)
-			b19,e19 = find_row_name(gff['miRNA'], gene_id, 7) #miRNA
-			b20,e20 = find_row(gff['miRNA'], pos, b19, e19+1)
-			check_nc_gene(arg,gff,'miRNA', b20, e20, pos,result,row)
-			b21,e21 = find_row_name(gff['pre_miRNA'], gene_id, 7) #pre_miRNA
-			b22,e22 = find_row(gff['pre_miRNA'], pos, b21, e21+1)
-			check_nc_gene(arg,gff,'pre_miRNA', b22, e22, pos,result,row)
-			b23,e23 = find_row_name(gff['snRNA'], gene_id, 7) #snRNA
-			b24,e24 = find_row(gff['snRNA'], pos, b23, e23+1)
-			check_nc_gene(arg,gff,'snRNA', b24, e24, pos,result,row)
-			b25,e25 = find_row_name(gff['snoRNA'], gene_id, 7) #snoRNA
-			b26,e26 = find_row(gff['snoRNA'], pos, b25, e25+1)
-			check_nc_gene(arg,gff,'snoRNA', b26, e26, pos,result,row)
-			b27,e27 = find_row_name(gff['pseudogenic_transcript'], gene_id, 7) #pseudogenic_transcript
-			b28,e28 = find_row(gff['pseudogenic_transcript'], pos, b27, e27+1)
-			check_nc_gene(arg,gff,'pseudogenic_transcript', b28, e28, pos,result,row)
-			b29,e29 = find_row_name(gff['SRP_RNA'], gene_id, 7) #SRP_RNA
-			b30,e30 = find_row(gff['SRP_RNA'], pos, b29, e29+1)
-			check_nc_gene(arg,gff,'SRP_RNA', b30, e30, pos,result,row)
+			find_nc_gene(arg, gff, gene_id, pos, result, row)
 
 	else:
 		dis1 = gff['gene'][b][2] - pos
@@ -1591,7 +1684,7 @@ def write_annotate_line(arg, result, row):
 		elif row['reorder'] == 0:
 			result['CODON_change'] = codonREF+' > '+codonALT
 			result['AA_change'] = AAREF +' > '+AAALT
-
+	result['INFO']['variant_type'] = arg['variant']
 	att_l = [k+'='+v for k,v in result['INFO'].items()]
 	att = ';'.join(att_l)
 	result['INFO'] = att
@@ -1745,7 +1838,7 @@ def vuelta_atras_NWS(matriz, i, j, A, B, gap):
 
   while i != 0 or j != 0:
 
-    if matriz[i,j] == matriz[i-1,j-1] + 1 and A[j-1] == B[i-1]:                                       #desplazamiento en diagonal
+    if matriz[i,j] == matriz[i-1,j-1] + 1 and A[j-1] == B[i-1]: #desplazamiento en diagonal
       alin_A = A[j-1] + alin_A
       alin_B = B[i-1] + alin_B
       i = i - 1

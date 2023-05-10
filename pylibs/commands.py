@@ -422,6 +422,7 @@ Filter Options:
     if len(row['DOM']) > 1 or len(row['REC']) > 1:
        is_indel(row, arg)
        continue
+    arg['variant'] = 'substitution'
     check_mutation2(row,arg)
   finish = time.perf_counter()
   #print(f'Variant annotation finished in {round(finish-start, 2)} second(s)')
