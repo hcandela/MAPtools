@@ -125,10 +125,15 @@ variable_descriptions={
    'STRAND':'##STRAND=<ID=*, Number=0, Type=Flag, Description=\"Genome strand cointaining the element (+, -, .).\">\n',\
    'CODON_change':'##CODON_change=<ID=*, Number=0, Type=Flag, Description=\"Target codon before and after mutation (AGA > AAA).\">\n',\
    'AA_change':'##AA_change=<ID=*, Number=0, Type=Flag, Description=\"Aminoacid before and after mutation (S > F).\">\n',\
-   'INFO':'##INFO=<ID=effect, Number=0, Type=Flag, Description=\"Type of aminoacid change effect in exons (Nonsynonymous or Synonymous:missense or nonsense or nonstop), in 5\'UTR (new_ATG:in_frame or out_of_frame:truncated_protein or elongated_protein) or if affects to non-coding gene (non_coding:exonic or intronic).\">\n'\
+   'INFO':'##INFO=<ID=variant_type, Number=0, Type=Flag, Description=\"Substitution, Insertion or Deletion.\">\n'\
+          '##INFO=<ID=effect, Number=0, Type=Flag, Description=\"Type of aminoacid change effect in CDS (Nonsynonymous/Synonymous:missense/nonsense/nonstop | Insertion/Deletion:in-frame/frameshift), in 5\'UTR (new_ATG:in_frame/out_of_frame:truncated_protein/elongated_protein), affects to non-coding gene (non_coding:exonic/intronic) or in deletions (genes/exons_deleted:id1,id2).\">\n'\
           '##INFO=<ID=left, Number=0, Type=Flag, Description=\"Gene or Exon immediately left (towards lower POS) and distance on bp(element:distance).\">\n'\
           '##INFO=<ID=right, Number=0, Type=Flag, Description=\"Gene or Exon immediately right (towards higher POS) and distance on bp(element:distance).\">\n'\
-          '##INFO=<ID=5_splice_site, Number=0, Type=Flag, Description=\"The mutation is 3 or less bp from the upstream splicing site (exon or intron _boundary:ID_CDS).">\n'\
-          '##INFO=<ID=3_splice_site, Number=0, Type=Flag, Description=\"The mutation is 3 or less bp from the downstream splicing site (exon or intron _boundary:ID_CDS).">\n'\
+          '##INFO=<ID=5_splice_site, Number=0, Type=Flag, Description=\"The mutation is 3 or less bp from the upstream splicing site (exon or intron _boundary:ID_CDS).\">\n'\
+          '##INFO=<ID=3_splice_site, Number=0, Type=Flag, Description=\"The mutation is 3 or less bp from the downstream splicing site (exon or intron _boundary:ID_CDS).\">\n'\
+          '##INFO=<ID=5_prime_deletion, Number=0, Type=Flag, Description=\"Deletion of the 5-prime end of a gene (ID_gen:deletion_size).\">\n'\
+          '##INFO=<ID=3_prime_deletion, Number=0, Type=Flag, Description=\"Deletion of the 3-prime end of a gene (ID_gen:deletion_size).\">\n'\
+          '##INFO=<ID=5_splice_site_deletion, Number=0, Type=Flag, Description=\"Deletion of the 5 prime intron splice site (intron_boundary:nextExonName).\">\n'\
+          '##INFO=<ID=3_splice_site_deletion, Number=0, Type=Flag, Description=\"Deletion of the 3 prime intron splice site (intron_boundary:prevExonName).\">\n'\
    
 }

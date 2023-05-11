@@ -6,7 +6,6 @@ import time
 from pylibs.analysis_lib import *
 from pylibs.graphics_lib import *
 
-
 def mbs(argv):
     mbs_doc = """
     Usage:
