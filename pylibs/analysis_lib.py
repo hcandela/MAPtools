@@ -96,7 +96,7 @@ def check_args(__doc__,arg:dict):
 		data_w.pop(wt_idx)
 	arg['data_w'] = data_w
 	arg['wt'] = wt
-	
+	arg['--contigs'] = dict()
 	arg['lim'] = 1e-90
 	#Call to specific checking function for each command
 	if 'mbs' in arg.keys():
@@ -104,7 +104,6 @@ def check_args(__doc__,arg:dict):
 	if 'qtl' in arg.keys():
 		arg = check_qtl_args(arg)
 	if 'annotate' in arg.keys():
-		arg['--contigs'] = dict()
 		arg = check_annotate_args(arg)
 	return arg
 
@@ -820,7 +819,7 @@ def load_gff(arg):
 				#dict_att = {dict_att[att.split('=')[0]] :att.split('=')[1] for att in attributes}
 				if type_ in gff.keys():
 					if type_ == 'CDS' and phase == '.':
-						print('##Warning: Phase has to be an integer in CDS {}:{}-{} and was discarded.\n'.format(seqid,start,end), file=sys.stderr)
+						print('Warning: Phase has to be an integer in CDS {}:{}-{} and was discarded.\n'.format(seqid,start,end), file=sys.stderr)
 					else:			
 						gff[type_].append([seqid, type_, int(start), int(end), strand, phase, dict_att['ID'], dict_att['Parent'], dict_att['Name']])
 	gff['gene_structures'] = gff['CDS'] + gff['five_prime_UTR'] + gff['three_prime_UTR']

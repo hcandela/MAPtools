@@ -93,13 +93,13 @@ maptools mbsplot -i mbs_results.txt -c 1,2,3 --captions -A 200 -m --all --bonfer
 maptools merge -i mbs_results.txt -w 2 -o reprocessed_results.txt
 ```
 ```
-cat output.vcf | maptools annotate -g genome.gff3 -f genoma.fasta -d D,R -r D -m R -o annotation.txt -R 1:1-10000000
+cat output.vcf | maptools annotate -g genome.gff3 -f reference.fasta -d D,R -r D -m R -o annotation.txt -R 1:1-10000000
 ```
 
 ## **Citation**
 
 César Martínez-Guardiola, Ricardo Parreño, Héctor Candela (2023).
-MAPtools: a Command-Line Tool for Mapping-by-Sequencing and QTL-Seq Analysis and Visualization.
+MAPtools: a Command-Line Tool for Mapping-by-Sequencing and QTL-Seq Analysis and Visualization. Submitted.
 
 
 
