@@ -951,6 +951,8 @@ def find_effect(before_nt,after_nt,strand, arg):
 	return [before, after, before_nt, after_nt, ';'.join(change)]
 
 def filter_EMS(arg, REF, ALT):
+	if len(REF) > 1 or len(ALT) > 1:
+		return True
 	if arg['--mutant-pool'] == 'R':
 		if (REF == 'G' and ALT == 'A') or (REF == 'C' and ALT == 'T'):
 			return True
