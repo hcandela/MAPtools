@@ -34,6 +34,7 @@ def mbs(argv):
       -Q, --max-ratio INT           Maximum allele frequency in dominant pool [default: 100].
       -q, --min-ratio INT           Minimum allele frequency in dominant pool [default: 0].
       --EMS                         Filter out SNPs other than caused by EMS (\"G\" > \"A\" or \"C\" > \"T\").
+      -I, --skip-indels             Filter out insertions and deletions.
       --parental-filter             Filter out variants if Parental (-d \"R\",\"Pr\"| \"Pd\"| \"Wr\"| \"Wd\")
                                     sample is provided.
       --het-filter                  Focuses on markers that are clearly heterozygous in the dominant pool (\"1\"/\"0\"
@@ -89,8 +90,8 @@ def qtl(argv):
     -i, --input FILE                VCF input file. Can also come from a pipe.
 
   Input Options:
-    -d, --data LIST                 Pools genotype: High (H), Low (L), parental high(Ph),
-                                    parental low(Pl), wild-type high (Wh) and wild-type
+    -d, --data LIST                 Pools genotype: High (H), Low (L), parental high(Ph) or
+                                    parental low(Pl).
                                     low(Wl) [default: H,L].
     -r, --ref-genotype STR          Which parental houses the reference: \"H\", \"L\" or \"miss\"
                                     (for missing genotype) [default: miss].
@@ -98,6 +99,7 @@ def qtl(argv):
   Filter Options:
     -C, --max-depth INT             Maximum read depth [default: inf].
     -c, --min-depth INT             Minimum read depth [default: 0].
+    -I, --skip-indels               Filter out insertions and deletions.
     --no-filter                     Disable all filters.
 
   Output Options:
@@ -364,6 +366,7 @@ Filter Options:
   -Q, --max-ratio INT           Maximum allele frequency in dominant pool [default: 100].
   -q, --min-ratio INT           Minimum allele frequency in dominant pool [default: 0].
   --EMS                         Filter out SNPs other than caused by EMS (\"G\" > \"A\" or \"C\" > \"T\").
+  -I, --skip-indels             Filter out insertions and deletions.
   --parental-filter             Filter out variants if Parental (-d \"R\",\"Pr\"| \"Pd\"| \"Wr\"| \"Wd\")
                                 sample is provided.                            
   --het-filter                  Focuses on markers that are clearly heterozygous in the dominant pool.

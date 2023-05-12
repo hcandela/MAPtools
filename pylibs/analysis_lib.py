@@ -25,8 +25,18 @@ def check_args(__doc__,arg:dict):
 			·Check output
 	'''
 	arg['--data'] = arg['--data'].split(',')
+	if 'mbs' in arg.keys():
+		valid_pools = {'D','R','Pr','Pd','Wr','Wd'}
+		for d in arg['--data']:
+			if d not in valid_pools:
+				print(f'Error: \"{d}\" is not a valid sample name.', file=sys.sterr)
+				sys.exit()
 	if 'qtl' in arg.keys():
-		translate = {'H':'D','L':'R','Ph':'Pd','Pl':'Pr','Wh':'Wd','Wl':'Wr'}
+		translate = {'H':'D','L':'R','Ph':'Pd','Pl':'Pr'}
+		for d in arg['--data']:
+			if d not in translate.keys():
+				print(f'Error: \"{d}\" is not a valid sample name.', file=sys.sterr)
+				sys.exit()
 		arg['--data'] = [translate[i] for i in arg['--data']]
 		for k,v in translate.items():
 			arg['--ref-genotype'] = arg['--ref-genotype'].replace(k,v)
@@ -162,20 +172,13 @@ def check_mbs_args(arg:dict):
 def check_qtl_args(arg:dict):
 	"""Check qtl options"""
 	data = arg['--data']
-	if ('Pr' in data or 'Pd' in data) and arg['wt'] == True:
-		#print(wt)
-		print('Error: Do not include wild-type(\"Wh\"|\"Wl\") and parental re-sequencing (\"Ph\"|\"Pl\") in the same analysis.', file=sys.stderr)
-		sys.exit()
-
 	if 'D' not in data or 'R' not in data:
 		print('Error: You should include the 2 pools in QTL-seq experiment (--data H,L)', file=sys.stderr)
 		sys.exit()
 	if 'Pr' in data and 'Pd' in data:
 		print('Error: You should include only one re-sequenced parental in data (--data H,L,Px)', file=sys.stderr)
 		sys.exit()
-	if 'Wr' in data and 'Wd' in data:
-		print('Error: You should include only one re-sequenced wilt-type in data (--data H,L,Wx)', file=sys.stderr)
-		sys.exit()
+
 	if arg['--max-depth'] == 'inf':
 		arg['--max-depth'] = np.inf
 	else:
@@ -456,7 +459,9 @@ def filter_mbs(arg, al_count, p_al_count, genotype):
 			#flag.append(het_filter(arg,a,b))
 			flag.append(het_filter2(arg,genotype,a,b))
 		if arg['--EMS']:
-			flag.append(filter_EMS(arg, REF, ALT))
+			flag.append(filter_EMS(arg, REF, ALT))	
+		if arg['--skip-indels']:
+			flag.append(indels_filter(REF,ALT))
 		if arg['--parental-filter'] and ('Pr' in inf_s or 'Pd' in inf_s or 'Wr' in inf_s or 'Wd' in inf_s):
 			#e,f = p_al_count[0], p_al_count[1]
 			#flag.append(isogenic_filter(arg,c,d,e,f))
@@ -474,6 +479,8 @@ def filter_mbs(arg, al_count, p_al_count, genotype):
 			#e,f = p_al_count[0], p_al_count[1]
 			#flag.append(isogenic_filter(arg,c,d,e,f))
 			flag.append(parental_filter(arg,genotype))
+		if arg['--skip-indels']:
+			flag.append(indels_filter(REF,ALT))
 	if False in flag:
 		return False
 	else:
@@ -494,11 +501,21 @@ def filter_qtl(arg, al_count, genotype):
 	if arg['dp_filter']:
 		flag.append(True if dp <= max_dp and dp >= min_dp else False)
 	#flag.append(False if b/(a+b) == d/(c+d) else True)
+	if arg['--skip-indels']:
+		flag.append(indels_filter(al_count[0],al_count[1]))
 	if False in flag:
 		return False
 	else:
 		return True
 
+def indels_filter(ref, alt):
+	if len(ref) > 1 or len(alt) > 1:
+		return False
+	elif len(ref) == 1 and len(alt) == 1:
+		return True
+
+	
+	
 def genotype_filter(arg, genotype):
 	inf_s = set(arg['--data'])
 	GT_rec = set(genotype['R'])
@@ -1048,7 +1065,7 @@ def is_indel(row,arg):
 		row['DOM'] = ref
 		row['REC'] = alt
 		arg['variant'] = 'insertion'
-		check_insertion(row, arg)
+		check_mutation2(row, arg)
 	elif len(alt) < len(ref):
 		alt,ref=NWSellers(alt, ref, 0, -1)
 		row['DOM'] = ref
@@ -1384,146 +1401,6 @@ def find_nc_gene(arg, gff, gene_id, pos, result, row):
 		check_nc_gene(arg,gff,type_, b2, e2, pos,result,row)
 
 
-def check_insertion(row, arg):
-	result = {h:row[h] for h in arg['header2'] if h in arg['header2'] and h in arg['header']}
-	result2 = {h:'.' for h in arg['header'] if h not in arg['header2']}
-	result2['INFO'] = dict()
-	result.update(result2)
-	result['CODON_ref'], result['CODON_alt'], result['AA_ref'], result['AA_alt'] = '.','.','.','.'
-	gff = arg['gff']
-	pos = int(row['POS'])
-	b,e = find_row(gff['gene'], pos, 0, len(gff['gene']))
-	if gff['gene'][b:e+1]:
-		for gene in gff['gene'][b:e+1]:
-			gene_id = gene[6]
-			b1,e1 = find_row_name(gff['mRNA'], gene_id, 7) #mRNA
-			b2,e2 = find_row(gff['mRNA'], pos, b1, e1+1)
-			if gff['mRNA'][b2:e2+1]:
-				for mRNA in gff['mRNA'][b2:e2+1]:
-					mRNA_id = mRNA[6]
-					result['STRAND'] = mRNA[4]
-					b3,e3 = find_row_name(gff['exon'], mRNA_id, 7)
-					b4,e4 = find_row(gff['exon'], pos, b3, e3+1)
-					if pos <= mRNA[3] and pos >= mRNA[2]:
-						if gff['exon'][b4:e4+1]:
-							exon = gff['exon'][b4:e4+1][0]
-							if gff['exon'][b4-1][7] == exon[7]: #if prev exon exist
-								if pos - exon[2] in {0,1,2}:
-									if exon[4] == '+':
-										result['INFO']['3_splice_site'] = 'exon-boundary:'+gff['exon'][e4][8]
-									else:
-										result['INFO']['5_splice_site'] = 'exon-boundary:'+gff['exon'][e4][8]
-							if gff['exon'][b4+1][7] == exon[7]: #if next exon exist
-								if exon[3] - pos in {0,1,2}:
-									if exon[4] == '+':
-										result['INFO']['5_splice_site'] = 'exon-boundary:'+gff['exon'][e4][8]
-									else:
-										result['INFO']['3_splice_site'] = 'exon-boundary:'+gff['exon'][e4][8]
-							b5,e5 = find_row_name(gff['CDS'], mRNA_id, 7)
-							b6,e6 = find_row(gff['CDS'], pos, b5, e5+1)
-							b7,e7 = find_row_name(gff['five_prime_UTR'], mRNA_id, 7)
-							b8,e8 = find_row(gff['five_prime_UTR'], pos, b7, e7+1)
-							b9,e9 = find_row_name(gff['three_prime_UTR'], mRNA_id, 7)
-							b10,e10 = find_row(gff['three_prime_UTR'], pos, b9, e9+1)
-							if gff['CDS'][b6:e6+1]:
-								for cds in gff['CDS'][b6:e6+1]:
-									cds_id = cds[6]
-									result['TYPE'] = 'CDS'
-									beg, end = codon_coords(pos,cds[2],cds[3],cds[4],int(cds[5])) #target pos, cds start, cds end, cds strand, cds phase
-
-									if beg < cds[2]:
-										prev_cds = gff['CDS'][e6-1]
-										p_beg = prev_cds[2]
-										p_end = prev_cds[3]
-										seq_cds_p = arg['ref'].seq[p_beg-1:p_end]
-										cds = gff['CDS'][e6]
-										n_beg = gff['CDS'][e6][2]
-										n_end = gff['CDS'][e6][3]
-										rest = cds[2] - beg
-										codon_ref = seq_cds_p[-rest:] + arg['ref'].seq[n_beg-1: end]
-										codon_alt = codon_ref[:pos-beg] + row['REC'] + codon_ref[pos-beg+1:]
-										aa_before, aa_after, codon_bef, codon_aft, change = find_effect(codon_ref, codon_alt, cds[4], arg)
-										result['CODON_ref'],result['CODON_alt'],result['AA_ref'],result['AA_alt'] = codon_bef, codon_aft, aa_before, aa_after
-										result['INFO']['effect'] = change
-										result['PARENT'] = mRNA_id
-										write_annotate_line(arg, result, row)
-										result['INFO'] = dict()
-										result['CODON_ref'], result['CODON_alt'], result['AA_ref'],result['AA_alt']= '.','.','.','.'
-									elif end > cds[3]:
-										next_cds = gff['CDS'][e6+1]
-										n_beg = next_cds[2]
-										n_end = next_cds[3]
-										seq_cds_n = arg['ref'].seq[n_beg-1:n_end]
-										p_beg = gff['CDS'][e6][2]
-										p_end = gff['CDS'][e6][3]
-										rest = end - cds[3]
-										codon_ref = arg['ref'].seq[beg-1: p_end] + seq_cds_n[:rest]
-										codon_alt = codon_ref[:pos-beg]+row['REC']+codon_ref[pos-beg+1:]
-										aa_before, aa_after, codon_bef, codon_aft, change = find_effect(codon_ref, codon_alt, cds[4], arg)
-										result['CODON_ref'],result['CODON_alt'],result['AA_ref'],result['AA_alt'] = codon_bef, codon_aft, aa_before, aa_after
-										result['PARENT'] = mRNA_id
-										result['INFO']['effect'] = change
-										write_annotate_line(arg, result, row)
-										result['INFO'] = dict()
-										result['CODON_ref'], result['CODON_alt'], result['AA_ref'],result['AA_alt']= '.','.','.','.'
-									else:
-										codon = arg['ref'].seq[beg-1:end]
-										codon_ref = codon[:pos-beg]+row['DOM']+codon[pos-beg+1:]
-										codon_alt = codon[:pos-beg]+row['REC']+codon[pos-beg+1:]
-										aa_before, aa_after, codon_bef, codon_aft, change = find_effect(codon_ref, codon_alt,cds[4], arg)
-										result['PARENT'] = mRNA_id
-										result['CODON_ref'],result['CODON_alt'],result['AA_ref'],result['AA_alt'] = codon_bef, codon_aft, aa_before, aa_after
-										result['INFO']['effect'] = change
-										write_annotate_line(arg, result, row)
-										result['INFO'] = dict()
-										result['CODON_ref'], result['CODON_alt'], result['AA_ref'],result['AA_alt']= '.','.','.','.'
-							elif gff['five_prime_UTR'][b8:e8+1]:
-								#five =  gff['five_prime_UTR'][b8:e8+1][0]
-								for five in  gff['five_prime_UTR'][b8:e8+1]:
-									result['TYPE'] = 'five_prime_UTR'		
-									result['INFO']['effect'] = '.:.:.'
-									result['PARENT'] = mRNA_id
-									write_annotate_line(arg, result, row)
-									result['INFO'] = dict()
-							elif gff['three_prime_UTR'][b10:e10+1]:
-								three =  gff['three_prime_UTR'][b10:e10+1][0]
-								result['TYPE'] = 'three_prime_UTR'
-								result['PARENT'] = mRNA_id
-								write_annotate_line(arg, result, row)
-								result['INFO'] = dict()
-						else:
-							result['TYPE'] = 'intron'
-							dis1 = gff['exon'][b4][2] - pos
-							dis2 = pos - gff['exon'][e4][3]
-							result['PARENT'] = mRNA_id
-							result['INFO']['left'] = gff['exon'][e4][8] +':'+ str(dis2)
-							result['INFO']['right'] = gff['exon'][b4][8] +':'+ str(dis1)
-							if gff['exon'][e4][7] == gff['exon'][b4][7]:
-								if dis2 in {1,2,3}:
-									if gff['exon'][e4][4] == '+':
-										result['INFO']['5_splice_site'] = 'intron-boundary:'+gff['exon'][e4][8]
-									else:
-										result['INFO']['3_splice_site'] = 'intron-boundary:'+gff['exon'][e4][8]
-								if dis1 in {1,2,3}:
-									if gff['exon'][b4][4] == '+':
-										result['INFO']['3_splice_site'] = 'intron-boundary:'+gff['exon'][b4][8]
-									else:
-										result['INFO']['5_splice_site'] = 'intron-boundary:'+gff['exon'][b4][8]
-								write_annotate_line(arg, result, row)
-								result['INFO'] = dict()
-
-			find_nc_gene(arg, gff, gene_id, pos, result, row)
-
-	else:
-		dis1 = gff['gene'][b][2] - pos
-		dis2 = pos - gff['gene'][e][3]
-		result['TYPE'] = 'intergenic'
-		result['INFO']['left'] = gff['gene'][e][6] +':'+ str(dis2) if e != -1 else '.'
-		result['INFO']['right'] = gff['gene'][b][6] +':'+ str(dis1) if b <= len(gff['gene']) else '.'
-		write_annotate_line(arg, result, row)
-		result['INFO'] = dict()
-
-
 def check_mutation2(row, arg):
 	result = {h:row[h] for h in arg['header2'] if h in arg['header2'] and h in arg['header']}
 	result2 = {h:'.' for h in arg['header'] if h not in arg['header2']}
@@ -1624,7 +1501,10 @@ def check_mutation2(row, arg):
 								#five =  gff['five_prime_UTR'][b8:e8+1][0]
 								for five in  gff['five_prime_UTR'][b8:e8+1]:
 									result['TYPE'] = 'five_prime_UTR'		
-									result['INFO']['effect'] = find_new_ATG(arg, pos, five, row)
+									if arg['variant'] == 'insertion':
+										result['INFO']['effect'] = '.:.:.'
+									elif arg['variant'] == 'substitution':
+										result['INFO']['effect'] = find_new_ATG(arg, pos, five, row)
 									result['PARENT'] = mRNA_id
 									write_annotate_line(arg, result, row)
 									result['INFO'] = dict()
