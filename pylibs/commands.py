@@ -8,38 +8,38 @@ from pylibs.graphics_lib import *
 
 def mbs(argv):
     mbs_doc = """
-    Usage:
-       maptools.py mbs [options]
-       maptools.py mbs
+Usage:
+  maptools.py mbs [options]
+  maptools.py mbs
 
-    Options:
-      -h, --help                    Show this screen.
-      -v, --version                 Show the version
-      -i, --input FILE              VCF input file. Can also come from a pipe.
+Options:
+  -h, --help                    Show this screen.
+  -v, --version                 Show the version
+  -i, --input FILE              VCF input file. Can also come from a pipe.
 
-    Input Options:
-      -d, --data LIST               Pools genotype: dominant(D), recessive(R), parental dominant(Pd),
-                                    parental recessive(Pr), wild-type recessive (Wr) and wild-type
-                                    dominant (Wd) [default: D,R].
-      -r, --ref-genotype STR        Which parental houses the reference, \"miss\" for missing genotype [default: miss].
-      -m, --mutant-pool STR         Which pool has the mutant phenotype [default: R].
+Input Options:
+  -d, --data LIST               Pools genotype: dominant(D), recessive(R), parental dominant(Pd),
+                                parental recessive(Pr), wild-type recessive (Wr) and wild-type
+                                dominant (Wd) [default: D,R].
+  -r, --ref-genotype STR        Which parental houses the reference, \"miss\" for missing genotype [default: miss].
+  -m, --mutant-pool STR         Which pool has the mutant phenotype [default: R].
 
-    Output Options:
-      -o, --output FILE             Write output to file.
-      -O, --output-type TYPE        \"txt\" tab separated, \"csv\" comma separated [default: txt]
+Output Options:
+  -o, --output FILE             Write output to file.
+  -O, --output-type TYPE        \"txt\" tab separated, \"csv\" comma separated [default: txt]
     
-    Filter Options:
-      -C, --max-depth INT           Maximum allele depth [default: inf].
-      -c, --min-depth INT           Minimum allele depth [default: 0].
-      -Q, --max-ratio INT           Maximum allele frequency in dominant pool [default: 100].
-      -q, --min-ratio INT           Minimum allele frequency in dominant pool [default: 0].
-      --EMS                         Filter out SNPs other than caused by EMS (\"G\" > \"A\" or \"C\" > \"T\").
-      -I, --skip-indels             Filter out insertions and deletions.
-      --parental-filter             Filter out variants if Parental (-d \"R\",\"Pr\"| \"Pd\"| \"Wr\"| \"Wd\")
-                                    sample is provided.
-      --het-filter                  Focuses on markers that are clearly heterozygous in the dominant pool (\"1\"/\"0\"
-                                    genotype or depth in the interval [-c,-C] and allele frequency in the interval [-q, -Q]).
-      --no-filter                   Disable all filters.                 
+Filter Options:
+  -C, --max-depth INT           Maximum allele depth [default: inf].
+  -c, --min-depth INT           Minimum allele depth [default: 0].
+  -Q, --max-ratio INT           Maximum allele frequency in dominant pool [default: 100].
+  -q, --min-ratio INT           Minimum allele frequency in dominant pool [default: 0].
+  --EMS                         Filter out SNPs other than caused by EMS (\"G\" > \"A\" or \"C\" > \"T\").
+  -I, --skip-indels             Filter out insertions and deletions.
+  --parental-filter             Filter out variants if Parental (-d \"R\",\"Pr\"| \"Pd\"| \"Wr\"| \"Wd\")
+                                sample is provided.
+  --het-filter                  Focuses on markers that are clearly heterozygous in the dominant pool (\"1\"/\"0\")
+                                genotype or depth in the interval [-c,-C] and allele frequency in the interval [-q, -Q]).
+  --no-filter                   Disable all filters.                 
     """
     arg = docopt(mbs_doc, argv=None, help=True,version=v_mbs)
     arg['pipe'] = sys.stdin.isatty()
@@ -80,31 +80,31 @@ def mbs(argv):
 
 def qtl(argv):
     qtl_doc = """
-  Usage:
-     maptools.py qtl [options]
-     maptools.py qtl
+Usage:
+  maptools.py qtl [options]
+  maptools.py qtl
 
-  Options:
-    -h, --help                      Show this screen.
-    -v, --version                   Show the version.
-    -i, --input FILE                VCF input file. Can also come from a pipe.
+Options:
+  -h, --help                      Show this screen.
+  -v, --version                   Show the version.
+  -i, --input FILE                VCF input file. Can also come from a pipe.
 
-  Input Options:
-    -d, --data LIST                 Pools genotype: High (H), Low (L), parental high(Ph) or
+Input Options:
+  -d, --data LIST                 Pools genotype: High (H), Low (L), parental high(Ph) or
                                     parental low(Pl).
                                     low(Wl) [default: H,L].
-    -r, --ref-genotype STR          Which parental houses the reference: \"H\", \"L\" or \"miss\"
+  -r, --ref-genotype STR          Which parental houses the reference: \"H\", \"L\" or \"miss\"
                                     (for missing genotype) [default: miss].
   
-  Filter Options:
-    -C, --max-depth INT             Maximum read depth [default: inf].
-    -c, --min-depth INT             Minimum read depth [default: 0].
-    -I, --skip-indels               Filter out insertions and deletions.
-    --no-filter                     Disable all filters.
+Filter Options:
+  -C, --max-depth INT             Maximum read depth [default: inf].
+  -c, --min-depth INT             Minimum read depth [default: 0].
+  -I, --skip-indels               Filter out insertions and deletions.
+  --no-filter                     Disable all filters.
 
-  Output Options:
-    -o, --output FILE               Write output file.
-    -O, --output-type TYPE          \"txt\" tab separated, \"csv\" comma separated [default: txt]
+Output Options:
+  -o, --output FILE               Write output file.
+  -O, --output-type TYPE          \"txt\" tab separated, \"csv\" comma separated [default: txt]
   """
     arg = docopt(qtl_doc, argv=None, help=True, version=v_qtl)
     # print(arg)
@@ -145,22 +145,22 @@ def qtl(argv):
 
 def merge(argv):
   merge_doc="""
-  Usage:
-     maptools.py merge [options]
-     maptools.py merge
+Usage:
+  maptools.py merge [options]
+  maptools.py merge
 
-  Options:
-    -h, --help                      Show this screen.
-    -v, --version                   Show the version.
-    -i, --input FILE                Maptools MBS or QTL-Seq output.
+Options:
+  -h, --help                      Show this screen.
+  -v, --version                   Show the version.
+  -i, --input FILE                Maptools MBS or QTL-Seq output.
 
-  Input Options:                   
-    -w, --window INT                Number of adjacent markers to merge the data [default: 20].
-    -c, --chromosomes LIST          Chromosomes names selection (separeted by comma) [default: all].
+Input Options:                   
+  -w, --window INT                Number of adjacent markers to merge the data [default: 20].
+  -c, --chromosomes LIST          Chromosomes names selection (separeted by comma) [default: all].
   
-  Output Options:
-    -o, --output FILE               Write output to file.
-    -O, --output-type TYPE          \"txt\" tab separated, \"csv\" comma separated [default: txt]
+Output Options:
+  -o, --output FILE               Write output to file.
+  -O, --output-type TYPE          \"txt\" tab separated, \"csv\" comma separated [default: txt]
   """
   arg = docopt(merge_doc, argv=None, help=True, version=v_merge)
   arg = check_merge(arg, merge_doc)
@@ -181,38 +181,38 @@ def merge(argv):
 
 def mbs_plot(argv):
     mbsplot_doc = """
-  Usage:
-     maptools.py mbsplot [options]
-     maptools.py mbsplot
+Usage:
+  maptools.py mbsplot [options]
+  maptools.py mbsplot
 
-  Options:
-    -h, --help                      Show this screen.
-    -v, --version                   Show the version.
-    -i, --input FILE                Maptools \"mbs\" output.
-    -c, --chromosomes LIST          List of chromosome selection names (separeted by comma) [default: all].
-    -C, --captions                  Generates figure captions.
+Options:
+  -h, --help                      Show this screen.
+  -v, --version                   Show the version.
+  -i, --input FILE                Maptools \"mbs\" output.
+  -c, --chromosomes LIST          List of chromosome selection names (separeted by comma) [default: all].
+  -C, --captions                  Generates figure captions.
 
-  Graphics options:
-    -A, --moving-avg INT            Number of adjacent markers for the calculation of moving average lines.
-    -m, --multi-chrom               Multi-chromosome plots.
-    -b, --boost INT                 Number of adjacent markers for the calculation of moving average for boost.
-    -t, --alpha FLOAT               Dots transparency (0.0 to 1.0) [default: 0.4]
-    --palette INT                   Select the colour palette for your plots(1:color blidness, 2:normal vision)
-                                    [default: 2]
+Graphics options:
+  -A, --moving-avg INT            Number of adjacent markers for the calculation of moving average lines.
+  -m, --multi-chrom               Multi-chromosome plots.
+  -b, --boost INT                 Number of adjacent markers for the calculation of moving average for boost.
+  -t, --alpha FLOAT               Dots transparency (0.0 to 1.0) [default: 0.4]
+  --palette STR                   Select the colour palette for your plots: \"standard\",\"color_blind\" or 
+                                  \"custom\" [default: standard].
 
-  Graphics types:
-    -p, --pvalue                    Generates p-value plots.
-    --bonferroni                    Show bonferroni test line in p-value plots.
-    -D, --allele-freq-1             Generates allele frequency plots for the dominant pool (AF1).
-    -R, --allele-freq-2             Generates allele frequency plots for the recessive pool (AF2).
-    -X, --combine                   Combined plots with AF1 and AF2 lines. Use it together with --moving-avg.
-    -M, --max-allele-freq2          Represents the maximum allele frequency in recessive pool.
-                                    Recomended when data is not phased.
-    -a, --all                       Generates all possible plot types.
+Graphics types:
+  -p, --pvalue                    Generates p-value plots.
+  --bonferroni                    Show bonferroni test line in p-value plots.
+  -D, --allele-freq-1             Generates allele frequency plots for the dominant pool (AF1).
+  -R, --allele-freq-2             Generates allele frequency plots for the recessive pool (AF2).
+  -X, --combine                   Combined plots with AF1 and AF2 lines. Use it together with --moving-avg.
+  -M, --max-allele-freq2          Represents the maximum allele frequency in recessive pool.
+                                  Recomended when data is not phased.
+  -a, --all                       Generates all possible plot types.
   
-  Output options:
-    -o, --outdir DIR                Output directory [default: graphics].
-    -O, --output-type TYPE          Output format: pdf, svg, jpg [default: pdf].
+Output options:
+  -o, --outdir DIR                Output directory [default: graphics].
+  -O, --output-type TYPE          Output format: pdf, svg, jpg [default: pdf].
   """
     arg = docopt(mbsplot_doc, argv=None, help=True,version=v_mbsplot)
     arg = test_plot(arg, mbsplot_doc)
@@ -253,42 +253,42 @@ def mbs_plot(argv):
 
 def qtl_plot(argv):
     qtlplot_doc = """
-  Usage:
-     maptools.py qtlplot [options]
-     maptools.py qtlplot
+Usage:
+  maptools.py qtlplot [options]
+  maptools.py qtlplot
 
-  Options:
-    -h, --help                      Show this screen.
-    -v, --version                   Show the version.
-    -i, --input FILE                Maptools \"qtl\" output.
-    -c, --chromosomes LIST          List of chromosome selection names (separeted by comma) [default: all].
-    -C, --captions                  Generates figure captions.
+Options:
+  -h, --help                      Show this screen.
+  -v, --version                   Show the version.
+  -i, --input FILE                Maptools \"qtl\" output.
+  -c, --chromosomes LIST          List of chromosome selection names (separeted by comma) [default: all].
+  -C, --captions                  Generates figure captions.
 
-  Graphic options:
-    -A, --moving-avg INT            Number of adjacent markers for the calculation of moving average lines.
-    -m, --multi-chrom               Multi-chromosome plots.
-    -t, --alpha FLOAT               Dots transparency (0.0 to 1.0) [default: 0.4]
-    --palette INT                   Select the colour palette for your plots(1:color blidness, 2:normal vision)
-                                    [default: 2]
+Graphic options:
+  -A, --moving-avg INT            Number of adjacent markers for the calculation of moving average lines.
+  -m, --multi-chrom               Multi-chromosome plots.
+  -t, --alpha FLOAT               Dots transparency (0.0 to 1.0) [default: 0.4]
+  --palette STR                   Select the colour palette for your plots: \"standard\",\"color_blind\" or 
+                                  \"custom\" [default: standard].
 
-  Graphic types:
-    -p, --pvalue                    Generates p-value plots.
-    --bonferroni                    Show bonferroni test line in p-value plots.
-    -d, --delta                     Generates Delta (AFrecessive High pool - AFrecessive Low pool) plots.
-    --ci95                          Show the  95% cofindence interval in Delta plots.
-    -H, --allele-freq-H             Generates the alelle frequency plots for the pool of high phenotype.
-    -L, --allele-freq-L             Generates the allele frecuency plots for the pool of low phenotype.
-    -X, --combine                   Combined plots with high and low lines. Use it together with --moving-avg.
-    -E, --euclidean-distance        Generates Euclidean distance plots between individual SNPs and in groups of
-                                    100 adjacent markers.
-    -G, --g-statistic               Generates G-statistic plots for individual SNPs.
-    -Q, --qtl-seq                   Generates muti-plots with ED, G, DELTA and p-value graphics
-                                    for each chromosome.
-    -a, --all                       Generates all possible plot types.
+Graphic types:
+  -p, --pvalue                    Generates p-value plots.
+  --bonferroni                    Show bonferroni test line in p-value plots.
+  -d, --delta                     Generates Delta (AFrecessive High pool - AFrecessive Low pool) plots.
+  --ci95                          Show the  95% cofindence interval in Delta plots.
+  -H, --allele-freq-H             Generates the alelle frequency plots for the pool of high phenotype.
+  -L, --allele-freq-L             Generates the allele frecuency plots for the pool of low phenotype.
+  -X, --combine                   Combined plots with high and low lines. Use it together with --moving-avg.
+  -E, --euclidean-distance        Generates Euclidean distance plots between individual SNPs and in groups of
+                                  100 adjacent markers.
+  -G, --g-statistic               Generates G-statistic plots for individual SNPs.
+  -Q, --qtl-seq                   Generates muti-plots with ED, G, DELTA and p-value graphics
+                                  for each chromosome.
+  -a, --all                       Generates all possible plot types.
   
-  Output options:
-    -o, --outdir DIR                Output directory [default: graphics].
-    -O, --output-type TYPE          Output format: pdf, svg, jpg [default: pdf].
+Output options:
+  -o, --outdir DIR                Output directory [default: graphics].
+  -O, --output-type TYPE          Output format: pdf, svg, jpg [default: pdf].
   """
     arg = docopt(qtlplot_doc, argv=None, help=True,version=v_qtlplot)
     arg = test_plot(arg, qtlplot_doc)
@@ -337,28 +337,28 @@ def qtl_plot(argv):
 def annotate(argv):
   annotate_doc="""
 Usage:
-   maptools.py annotate [options]
-   maptools.py annotate
+  maptools.py annotate [options]
+  maptools.py annotate
 
 Options:
-   -h, --help                    Show this screen.
-   -v, --version                 Show the version.
-   -i, --input FILE              VCF input file. Can also come from a pipe.
-   -g, --gff FILE                GFF3 input file.
-   -f, --fasta-reference FILE    FASTA reference file (The same used to align the reads).
+  -h, --help                    Show this screen.
+  -v, --version                 Show the version.
+  -i, --input FILE              VCF input file. Can also come from a pipe.
+  -g, --gff FILE                GFF3 input file.
+  -f, --fasta-reference FILE    FASTA reference file (The same used to align the reads).
 
 Input Options:
-   -d, --data LIST               Pools genotype: dominant(D), recessive(R), parental dominant(Pd),
-                                 parental recessive(Pr), wild-type recessive(Wr) and
-                                 wild-type dominant(Wr) [default: D,R].
-   -r, --ref-genotype STR        Which parental houses the reference, \"miss\" for missing genotype [default: miss].
-   -m, --mutant-pool STR         Which pool has the mutant phenotype [default: R].
-   -R, --region REGION           Region of the genome to explore (... -R chrName:Startpos-Endpos).
-   -t, --transl-table INT        Translation table [default: 1].
+  -d, --data LIST               Pools genotype: dominant(D), recessive(R), parental dominant(Pd),
+                                parental recessive(Pr), wild-type recessive(Wr) and
+                                wild-type dominant(Wr) [default: D,R].
+  -r, --ref-genotype STR        Which parental houses the reference, \"miss\" for missing genotype [default: miss].
+  -m, --mutant-pool STR         Which pool has the mutant phenotype [default: R].
+  -R, --region REGION           Region of the genome to explore (... -R chrName:Startpos-Endpos).
+  -t, --transl-table INT        Translation table [default: 1].
 
 Output Options:
-   -o, --output FILE             Write output to file.
-   -O, --output-type TYPE        \"txt\" tab separated, \"csv\" comma separated [default: txt].
+  -o, --output FILE             Write output to file.
+  -O, --output-type TYPE        \"txt\" tab separated, \"csv\" comma separated [default: txt].
 
 Filter Options:
   -C, --max-depth INT           Maximum allele depth [default: inf].

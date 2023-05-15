@@ -1,18 +1,14 @@
 from pylibs.analysis_lib import *
 from pylibs.constants import *
-import warnings
-import matplotlib.backends.backend_pdf
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 import numpy as np
 import pandas as pd
-import logging
 import scipy.stats as st
 import sys
 import os
-import re
 from math import log
-import errno
+import json
 from docopt import docopt
 from matplotlib.ticker import ScalarFormatter
 from matplotlib.ticker import (MultipleLocator,
@@ -85,6 +81,8 @@ def test_plot(arg, __doc__):
             os.makedirs(arg['captions_dir'])
         except FileExistsError:
             pass
+
+    read_palette(arg)
 
     if arg['--multi-chrom'] == True and len(arg['--chromosomes']) == 1:
         arg['--multi-chrom'] = False
@@ -204,7 +202,27 @@ def check_merge(arg,__doc__):
         sys.exit()
     # Checking graphic types
     return arg
-
+def read_palette(arg):
+    try:
+        with open("palette.json") as json_file:
+            data = json.load(json_file)
+    except FileNotFoundError:
+        print('Error: Plese put the file \"palette.json\" in the MAPtools folder.', file=sys.stderr)
+        sys.exit()
+    
+    ant = 'mbs' if 'mbsplot' in arg.keys() else 'qtl'
+    palette = arg['--palette']
+    if palette not in data[ant].keys():
+        print('Error: Select a correct palette\'s name: \"standard\",\"color_blind\" or \"custom\".', file=sys.stderr)
+        sys.exit()
+    if palette == 'custom':
+        for key,val in data[ant]['custom'].items():
+            if val == list():
+                palette = 'standard'
+                break
+    arg['--palette'] = {k: v[0] for k, v in data[ant][palette].items()}
+    arg['color_names'] = {k: v[1] for k, v in data[ant][palette].items()}
+        
 
 def check_mbs_opts(arg):
     if arg['--boost'] == None:
@@ -216,9 +234,7 @@ def check_mbs_opts(arg):
             sys.exit()
     arg['titles'] = titles_mbs
     arg['lines'] = lines_mbs
-    palette = palettes_mbs[arg['--palette']]
-    arg['--palette'] = {k: v[0] for k, v in palette.items()}
-    arg['color_names'] = {k: v[1] for k, v in palette.items()}
+
     if arg['--all']:
         if 'log10PVALUE' in arg['--fields']:
             arg['--pvalue'] = True
@@ -260,9 +276,7 @@ def check_mbs_opts(arg):
 def check_qtl_opts(arg):
     arg['titles'] = titles_qtl
     arg['lines'] = lines_qtl
-    palette = palettes_qtl[arg['--palette']]
-    arg['--palette'] = {k: v[0] for k, v in palette.items()}
-    arg['color_names'] = {k: v[1] for k, v in palette.items()}
+
     if arg['--all']:
         if 'log10PVALUE' in arg['--fields']:
             arg['--pvalue'] = True
@@ -812,7 +826,7 @@ def AF_mono_graph(df, arg, g_type):
             key2 = -3
             t,rt = arg['titles'][key]
             ticks_y=[-1, 0, 1]
-            lim_y=(-1.5, 1.5)
+            lim_y=(-1.2, 1.2)
         d=df[df['#CHROM'] == chrom[i]]
         max_x=int(arg['contigs'][chrom[i]])
         x=d[['POS']]
@@ -889,7 +903,7 @@ def pval_multi_Vertical_graph(df, arg):
             ax[i].set_xticks(ticks=np.arange(0, max_x, 5e6))
             ax[i].tick_params(labelbottom=False)
             ax[i].set_ylabel(ylabel='log'+r'$_{10}$'+'(p-value)', fontsize=12, rotation=90, labelpad=15)
-            ax[i].set_title('({})'.format(arg['labs'][chrom[i]]), fontsize=18, rotation=0, x=-0.14, y=0.85)
+            ax[i].set_title('({})'.format(arg['labs'][chrom[i]]), fontsize=16, rotation=0, x=-0.12, y=0.85)
             labs_list.append('({}) Chromosome {}.'.format(arg['labs'][chrom[i]],chrom[i]))
             ax[i].tick_params(axis='y', which='major', labelsize=8)
             if arg['--moving-avg'] != False:
@@ -954,7 +968,7 @@ def ED_multi_Vertical_graph(df, arg):
             ax[i].set_ylabel(ylabel='Euclidean distance', fontsize=12, rotation=90, labelpad=15)
             ax[i].set_yticks(ticks=[0,0.5,1,1.5])
             ax[i].set_yticklabels(labels=[0,0.5,1,1.5], fontsize=8)
-            ax[i].set_title('({})'.format(arg['labs'][chrom[i]]), fontsize=18, rotation=0, x=-0.14, y=0.85)
+            ax[i].set_title('({})'.format(arg['labs'][chrom[i]]), fontsize=16, rotation=0, x=-0.12, y=0.85)
             labs_list.append('({}) Chromosome {}.'.format(arg['labs'][chrom[i]],chrom[i]))
             ax[i].tick_params(axis='y', which='major', labelsize=8)
             ax[i].spines['top'].set_visible(False)
@@ -1006,7 +1020,7 @@ def G_multi_Vertical_graph(df, arg):
             ax[i].set_xticks(ticks=np.arange(0, max_x, 5e6))
             ax[i].tick_params(labelbottom=False)
             ax[i].set_ylabel(ylabel='G-statistic', fontsize=12, rotation=90, labelpad=15)
-            ax[i].set_title('({})'.format(arg['labs'][chrom[i]]), fontsize=18, rotation=0, x=-0.14, y=0.85)
+            ax[i].set_title('({})'.format(arg['labs'][chrom[i]]), fontsize=16, rotation=0, x=-0.12, y=0.85)
             labs_list.append('({}) Chromosome {}.'.format(arg['labs'][chrom[i]],chrom[i]))
             ax[i].tick_params(axis='y', which='major', labelsize=8)
             ax[i].spines['top'].set_visible(False)
@@ -1069,7 +1083,7 @@ def AF_multi_Vertical_graph(df, arg, g_type):
         key2 = -3
         t,rt = arg['titles'][key]
         ticks_y = [-1,0,1]
-        lim_y = (-1.5, 1.5)
+        lim_y = (-1.2, 1.2)
     for chrom_list in arg['chrom_lists']:
         chrom = chrom_list
         if len(chrom) > 1:
@@ -1086,7 +1100,7 @@ def AF_multi_Vertical_graph(df, arg, g_type):
             ax[i].set_xticks(ticks=np.arange(0, max_x, 5e6))
             ax[i].tick_params(labelbottom=False)
             ax[i].set_ylabel(ylabel=ylab, fontsize=12, rotation=90, labelpad=15)
-            ax[i].set_title('({})'.format(arg['labs'][chrom[i]]), fontsize=18, rotation=0, x = -0.14, y=0.85)
+            ax[i].set_title('({})'.format(arg['labs'][chrom[i]]), fontsize=16, rotation=0, x = -0.12, y=0.85)
             labs_list.append('({}) Chromosome {}.'.format(arg['labs'][chrom[i]],chrom[i]))
             ax[i].set_yticks(ticks=ticks_y)
             ax[i].set_yticklabels(labels=ticks_y, fontsize=8)
@@ -1167,7 +1181,7 @@ def AF12_multi_Vertical_graph(df, arg):
             ax[i].set_xticks(ticks=np.arange(0, max_x, 5e6))
             ax[i].tick_params(labelbottom=False)
             ax[i].set_ylabel(ylabel='Allele Frequency', fontsize=12, rotation=90, labelpad=15)
-            ax[i].set_title('({})'.format(arg['labs'][chrom[i]]), fontsize=18, rotation=0, x = -0.14, y=0.85) 
+            ax[i].set_title('({})'.format(arg['labs'][chrom[i]]), fontsize=16, rotation=0, x = -0.12, y=0.85) 
             labs_list.append('({}) Chromosome {}.'.format(arg['labs'][chrom[i]],chrom[i]))  
             ax[i].set_yticks(ticks=ticks_y)
             ax[i].set_yticklabels(labels=ticks_y, fontsize=8)
@@ -1220,7 +1234,7 @@ def AF12_multi_Vertical_graph(df, arg):
             ax[i].set_xticks(ticks=np.arange(0, max_x, 5e6))
             ax[i].tick_params(labelbottom=False)
             ax[i].set_ylabel(ylabel='Allele Frequency', fontsize=12, rotation=90, labelpad=15)
-            ax[i].set_title('({})'.format(arg['labs'][chrom[i]]), fontsize=18, rotation=0, x = -0.14, y=0.85)
+            ax[i].set_title('({})'.format(arg['labs'][chrom[i]]), fontsize=16, rotation=0, x = -0.12, y=0.85)
             ax[i].set_yticks(ticks=ticks_y)
             ax[i].set_yticklabels(labels=ticks_y, fontsize=8)
             if arg['--moving-avg'] != False:
@@ -1277,7 +1291,7 @@ def AF1_AF2_pval_mono(df, arg):
         ax[0].set_xticks(ticks=np.arange(0, max_x, 5e6))
         ax[0].tick_params(labelbottom=False)
         ax[0].set_ylabel(ylabel='Allele Frequency', fontsize=12, rotation=90, labelpad=15)
-        ax[0].set_title('(a)', fontsize=17, rotation=0, x = -0.14, y=0.85)
+        ax[0].set_title('(a)', fontsize=16, rotation=0, x = -0.14, y=0.85)
         ax[0].set_yticks(ticks=[0, 0.25, 0.5, 0.75, 1])
         ax[0].set_yticklabels(labels=[0, 0.25, 0.5, 0.75, 1], fontsize=8)
         if arg['--moving-avg'] != False:
@@ -1295,7 +1309,7 @@ def AF1_AF2_pval_mono(df, arg):
         ax[1].set_xticks(ticks=np.arange(0, max_x, 5e6))
         ax[1].tick_params(labelbottom=False)
         ax[1].set_ylabel(ylabel='Allele Frequency', fontsize=12, rotation=90, labelpad=15)
-        ax[1].set_title('(b)', fontsize=17, rotation=0, x = -0.14, y=0.85)
+        ax[1].set_title('(b)', fontsize=16, rotation=0, x = -0.14, y=0.85)
         ax[1].set_yticks(ticks=[0, 0.25, 0.5, 0.75, 1])
         ax[1].set_yticklabels(labels=[0, 0.25, 0.5, 0.75, 1], fontsize=8)
         if arg['--moving-avg'] != False:
@@ -1313,7 +1327,7 @@ def AF1_AF2_pval_mono(df, arg):
         ax[2].set_xticks(ticks=np.arange(0, max_x, 5e6))
         ax[2].set_xticklabels(labels=np.arange(0, max_x, 5e6),fontsize=8)
         ax[2].set_ylabel(ylabel='log'+r'$_{10}$'+'(p-value)',fontsize=12, labelpad=15)
-        ax[2].set_title('(c)', fontsize=17, rotation=0, x = -0.14, y=0.85)
+        ax[2].set_title('(c)', fontsize=16, rotation=0, x = -0.14, y=0.85)
         ax[2].tick_params(axis='y', which='major', labelsize=8)
         if arg['--moving-avg'] != False:
             plot_avg(d, arg, ax[2], 'log10PVALUE')
@@ -1368,9 +1382,10 @@ def qtl_mixed_plot(df, arg):
         ax[0].set(xlim=(0, max_x), ylim=(min(df['G']), max(df['G'])))
         ax[0].set_xticks(ticks=np.arange(0, max_x, 5e6))
         ax[0].tick_params(labelbottom=False)
-        ax[0].set_ylabel(ylabel='G-statistic', fontsize=12, rotation=90, labelpad=15)
-        ax[0].tick_params(axis='y', which='major', labelsize=8)
-        ax[0].set_title('(a)', fontsize=17, rotation=0, x = -0.14, y=0.85)
+        ax[0].set_ylabel(ylabel='G-statistic', fontsize=12, rotation=90)
+        ax[0].yaxis.set_label_coords(-0.075,0.5)
+        ax[0].tick_params(axis='y', which='major', labelsize=8, size=8)
+        ax[0].set_title('(a)', fontsize=16, rotation=0, x = -0.14, y=0.85)
         
         if arg['--moving-avg'] != False:
             plot_avg(d, arg, ax[0], 'G' )
@@ -1382,8 +1397,9 @@ def qtl_mixed_plot(df, arg):
         ax[1].set(xlim=(0, max_x), ylim=(0, 1.5))
         ax[1].set_xticks(ticks=np.arange(0, max_x, 5e6))
         ax[1].tick_params(labelbottom=False)
-        ax[1].set_ylabel(ylabel='Euclidean distance', fontsize=12, rotation=90, labelpad=15)
-        ax[1].set_title('(b)', fontsize=17, rotation=0, x = -0.14, y=0.85)
+        ax[1].set_ylabel(ylabel='Euclidean distance', fontsize=12, rotation=90)
+        ax[1].yaxis.set_label_coords(-0.075,0.5)
+        ax[1].set_title('(b)', fontsize=16, rotation=0, x = -0.14, y=0.85)
         ax[1].set_yticks(ticks=[0, 0.5, 1, 1.5])
         ax[1].set_yticklabels(labels=[0, 0.5, 1, 1.5], fontsize=8)
         plot_ED100_4(d, arg, ax[1], max_x, max(df['ED100_4']))
@@ -1392,15 +1408,16 @@ def qtl_mixed_plot(df, arg):
 
         # DELTA
         if arg['--ci95']:
-            lim_y = (-1.3, 1.3)
+            lim_y = (-1.2, 1.2)
         else:
             lim_y = (-1, 1)
         ax[2].scatter(x, y3, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
         ax[2].set(xlim=(0, max_x), ylim=lim_y)
         ax[2].set_xticks(ticks=np.arange(0, max_x, 5e6))
         ax[2].tick_params(labelbottom=False)
-        ax[2].set_ylabel(ylabel='$\Delta$'+' (SNP-index)',fontsize=12, labelpad=15)
-        ax[2].set_title('(c)', fontsize=17, rotation=0, x = -0.14, y=0.85)
+        ax[2].set_ylabel(ylabel='$\Delta$'+' (SNP-index)',fontsize=12)
+        ax[2].yaxis.set_label_coords(-0.075,0.5)
+        ax[2].set_title('(c)', fontsize=16, rotation=0, x = -0.14, y=0.85)
         ax[2].set_yticks(ticks=[-1,0,1])
         ax[2].set_yticklabels(labels=[-1,0,1], fontsize=8)
         if arg['--moving-avg'] != False:
@@ -1416,8 +1433,9 @@ def qtl_mixed_plot(df, arg):
         ax[3].set(xlim=(0, max_x), ylim=(min(df['log10PVALUE'])*1.05, 0))
         ax[3].set_xticks(ticks=np.arange(0, max_x, 5e6))
         ax[3].set_xticklabels(labels=np.arange(0, max_x, 5e6),fontsize=8)
-        ax[3].set_ylabel(ylabel='log'+r'$_{10}$'+'(p-value)',fontsize=12, labelpad=15)
-        ax[3].set_title('(d)', fontsize=17, rotation=0, x = -0.14, y=0.85)
+        ax[3].set_ylabel(ylabel='log'+r'$_{10}$'+'(p-value)',fontsize=12)
+        ax[3].yaxis.set_label_coords(-0.075,0.5)
+        ax[3].set_title('(d)', fontsize=16, rotation=0, x = -0.14, y=0.85)
         ax[3].tick_params(axis='y', which='major', labelsize=8)
         if arg['--moving-avg'] != False:
             plot_avg(d, arg, ax[3], 'log10PVALUE')
@@ -1427,7 +1445,7 @@ def qtl_mixed_plot(df, arg):
             ax[3].axhline(y=threshold, color='black', xmin=0,xmax=max_x_ch, linestyle='dashed', linewidth=0.75)
         ax[3].xaxis.set_major_formatter(ScalarFormatter())
         ax[3].ticklabel_format(axis='x', style='scientific',scilimits=(6, 6), useMathText=True)
-        ax[3].set_xlabel(xlabel='Chromosomal position (bp)',fontsize=15)
+        ax[3].set_xlabel(xlabel='Chromosomal position (bp)',fontsize=14)
         ax[3].spines['top'].set_visible(False)
         ax[3].spines['right'].set_visible(False)
 
@@ -1468,37 +1486,39 @@ def snp_index_graph(df, arg):
         y3=d['DELTA']  # delta
 
         #SNPidx1
-        ax[0].scatter(x, y1, s=0.5, c=arg['--palette']['SNPidx1'], alpha=arg['--alpha'])
+        ax[0].scatter(x, y1, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
         ax[0].set(xlim=(0, max_x), ylim=(0, 1))
         ax[0].set_xticks(ticks=np.arange(0, max_x, 5e6))
         ax[0].tick_params(labelbottom=False)
         ax[0].set_yticks(ticks=[0, 0.5, 1])
         ax[0].set_yticklabels(labels=[0, 0.5, 1], rotation=90, fontsize=8)
-        ax[0].set_ylabel('SNP-index', fontsize=12, labelpad=15)
-        ax[0].set_title('(a)', fontsize=17, rotation=0, x=-0.14, y=0.85)
+        ax[0].set_ylabel('SNP-index', fontsize=12)
+        ax[0].yaxis.set_label_coords(-0.06,0.5)
+        ax[0].set_title('(a)', fontsize=16, rotation=0, x=-0.13, y=0.85)
         ax[0].axhline(y=0.5, color='black', linestyle='dashed', linewidth=0.75)
         ax[0].spines['top'].set_visible(False)
         ax[0].spines['right'].set_visible(False)
 
         # SNPidx2
-        ax[1].scatter(x, y2, s=0.5, c=arg['--palette']['SNPidx2'], alpha=arg['--alpha'])
+        ax[1].scatter(x, y2, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
         ax[1].set(xlim=(0, max_x), ylim=(0, 1))
         ax[1].set_xticks(ticks=np.arange(0, max_x, 5e6))
         ax[1].tick_params(labelbottom=False)
         ax[1].set_yticks(ticks=[0, 0.5, 1])
         ax[1].set_yticklabels(labels=[0, 0.5, 1], fontsize=8, rotation=90)
-        ax[1].set_ylabel('SNP-index', fontsize=12, labelpad=15)
-        ax[1].set_title('(b)', fontsize=17, rotation=0, x=-0.14, y=0.85)
+        ax[1].set_ylabel('SNP-index', fontsize=12)
+        ax[1].yaxis.set_label_coords(-0.06,0.5)
+        ax[1].set_title('(b)', fontsize=16, rotation=0, x=-0.13, y=0.85)
         ax[1].axhline(y=0.5, color='black', linestyle='dashed', linewidth=0.75)
         ax[1].spines['top'].set_visible(False)
         ax[1].spines['right'].set_visible(False)
 
         # D-SNPidx
         if arg['--ci95']:
-            lim_y = (-1.3, 1.3)
+            lim_y = (-1.2, 1.2)
         else:
             lim_y = (-1, 1)
-        ax[2].scatter(x, y3, s=0.5, c=arg['--palette']['DELTA'], alpha=arg['--alpha'])
+        ax[2].scatter(x, y3, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
         ax[2].set(xlim=(0, max_x), ylim=lim_y)
         ax[2].set_yticks(ticks=[-1, 0, 1])
         ax[2].tick_params(labelbottom=True)
@@ -1508,8 +1528,9 @@ def snp_index_graph(df, arg):
         ax[2].xaxis.set_major_formatter(ScalarFormatter())
         ax[2].ticklabel_format(axis='x', style='scientific',scilimits=(6, 6), useMathText=True)
         ax[2].set_yticklabels(labels=[-1, 0, 1], rotation=90,fontsize=8)
-        ax[2].set_ylabel('$\Delta$'+' (SNP-index)',fontsize=12, labelpad=15)
-        ax[2].set_title('(c)', fontsize=17, rotation=0, x=-0.14, y=0.85)
+        ax[2].set_ylabel('$\Delta$'+' (SNP-index)',fontsize=12)
+        ax[2].yaxis.set_label_coords(-0.06,0.5)
+        ax[2].set_title('(c)', fontsize=16, rotation=0, x=-0.13, y=0.85)
         ax[2].axhline(y=0, color='black', linestyle='dashed', linewidth=0.75)
         ax[2].spines['top'].set_visible(False)
         ax[2].spines['right'].set_visible(False)
@@ -1605,15 +1626,15 @@ def plot_avg_qtl_SNPidx(d, arg, ax):
     #SNPidx1
     d['producty1']=d['SNPidx1'] * d['DP1']
     d['mediamovily1']=(d['producty1'].rolling(arg['--moving-avg']).sum() / d['DP1'].rolling(arg['--moving-avg']).sum())
-    ax[0].plot(d['mediamovilx'], d['mediamovily1'], c=color, lw=1.5)
+    ax[0].plot(d['mediamovilx'], d['mediamovily1'], c=arg['--palette']['SNPidx1'], lw=1.5)
     #SNPidx2
     d['producty2']=d['SNPidx2'] * d['DP2']
     d['mediamovily2']=(d['producty2'].rolling(arg['--moving-avg']).sum() / d['DP2'].rolling(arg['--moving-avg']).sum())
-    ax[1].plot(d['mediamovilx'], d['mediamovily2'], c=color, lw=1.5)
+    ax[1].plot(d['mediamovilx'], d['mediamovily2'], c=arg['--palette']['SNPidx2'], lw=1.5)
     # D-SNPidx
     d['productyD']=d['DELTA'] * d['DP']
     d['mediamovilD']=(d['productyD'].rolling(arg['--moving-avg']).sum() / d['DP'].rolling(arg['--moving-avg']).sum())
-    ax[2].plot(d['mediamovilx'], d['mediamovilD'], c=color, lw=1.5)
+    ax[2].plot(d['mediamovilx'], d['mediamovilD'], c=arg['--palette']['DELTA'], lw=1.5)
 
 
 def plot_boost(d, arg, ax, max_x):
@@ -1687,7 +1708,7 @@ def Delta2_Vertical_graph(df, arg):
             ax[i].set_xticks(ticks=np.arange(0, max_x, 5e6))
             ax[i].tick_params(labelbottom=False)
             ax[i].set_ylabel(ylabel='Allele Frequency', fontsize=12, rotation=90, labelpad=15)
-            ax[i].set_title('({})'.format(arg['labs'][chrom[i]]), fontsize=18, rotation=0, x = -0.14, y=0.85) 
+            ax[i].set_title('({})'.format(arg['labs'][chrom[i]]), fontsize=16, rotation=0, x = -0.12, y=0.85) 
             labs_list.append('({}) Chromosome {}.'.format(arg['labs'][chrom[i]],chrom[i]))  
             ax[i].set_yticks(ticks=ticks_y)
             ax[i].set_yticklabels(labels=ticks_y, fontsize=8)

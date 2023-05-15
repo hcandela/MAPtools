@@ -1,0 +1,63 @@
+{
+    "mbs" : {   "standard": {
+                    "dots":["#5770db","dark blue"],
+                    "MAX_SNPidx2":["#db57b2","pink"],
+                    "log10PVALUE":["#db5f57","red"],
+                    "SNPidx1":["#57db80","light green"],
+                    "SNPidx2":["#db57b2","pink"],
+                    "BOOST":["#dbc257","gold"]
+                },
+                "color_blind": {
+                    "dots":["#949494","gray"],
+                    "MAX_SNPidx2":["#d55e00","dark orange"],
+                    "log10PVALUE":["#cc78bc","magenta"],
+                    "SNPidx1":["#0173b2","blue"],
+                    "SNPidx2":["#d55e00","dark orange"],
+                    "BOOST":["#cc78bc","magenta"]
+
+                },
+                "custom": {
+                    "dots":[],
+                    "MAX_SNPidx2":[],
+                    "log10PVALUE":[],
+                    "SNPidx1":[],
+                    "SNPidx2":[],
+                    "BOOST":[]
+                } 
+        },
+    "qtl" : {   "standard" : {
+                    "dots":["#5770db","dark blue"],
+                    "MAX_SNPidx2":["#db57b2","pink"],
+                    "log10PVALUE":["#db5f57","red"],
+                    "SNPidx1":["#57db80","light green"],
+                    "DELTA":["#db5f57","red"],
+                    "SNPidx2":["#db57b2","pink"],
+                    "mvg":["#db5f57","red"],
+                    "ci":["#ff7f00","orange"]
+                },
+                "color_blind" : {
+                    "dots":["#949494","gray"],
+                    "MAX_SNPidx2":["#d55e00","dark orange"],
+                    "log10PVALUE":["#cc78bc","magenta"],
+                    "SNPidx1":["#57db80","light green"],
+                    "DELTA":["#0173b2","blue"],
+                    "SNPidx2":["#d55e00","dark orange"],
+                    "mvg":["#cc78bc","magenta"],
+                    "ci":["#0173b2","blue"]
+
+                },
+                "custom" : {
+                    "dots":[],
+                    "MAX_SNPidx2":[],
+                    "log10PVALUE":[],
+                    "SNPidx1":[],
+                    "DELTA":[],
+                    "SNPidx2":[],
+                    "mvg":[],
+                    "ci":[]
+
+                }
+
+    }
+}
+
