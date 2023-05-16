@@ -41,9 +41,9 @@ titles_qtl = {1:('p-values of two-tailed Fisher\'s exact tests along the chromos
           7:('Frequency of alleles in the pool of plants exhibiting the high phenotype.', 'AF1&2_multiV','AF1_multiV'),
           8:('Frequency of alleles in the pool of plants exhibiting the low phenotype.', 'AF2&1_multiV','AF2_multiV'),
           9:('$\Delta$ SNP-index plot with data from both pools.','Delta_multiV'),
-          11:('Single nucleotide polymorphism (SNP)-index plots of chromosome {}','SNPidx_{}'),
-          10:('Euclidean Distance between frequencies in both pools', 'ED_{}','ED_multiV'),
-          12:('G-statistic of the two-phase sampling inherent to both pools, calculated using the procedure used in (Magwene, et al. 2011) .','G_{}','G_multiV'),
+          11:('Single nucleotide polymorphism (SNP)-index plots of chromosome {}.','SNPidx_{}'),
+          10:('Euclidean Distance between frequencies in both pools.', 'ED_{}','ED_multiV'),
+          12:('G-statistic of the two-phase sampling inherent to both pools, calculated using the procedure used in (Magwene, et al. 2011).','G_{}','G_multiV'),
           13:('QTL-Seq comparison plot of chromosome {}.', 'QTL-Seq_{}')
 }
 
@@ -76,9 +76,9 @@ lines_qtl = {-3:'Each {} dot was calculated substracting the SNP-index value of 
             ' (c) $\Delta$ SNP-index plot, substracting the SNP-index value of the low pool from the high pool.',
          7:'The {} region shows the confidence interval for a proportion difference at a significance level of 5%, adjusted by the Bonferroni correction (n={}).',
          8:'The {} line indicates the moving average for each of the plotted variables, at {} adjacent SNPs.',
-         9:'Each {} dot represents the Euclidean distance for each individual marker',
+         9:'Each {} dot represents the Euclidean distance for each individual marker.',
          10:'The {} line is the smoothed statistic ED100^4 for Euclidean distance, calculated by summing of 100 individual markers raised to the fourth power as described in (de la Fuente Cantó, et al. 2022).',
-         11:'Each {} dot represents the G-statistic for each individual marker',
+         11:'Each {} dot represents the G-statistic for each individual marker.',
          12:'The {} line indicates the weighted moving average of the G-statistic at {} adjacent SNPs.',
          13:'(a) G-statistic for each individual SNP. (b) Euclidean distance for each individual SNP and the smoothed statistic ED100^4.'\
             '(c) $\Delta$ SNP-index plot, substracting the SNP-index value of the low pool from the high pool.'\

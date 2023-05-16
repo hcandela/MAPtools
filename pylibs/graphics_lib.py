@@ -36,6 +36,23 @@ def read_header_plot(arg):
                     if w in merge_argv:
                         w_index = merge_argv.index(w)
                 arg['--window'] = merge_argv[w_index+1]
+            if line.startswith('##maptools_qtlCommand='):
+                names = ['-r', '--ref-genotype','-d','--data']
+                qtl_argv = line.split('=')[1].split(' ')
+                result = list()
+                for i in range(len(qtl_argv)):
+                    ar = qtl_argv[i]
+                    if ar == '-r' or ar == '--ref-genotype':
+                        ar_index = qtl_argv.index(ar)
+                        ref = qtl_argv[ar_index+1]
+                        result.append(True if ref != 'miss' else False)
+                    elif ar == '-d' or ar == '--data':
+                        ar_index = qtl_argv(ar)
+                        data = qtl_argv[ar_index+1].split(',')
+                        result.append(True if 'Pl' in data or 'Ph' in data else False)
+
+                arg['--ref-genotype'] = True if True in result else False
+
             if line.startswith('##contig=<'):
                 s = line[line.find('<')+1:line.rfind('>')].split(',')
                 id = s[0].split('=')[1]
@@ -282,7 +299,7 @@ def check_qtl_opts(arg):
             arg['--pvalue'] = True
         else:
             arg['--pvalue'] = False
-        if 'SNPidx1' in arg['--fields'] and 'SNPidx2' in arg['--fields']:
+        if arg['--ref-genotype'] == True:
             arg['--allele-freq-H'] = True
             arg['--allele-freq-L'] = True
             arg['--combine'] = True
@@ -313,10 +330,10 @@ def check_qtl_opts(arg):
         if arg['--g-statistic'] == True and 'G' not in arg['--fields']:
             print('Error: is not possible make G-statistic graphics with your input data', file=sys.stderr)
             sys.exit()
-        if ('SNPidx1' not in arg['--fields'] or 'SNPidx2' not in arg['--fields']) and (arg['--allele-freq-H'] == True or arg['--allele-freq-L'] == True):
+        if (arg['--ref-genotype'] == False) and (arg['--allele-freq-H'] == True or arg['--allele-freq-L'] == True):
             print('Error: is not possible make phased SNP-idx graphics with your input data. Please use -a or -p.', file=sys.stderr)
             sys.exit()
-        if arg['--combine'] == True and 'SNPidx1' not in arg['--fields'] or 'SNPidx2' not in arg['--fields']:
+        if arg['--combine'] == True and arg['--ref-genotype'] == False:
             print('Error: is not possible to make combined graphics with your input data. Please use -a.', file=sys.stderr)
             sys.exit()
     if arg['--all'] == False and arg['--pvalue'] == False and arg['--delta'] == False and arg['--allele-freq-H'] == False and arg['--allele-freq-L'] == False and arg['--qtl-seq'] == False and arg['--g-statistic'] == False and arg['--euclidean-distance'] == False:
@@ -1614,7 +1631,7 @@ def plot_avg(d, arg, ax, field):
     d['prodx']=d['POS'] * d['DP']
     d['avgx']=(d['prodx'].rolling(arg['--moving-avg']).sum() / \
                d['DP'].rolling(arg['--moving-avg']).sum())
-    ax.plot(d['avgx'], d['avgy'], c=c_, lw=1.25)#lw=0.75
+    ax.plot(d['avgx'], d['avgy'], c=c_, lw=2)#lw=0.75
 
 def plot_avg_qtl_SNPidx(d, arg, ax):
     color = arg['--palette']['mvg']
@@ -1626,15 +1643,15 @@ def plot_avg_qtl_SNPidx(d, arg, ax):
     #SNPidx1
     d['producty1']=d['SNPidx1'] * d['DP1']
     d['mediamovily1']=(d['producty1'].rolling(arg['--moving-avg']).sum() / d['DP1'].rolling(arg['--moving-avg']).sum())
-    ax[0].plot(d['mediamovilx'], d['mediamovily1'], c=arg['--palette']['SNPidx1'], lw=1.5)
+    ax[0].plot(d['mediamovilx'], d['mediamovily1'], c=arg['--palette']['SNPidx1'], lw=2)
     #SNPidx2
     d['producty2']=d['SNPidx2'] * d['DP2']
     d['mediamovily2']=(d['producty2'].rolling(arg['--moving-avg']).sum() / d['DP2'].rolling(arg['--moving-avg']).sum())
-    ax[1].plot(d['mediamovilx'], d['mediamovily2'], c=arg['--palette']['SNPidx2'], lw=1.5)
+    ax[1].plot(d['mediamovilx'], d['mediamovily2'], c=arg['--palette']['SNPidx2'], lw=2)
     # D-SNPidx
     d['productyD']=d['DELTA'] * d['DP']
     d['mediamovilD']=(d['productyD'].rolling(arg['--moving-avg']).sum() / d['DP'].rolling(arg['--moving-avg']).sum())
-    ax[2].plot(d['mediamovilx'], d['mediamovilD'], c=arg['--palette']['DELTA'], lw=1.5)
+    ax[2].plot(d['mediamovilx'], d['mediamovilD'], c=arg['--palette']['DELTA'], lw=2)
 
 
 def plot_boost(d, arg, ax, max_x):
@@ -1653,7 +1670,7 @@ def plot_boost(d, arg, ax, max_x):
     ax2=ax.twinx()
     ax2.spines['top'].set_visible(False)
     c_=arg['--palette']['BOOST']
-    ax2.plot(d['medboostx'], d['medboost'], c=c_, lw=1.00, linestyle='dashed')
+    ax2.plot(d['medboostx'], d['medboost'], c=c_, lw=1.25, linestyle='dashed')
     ax2.set(xlim=(0, max_x), ylim=(0, 1))
     ax2.set_yticks(ticks=[0, 0.25, 0.5, 0.75, 1])
     ax2.set_yticklabels(labels=[0, 0.25, 0.5, 0.75, 1], fontsize=8)
@@ -1665,7 +1682,7 @@ def plot_ED100_4(d, arg, ax, max_x, max_y):
     ax2.set(xlim=(0, max_x), ylim=(0, max_y))
     ax2.tick_params(axis='y', which='major', labelsize=8)
     ax2.set_ylabel(ylabel='ED $\mathregular{100^4}$  $\mathregular{x10^8}$ ', fontsize=10, rotation=90, labelpad=15)
-    ax2.plot(d['POS'], d['ED100_4'], c=c_, lw=1.25)
+    ax2.plot(d['POS'], d['ED100_4'], c=c_, lw=2)
     ax2.spines['top'].set_visible(False)
 
 def create_caption(arg, res_tit):

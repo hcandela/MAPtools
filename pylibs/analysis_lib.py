@@ -307,12 +307,12 @@ def qtl_calc(inp, arg):
 		g = Gstatic(a,b,c,d)
 		pva = pvalor(a,b,c,d)
 		pva10 = (log(pva)/log(10))
+		ratio1 = b/(a+b)
+		ratio2 = d/(c+d)
+		delta = ratio1 - ratio2
 		if no_ref == 'miss' and 'Pd' not in data and 'Pr' not in data:
-			return [ed,g,pva,pva10]
+			return [ratio1, ratio2,abs(delta),ed,g,pva,pva10]
 		else:
-			ratio1 = b/(a+b)
-			ratio2 = d/(c+d)
-			delta = ratio1 - ratio2
 			return [ratio1,ratio2,delta,ed,g,pva,pva10]
 
 def choose_header(arg):
@@ -329,10 +329,10 @@ def choose_header(arg):
 		elif 'D' in inf_s and 'R' in inf_s and arg['--ref-genotype'] == 'miss' and 'Pd' not in inf_s and 'Pr' not in inf_s:
 			header = ['#CHROM','POS','DOM','REC','DPdom_1','DPrec_1','DPdom_2','DPrec_2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE']
 	elif 'qtl' in arg.keys():
-		if arg['--ref-genotype'] == 'miss' and 'Pr' not in inf_s and 'Pd' not in inf_s:
-			header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','ED','G','PVALUE','log10PVALUE']
-		if arg['--ref-genotype'] != 'miss' or 'Pr' in inf_s or 'Pd' in inf_s:
-			header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','SNPidx1','SNPidx2','DELTA','ED','G','PVALUE','log10PVALUE']
+		#if arg['--ref-genotype'] == 'miss' and 'Pr' not in inf_s and 'Pd' not in inf_s:
+		#	header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','ED','G','PVALUE','log10PVALUE']
+		#if arg['--ref-genotype'] != 'miss' or 'Pr' in inf_s or 'Pd' in inf_s:
+		header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','SNPidx1','SNPidx2','DELTA','ED','G','PVALUE','log10PVALUE']
 	arg['header'] = header
 
 
@@ -1653,6 +1653,40 @@ def read_header_merge(arg:dict):
 		for line in handle:
 			if line.startswith('##maptools_'):
 				lines.append(line)
+			if line.startswith('##maptools_qtlCommand='):
+				qtl_argv = line.split('=')[1].split(' ')
+				result = list()
+				for i in range(len(qtl_argv)):
+					ar = qtl_argv[i]
+					if ar == '-r' or ar == '--ref-genotype':
+						ar_index = qtl_argv.index(ar)
+						ref = qtl_argv[ar_index+1]
+						result.append(True if ref != 'miss' else False)
+					elif ar == '-d' or ar == '--data':
+						ar_index = qtl_argv(ar)
+						data = qtl_argv[ar_index+1].split(',')
+						result.append(True if 'Pl' in data or 'Ph' in data else False)
+				#arg['--ref-genotype'] = True if True in result else False
+				if not True in result:
+					print('Error: A reference or a parental resequencing is needed in order to execute the \"merge\" command.', file=sys.stderr)
+					sys.exit()
+			if line.startswith('##maptools_mbsCommand='):
+				mbs_argv = line.split('=')[1].split(' ')
+				result = list()
+				for i in range(len(mbs_argv)):
+					ar = mbs_argv[i]
+					if ar == '-r' or ar == '--ref-genotype':
+						ar_index = mbs_argv.index(ar)
+						ref = mbs_argv[ar_index+1]
+						result.append(True if ref != 'miss' else False)
+					elif ar == '-d' or ar == '--data':
+						ar_index = mbs_argv(ar)
+						data = mbs_argv[ar_index+1].split(',')
+						result.append(True if 'Pd' in data or 'Pr' in data else False)
+				#arg['--ref-genotype'] = True if True in result else False
+				if not True in result:
+					print('Error: A reference or a parental resequencing is needed in order to execute the \"merge\" command.', file=sys.stderr)
+					sys.exit()
 			if line.startswith('##bcftoolsVersion='):
 				lines.append(line)
 			if line.startswith('##bcftoolsCommand='):
