@@ -663,7 +663,7 @@ def normalize(pools, REF, arg, r_min=0.03):
 			p_al = sorted(p_dom, key=lambda key: p_dom[key], reverse=True) #ordered from higher to lower
 			p_al2 = [key for key,arg in p_dom.items()]
 			arg['reorder'] = 1 if p_al != p_al2 else 0
-			if p_dom[p_al[0]] > 0 and p_dom[p_al[1]]/(p_dom[p_al[0]] + p_dom[p_al[1]]) < r_min:# or len(p_al) > 2:
+			if p_dom[p_al[0]] > 0 and p_dom[p_al[1]]/(p_dom[p_al[0]] + p_dom[p_al[1]]) < 0.03:# or len(p_al) > 2:
 				a = rec[p_al[0]]
 				b = rec[p_al[1]]
 				e = p_dom[p_al[0]]
@@ -1610,9 +1610,16 @@ def read_header(arg:dict,line:str):
 			print('Error: The \"--data\" list does not match with the number of pools used.', file=sys.stderr)
 			sys.exit()
 		elif len(arg['--data']) <= len(bam_list):
-			arg['pools'] = {arg['--data'][i]:bam_list[i] for i in range(len(arg['--data']))}
-			pools = '##bamFiles:genotypes='+','.join(':'.join((key,val)) for (key, val) in arg['pools'].items()) + '\n'
-			write_line(pools, fsal)
+			if 'qtl' in arg.keys():
+				translate = {'D':'H','R':'L','Pd':'Ph','Pr':'Pl'}
+				d = [translate[i] for i in arg['--data']]
+				arg['pools'] = {d[i]:bam_list[i] for i in range(len(d))}
+				pools = '##bamFiles:genotypes='+','.join(':'.join((key,val)) for (key, val) in arg['pools'].items()) + '\n'
+				write_line(pools, fsal)
+			else:
+				arg['pools'] = {arg['--data'][i]:bam_list[i] for i in range(len(arg['--data']))}
+				pools = '##bamFiles:genotypes='+','.join(':'.join((key,val)) for (key, val) in arg['pools'].items()) + '\n'
+				write_line(pools, fsal)
 		if 'annotate' in arg.keys():
 			chrom, pos_i, pos_f = arg['--region'][0], arg['--region'][1], arg['--region'][2]
 			if chrom not in arg['--contigs'].keys():
@@ -1663,7 +1670,7 @@ def read_header_merge(arg:dict):
 						ref = qtl_argv[ar_index+1]
 						result.append(True if ref != 'miss' else False)
 					elif ar == '-d' or ar == '--data':
-						ar_index = qtl_argv(ar)
+						ar_index = qtl_argv.index(ar)
 						data = qtl_argv[ar_index+1].split(',')
 						result.append(True if 'Pl' in data or 'Ph' in data else False)
 				#arg['--ref-genotype'] = True if True in result else False

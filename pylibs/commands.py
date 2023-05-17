@@ -310,8 +310,10 @@ Output options:
         if arg['--multi-chrom'] == True:    
             pval_multi_graph(df, arg)
             pval_multi_Vertical_graph(df, arg)
-    if arg['--delta'] == True:
+    if arg['--delta'] == True and arg['--ref-genotype'] == True:
         snp_index_graph(df, arg)
+    
+    if arg['--delta'] == True:
         AF_mono_graph(df, arg, 'DELTA')
         if arg['--multi-chrom'] == True:
             AF_multi_Vertical_graph(df, arg, 'DELTA')

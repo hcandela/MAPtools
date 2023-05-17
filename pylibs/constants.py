@@ -63,7 +63,8 @@ lines_mbs = {-3:'Each {} dot indicates the  maximum allele frequency of a bialle
                     'Each {} dot indicates the allele frequency (a,b) or the p-value (c) of biallelic SNP segregating population.'
 }
 
-lines_qtl = {-3:'Each {} dot was calculated substracting the SNP-index value of the low pool from the high pool.',
+lines_qtl = {-4:'Each {} dot was calculated substracting the SNP-index value of the low pool from the high pool, and obtaining its absolute value.',
+         -3:'Each {} dot was calculated substracting the SNP-index value of the low pool from the high pool.',
         -2:'Each {} dot indicates the allele frequency of a biallelic SNP segregating in the population, as determined for the pool of high phenotype.',
         -1:'Each {} dot indicates the allele frequency of a biallelic SNP segregating in the population, as determined for the pool of low phenotype.',
          0:'Each {} dot indicates the p-value of a biallelic SNP segregating in the population, as determined using the data from both pools.',
@@ -82,6 +83,9 @@ lines_qtl = {-3:'Each {} dot was calculated substracting the SNP-index value of 
          12:'The {} line indicates the weighted moving average of the G-statistic at {} adjacent SNPs.',
          13:'(a) G-statistic for each individual SNP. (b) Euclidean distance for each individual SNP and the smoothed statistic ED100^4.'\
             '(c) $\Delta$ SNP-index plot, substracting the SNP-index value of the low pool from the high pool.'\
+               '(d) p-values of two-tailed Fisher\'s exact tests.',
+         14:'(a) G-statistic for each individual SNP. (b) Euclidean distance for each individual SNP and the smoothed statistic ED100^4.'\
+            '(c) $\Delta$ SNP-index plot, substracting the SNP-index value of the low pool from the high pool, in absolute value.'\
                '(d) p-values of two-tailed Fisher\'s exact tests.'
         
          

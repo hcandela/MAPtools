@@ -583,7 +583,7 @@ def pval_multi_graph(df, arg):
     if arg['--captions']:
         f = create_caption(arg, rt)
     typ = arg['--output-type']
-    min_y = min(df['log10PVALUE'])*1.05
+    max_y = max(-df['log10PVALUE'])*1.05
     labs_list = list()
     f_name = list()
     for chrom_list in arg['chrom_lists']:
@@ -591,23 +591,31 @@ def pval_multi_graph(df, arg):
         if len(chrom) > 1:
             fig, ax = plt.subplots(1, len(chrom), figsize=(len(chrom)*(3.3333333335), 2))
         if len(chrom) == 1:
-            fig, ax = plt.subplots(1,2,figsize=(2*(3.3333333335), 2))
+            fig, ax = plt.subplots(1,2,figsize=(2*(3), 2))
         for i in range(len(chrom)):
             d = df[df['#CHROM'] == chrom[i]]
             max_x = int(arg['contigs'][chrom[i]])
             x = d[['POS']]
-            y = d[['log10PVALUE']]
+            y = -d[['log10PVALUE']]
             ax[i].scatter(x, y, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
-            ax[i].set(xlim=(0, max_x), ylim=(min_y, 0))
+            ax[i].set(xlim=(0, max_x), ylim=(0, max_y))
             ax[i].set_xticks([])
             ax[i].set_xlabel(xlabel='chr {}'.format(chrom[i]), fontsize=8)
             labs_list.append('Chromosome {}'.format(chrom[i]))
-            ax[i].set_ylabel(ylabel='log'+r'$_{10}$'+'(p-value)',fontsize=12,labelpad=15)
+            ax[i].set_ylabel(ylabel='-log'+r'$_{10}$'+'(p-value)',fontsize=12,labelpad=15)
             ax[i].tick_params(axis='y', which='major', labelsize=8)
             if arg['--moving-avg'] != False:
-                plot_avg(d, arg, ax[i], 'log10PVALUE')
+                d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
+                c_=arg['--palette']['log10PVALUE']
+                d['prody']=d['log10PVALUE'] * d['DP']
+                d['avgy']=(d['prody'].rolling(arg['--moving-avg']).sum() / \
+                    d['DP'].rolling(arg['--moving-avg']).sum())
+                d['prodx']=d['POS'] * d['DP']
+                d['avgx']=(d['prodx'].rolling(arg['--moving-avg']).sum() / \
+                d['DP'].rolling(arg['--moving-avg']).sum())
+                ax[i].plot(d['avgx'], -d['avgy'], c=c_, lw=2)#lw=0.75
             if arg['--bonferroni']:
-                threshold = log(0.05/len(df.axes[0]))/log(10)
+                threshold = -log(0.05/len(df.axes[0]))/log(10)
                 max_x_ch = (max(d['POS'])/max_x)
                 ax[i].axhline(y=threshold, color='black', xmin=0,xmax=max_x_ch, linestyle='dashed', linewidth=0.75)
             if len(chrom) == 1:
@@ -848,7 +856,7 @@ def AF_mono_graph(df, arg, g_type):
             else:
                 ylab = '|$\Delta$'+' (SNP-index)|'
                 key = 5
-                key2 = -3
+                key2 = -4
                 t,rt = arg['titles'][key]
                 ticks_y=[0, 0.25, 0.5, 0.75, 1]
                 lim_y=(0, 1.2)
@@ -1113,7 +1121,7 @@ def AF_multi_Vertical_graph(df, arg, g_type):
         else:
             ylab = '|$\Delta$' + '(SNP-index)|'
             key = 9
-            key2 = -3
+            key2 = -4
             t,rt = arg['titles'][key]
             ticks_y = [0,0.25,0.5,0.75,1]
             lim_y = (0, 1.2)
@@ -1443,16 +1451,10 @@ def qtl_mixed_plot(df, arg):
         # DELTA
         if arg['--ref-genotype'] == True:
             ylab = '$\Delta$'+' (SNP-index)'
-            key = 5
-            key2 = -3
-            t,rt = arg['titles'][key]
             ticks_y=[-1, 0, 1]
             lim_y=(-1.2, 1.2)
         else:
             ylab = '|$\Delta$'+' (SNP-index)|'
-            key = 5
-            key2 = -3
-            t,rt = arg['titles'][key]
             ticks_y=[0, 0.25, 0.5, 0.75, 1]
             lim_y=(0, 1.2)
 
@@ -1507,7 +1509,10 @@ def qtl_mixed_plot(df, arg):
             f = create_caption(arg, rtch)
             cap.append(filename)
             cap.append(t.format(chrom[i]))
-            cap.append(arg['lines'][13])
+            if arg['--ref-genotype'] == True:
+                cap.append(arg['lines'][13])
+            else:
+               cap.append(arg['lines'][14])
             #if arg['--moving-avg'] != False:
             #    cap.append(arg['lines'][3].format(arg['color_names']['SNPidx1'], str(arg['--moving-avg'])))
             #    cap.append(arg['lines'][4].format(arg['color_names']['SNPidx2'], str(arg['--moving-avg'])))
@@ -1659,6 +1664,7 @@ def plot_avg(d, arg, ax, field):
     d['prodx']=d['POS'] * d['DP']
     d['avgx']=(d['prodx'].rolling(arg['--moving-avg']).sum() / \
                d['DP'].rolling(arg['--moving-avg']).sum())
+    
     ax.plot(d['avgx'], d['avgy'], c=c_, lw=2)#lw=0.75
 
 def plot_avg_qtl_SNPidx(d, arg, ax):
