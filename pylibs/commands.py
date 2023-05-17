@@ -225,6 +225,7 @@ Output options:
         if arg['--multi-chrom'] == True:
           pval_multi_graph(df, arg)
           pval_multi_Vertical_graph(df, arg)
+          pval_manhattan_plot(df, arg)
     if arg['--allele-freq-1'] == True and arg['--allele-freq-2'] == True:
         if arg['--combine'] and arg['--moving-avg'] != False:
             AF1_AF2_mono_graph(df, arg)
@@ -310,6 +311,7 @@ Output options:
         if arg['--multi-chrom'] == True:    
             pval_multi_graph(df, arg)
             pval_multi_Vertical_graph(df, arg)
+            pval_manhattan_plot(df, arg)
     if arg['--delta'] == True and arg['--ref-genotype'] == True:
         snp_index_graph(df, arg)
     

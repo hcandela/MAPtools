@@ -19,7 +19,8 @@ blind_qtl={'dots':('#000000','black'), 'MAX_SNPidx2':('#f781bf','pink')
 }
 palettes_qtl = {'1':blind_qtl,'2':norm_qtl}
 
-titles_mbs = {1:('p-values of two-tailed Fisher\'s exact tests along the chromosomes ({}).','pvalues_multiH' ),
+titles_mbs = {-1:('p-values of two-tailed Fisher\'s exact tests along the chromosomes ({}).','pvalues_manhattan' ),
+          1:('p-values of two-tailed Fisher\'s exact tests along the chromosomes ({}).','pvalues_multiH' ),
           2:('p-values of two-tailed Fisher\'s exact tests in chromosome {}.', 'pvalue_{}'),
           3:('Frequency of alleles in the pool of plants exhibiting the wild-type phenotype, in chromosome {}.', 'AF1&2_{}', 'AF1_{}'),
           4:('Frequency of alleles in the pool of plants exhibiting the mutant phenotype, in chromosome {}.', 'AF2&1_{}', 'AF2_{}'),
@@ -32,7 +33,8 @@ titles_mbs = {1:('p-values of two-tailed Fisher\'s exact tests along the chromos
           11:('Single nucleotide polymorphism (SNP)-index plots of chromosome {}','SNPidx_{}')
 }
 
-titles_qtl = {1:('p-values of two-tailed Fisher\'s exact tests along the chromosomes ({}).','pvalues_multiH' ),
+titles_qtl = {-1:('p-values of two-tailed Fisher\'s exact tests along the chromosomes ({}).','pvalues_manhattan' ),
+          1:('p-values of two-tailed Fisher\'s exact tests along the chromosomes ({}).','pvalues_multiH' ),
           2:('p-values of two-tailed Fisher\'s exact tests in chromosome {}.', 'pvalue_{}'),
           3:('Frequency of alleles in the pool of plants exhibiting the high phenotype, in chromosome {}.', 'AF1&2_{}', 'AF1_{}'),
           4:('Frequency of alleles in the pool of plants exhibiting the low phenotype, in chromosome {}.', 'AF2&1_{}', 'AF2_{}'),
@@ -47,12 +49,14 @@ titles_qtl = {1:('p-values of two-tailed Fisher\'s exact tests along the chromos
           13:('QTL-Seq comparison plot of chromosome {}.', 'QTL-Seq_{}')
 }
 
-lines_mbs = {-3:'Each {} dot indicates the  maximum allele frequency of a biallelic SNP segregating in the population, as determined for the pool of mutants.',
+lines_mbs = {-6:'The {} line indicates the weighted moving average of the -log(p-values) of {} adjacent SNPs.',
+        -5:'Each {} dot indicates the -log(p-value) of a biallelic SNP segregating in the population, as determined using the data from both pools.',
+        -3:'Each {} dot indicates the  maximum allele frequency of a biallelic SNP segregating in the population, as determined for the pool of mutants.',
         -2:'Each {} dot indicates the allele frequency of a biallelic SNP segregating in the population, as determined for the pool of wild-type sibilings.',
         -1:'Each {} dot indicates the allele frequency of a biallelic SNP segregating in the population, as determined for the pool of mutants.',
-         0:'Each {} dot indicates the p-value of a biallelic SNP segregating in the population, as determined using the data from both pools.',
-         1:'The {} line indicates the weighted moving average of the p-values of {} adjacent SNPs.',
-	     2:'The dashed line marks the significance threshold calculated using the Bonferroni correction, considering n={} chromosomal locations have been tested.',
+         0:'Each {} dot indicates the log(p-value) of a biallelic SNP segregating in the population, as determined using the data from both pools.',
+         1:'The {} line indicates the weighted moving average of the log(p-values) of {} adjacent SNPs.',
+	      2:'The dashed line marks the significance threshold calculated using the Bonferroni correction, considering n={} chromosomal locations have been tested.',
          3:'The {} line indicates the moving average of the allele frequencies at {} adjacent SNPs, in a pool of plants exhibiting the wild-type phenotype.',
          4:'The {} line indicates the moving average of the allele frequencies at {} adjacent SNPs, in a pool of plants exhibiting the mutant phenotype.',
          5:'The {} line indicates the moving average of the maximum allele frequencies at {} adjacent SNPs, in a pool of plants exhibiting the mutant phenotype.',
@@ -63,8 +67,10 @@ lines_mbs = {-3:'Each {} dot indicates the  maximum allele frequency of a bialle
                     'Each {} dot indicates the allele frequency (a,b) or the p-value (c) of biallelic SNP segregating population.'
 }
 
-lines_qtl = {-4:'Each {} dot was calculated substracting the SNP-index value of the low pool from the high pool, and obtaining its absolute value.',
-         -3:'Each {} dot was calculated substracting the SNP-index value of the low pool from the high pool.',
+lines_qtl = {-6:'The {} line indicates the weighted moving average of the -log(p-values) of {} adjacent SNPs.',
+        -5:'Each {} dot indicates the -log(p-value) of a biallelic SNP segregating in the population, as determined using the data from both pools.',
+        -4:'Each {} dot was calculated substracting the SNP-index value of the low pool from the high pool, and obtaining its absolute value.',
+        -3:'Each {} dot was calculated substracting the SNP-index value of the low pool from the high pool.',
         -2:'Each {} dot indicates the allele frequency of a biallelic SNP segregating in the population, as determined for the pool of high phenotype.',
         -1:'Each {} dot indicates the allele frequency of a biallelic SNP segregating in the population, as determined for the pool of low phenotype.',
          0:'Each {} dot indicates the p-value of a biallelic SNP segregating in the population, as determined using the data from both pools.',

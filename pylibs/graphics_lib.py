@@ -639,7 +639,69 @@ def pval_multi_graph(df, arg):
         if arg['--bonferroni']:
             cap.append(arg['lines'][2].format(str(arg['n_markers'])))
         write_caption(f, cap,arg)
-    
+
+def pval_manhattan_plot(df, arg):
+    t, rt = arg['titles'][-1]
+    if arg['--captions']:
+        f = create_caption(arg, rt)
+    typ = arg['--output-type']
+    max_y = max(-df['log10PVALUE'])*1.05
+    labs_list = list()
+    f_name = list()
+    am = 2.5
+    chrom = arg['--chromosomes']
+    if len(arg['--chromosomes'])*am <= 18:
+        af = len(arg['--chromosomes'])*am
+    else:
+        af = 18
+    fig, ax = plt.subplots(1, len(chrom), figsize=(af, 3))
+    for i in range(len(chrom)):
+        d = df[df['#CHROM'] == chrom[i]]
+        max_x = int(arg['contigs'][chrom[i]])
+        x = d[['POS']]
+        y = -d[['log10PVALUE']]
+        ax[i].scatter(x, y, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+        ax[i].set(xlim=(0, max_x), ylim=(0, max_y))
+        ax[i].set_xticks([])
+        ax[i].set_xlabel(xlabel=f'{chrom[i]}', fontsize=12)
+        labs_list.append('Chromosome {}'.format(chrom[i]))
+        ax[i].set_ylabel(ylabel='-log'+r'$_{10}$'+'(p-value)',fontsize=12,labelpad=15)
+        ax[i].tick_params(axis='y', which='major', labelsize=8)
+        if arg['--moving-avg'] != False:
+            d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
+            c_=arg['--palette']['log10PVALUE']
+            d['prody']=d['log10PVALUE'] * d['DP']
+            d['avgy']=(d['prody'].rolling(arg['--moving-avg']).sum() / \
+                d['DP'].rolling(arg['--moving-avg']).sum())
+            d['prodx']=d['POS'] * d['DP']
+            d['avgx']=(d['prodx'].rolling(arg['--moving-avg']).sum() / \
+            d['DP'].rolling(arg['--moving-avg']).sum())
+            ax[i].plot(d['avgx'], -d['avgy'], c=c_, lw=2)#lw=0.75
+        if arg['--bonferroni']:
+            threshold = -log(0.05/len(df.axes[0]))/log(10)
+            max_x_ch = (max(d['POS'])/max_x)
+            ax[i].axhline(y=threshold, color='black', xmin=0,xmax=max_x_ch, linestyle='dashed', linewidth=0.75)
+        if len(chrom) == 1:
+            ax[1].remove()
+        if i > 0:
+            ax[i].axes.get_yaxis().set_visible(False)
+    fig.subplots_adjust(wspace=0)
+    filename = rt + typ
+    filename = check_save(arg, filename)
+    f_name.append(filename)
+    plt.savefig(arg['--outdir']+filename)
+    plt.close()
+    cap = list()
+    if arg['--captions']:
+        cap.append(', '.join(f_name))
+        cap.append(t.format(', '.join(labs_list)))
+        cap.append(arg['lines'][-5].format(arg['color_names']['dots']))
+        if arg['--moving-avg'] != False:
+            cap.append(arg['lines'][-6].format(arg['color_names']['log10PVALUE'], str(arg['--moving-avg'])))
+        if arg['--bonferroni']:
+            cap.append(arg['lines'][2].format(str(arg['n_markers'])))
+        write_caption(f, cap,arg) 
+
 def pval_mono_graph(df, arg):
     chrom=arg['--chromosomes']
     typ=arg['--output-type']
