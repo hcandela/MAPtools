@@ -48,7 +48,7 @@ If you would like to contribute to MAPtools, please follow these steps:
 All contributions are welcome and appreciated!
 
 ## **License**
-MAPtools is distributed under the MIT License. See LICENSE for more information.
+MAPtools is distributed under the GPL v3.0 License. See LICENSE for more information.
 
 ## **Overview**
 MAPtools is a set of tools to facilitate the analysis of mapping-by-sequencing and QTL-seq studies.

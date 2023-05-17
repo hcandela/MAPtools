@@ -47,7 +47,7 @@ def read_header_plot(arg):
                         ref = qtl_argv[ar_index+1]
                         result.append(True if ref != 'miss' else False)
                     elif ar == '-d' or ar == '--data':
-                        ar_index = qtl_argv(ar)
+                        ar_index = qtl_argv.index(ar)
                         data = qtl_argv[ar_index+1].split(',')
                         result.append(True if 'Pl' in data or 'Ph' in data else False)
 
@@ -838,12 +838,20 @@ def AF_mono_graph(df, arg, g_type):
             ticks_y=[0.5, 0.75, 1]
             lim_y=(0.5, 1)
         if g_type == 'DELTA':
-            ylab = '$\Delta$'+' (SNP-index)'
-            key = 5
-            key2 = -3
-            t,rt = arg['titles'][key]
-            ticks_y=[-1, 0, 1]
-            lim_y=(-1.2, 1.2)
+            if arg['--ref-genotype'] == True:
+                ylab = '$\Delta$'+' (SNP-index)'
+                key = 5
+                key2 = -3
+                t,rt = arg['titles'][key]
+                ticks_y=[-1, 0, 1]
+                lim_y=(-1.2, 1.2)
+            else:
+                ylab = '|$\Delta$'+' (SNP-index)|'
+                key = 5
+                key2 = -3
+                t,rt = arg['titles'][key]
+                ticks_y=[0, 0.25, 0.5, 0.75, 1]
+                lim_y=(0, 1.2)
         d=df[df['#CHROM'] == chrom[i]]
         max_x=int(arg['contigs'][chrom[i]])
         x=d[['POS']]
@@ -1095,12 +1103,21 @@ def AF_multi_Vertical_graph(df, arg, g_type):
         ticks_y=[0.5, 0.75, 1]
         lim_y=(0.5, 1)
     if g_type == 'DELTA':
-        ylab = '$\Delta$' + '(SNP-index)'
-        key = 9
-        key2 = -3
-        t,rt = arg['titles'][key]
-        ticks_y = [-1,0,1]
-        lim_y = (-1.2, 1.2)
+        if arg['--ref-genotype'] == True:
+            ylab = '$\Delta$' + '(SNP-index)'
+            key = 9
+            key2 = -3
+            t,rt = arg['titles'][key]
+            ticks_y = [-1,0,1]
+            lim_y = (-1.2, 1.2)
+        else:
+            ylab = '|$\Delta$' + '(SNP-index)|'
+            key = 9
+            key2 = -3
+            t,rt = arg['titles'][key]
+            ticks_y = [0,0.25,0.5,0.75,1]
+            lim_y = (0, 1.2)
+
     for chrom_list in arg['chrom_lists']:
         chrom = chrom_list
         if len(chrom) > 1:
@@ -1424,19 +1441,30 @@ def qtl_mixed_plot(df, arg):
         ax[1].spines['right'].set_visible(False)
 
         # DELTA
-        if arg['--ci95']:
-            lim_y = (-1.2, 1.2)
+        if arg['--ref-genotype'] == True:
+            ylab = '$\Delta$'+' (SNP-index)'
+            key = 5
+            key2 = -3
+            t,rt = arg['titles'][key]
+            ticks_y=[-1, 0, 1]
+            lim_y=(-1.2, 1.2)
         else:
-            lim_y = (-1, 1)
+            ylab = '|$\Delta$'+' (SNP-index)|'
+            key = 5
+            key2 = -3
+            t,rt = arg['titles'][key]
+            ticks_y=[0, 0.25, 0.5, 0.75, 1]
+            lim_y=(0, 1.2)
+
         ax[2].scatter(x, y3, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
         ax[2].set(xlim=(0, max_x), ylim=lim_y)
         ax[2].set_xticks(ticks=np.arange(0, max_x, 5e6))
         ax[2].tick_params(labelbottom=False)
-        ax[2].set_ylabel(ylabel='$\Delta$'+' (SNP-index)',fontsize=12)
+        ax[2].set_ylabel(ylabel= ylab ,fontsize=12)
         ax[2].yaxis.set_label_coords(-0.075,0.5)
         ax[2].set_title('(c)', fontsize=16, rotation=0, x = -0.14, y=0.85)
-        ax[2].set_yticks(ticks=[-1,0,1])
-        ax[2].set_yticklabels(labels=[-1,0,1], fontsize=8)
+        ax[2].set_yticks(ticks=ticks_y)
+        ax[2].set_yticklabels(labels=ticks_y, fontsize=8)
         if arg['--moving-avg'] != False:
             plot_avg(d, arg, ax[2], 'DELTA')
         if arg['--ci95']:
