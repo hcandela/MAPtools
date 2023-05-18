@@ -583,7 +583,7 @@ def pval_multi_graph(df, arg):
     if arg['--captions']:
         f = create_caption(arg, rt)
     typ = arg['--output-type']
-    max_y = max(-df['log10PVALUE'])*1.05
+    min_y = min(df['log10PVALUE'])*1.05
     labs_list = list()
     f_name = list()
     for chrom_list in arg['chrom_lists']:
@@ -596,26 +596,18 @@ def pval_multi_graph(df, arg):
             d = df[df['#CHROM'] == chrom[i]]
             max_x = int(arg['contigs'][chrom[i]])
             x = d[['POS']]
-            y = -d[['log10PVALUE']]
+            y = d[['log10PVALUE']]
             ax[i].scatter(x, y, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
-            ax[i].set(xlim=(0, max_x), ylim=(0, max_y))
+            ax[i].set(xlim=(0, max_x), ylim=(min_y, 0))
             ax[i].set_xticks([])
             ax[i].set_xlabel(xlabel='chr {}'.format(chrom[i]), fontsize=8)
             labs_list.append('Chromosome {}'.format(chrom[i]))
-            ax[i].set_ylabel(ylabel='-log'+r'$_{10}$'+'(p-value)',fontsize=12,labelpad=15)
+            ax[i].set_ylabel(ylabel='log'+r'$_{10}$'+'(p-value)',fontsize=12,labelpad=15)
             ax[i].tick_params(axis='y', which='major', labelsize=8)
             if arg['--moving-avg'] != False:
-                d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
-                c_=arg['--palette']['log10PVALUE']
-                d['prody']=d['log10PVALUE'] * d['DP']
-                d['avgy']=(d['prody'].rolling(arg['--moving-avg']).sum() / \
-                    d['DP'].rolling(arg['--moving-avg']).sum())
-                d['prodx']=d['POS'] * d['DP']
-                d['avgx']=(d['prodx'].rolling(arg['--moving-avg']).sum() / \
-                d['DP'].rolling(arg['--moving-avg']).sum())
-                ax[i].plot(d['avgx'], -d['avgy'], c=c_, lw=2)#lw=0.75
+                    plot_avg(d, arg, ax[i], 'log10PVALUE')
             if arg['--bonferroni']:
-                threshold = -log(0.05/len(df.axes[0]))/log(10)
+                threshold = log(0.05/len(df.axes[0]))/log(10)
                 max_x_ch = (max(d['POS'])/max_x)
                 ax[i].axhline(y=threshold, color='black', xmin=0,xmax=max_x_ch, linestyle='dashed', linewidth=0.75)
             if len(chrom) == 1:

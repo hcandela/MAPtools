@@ -223,7 +223,7 @@ Output options:
     if arg['--pvalue'] == True:
         pval_mono_graph(df, arg)
         if arg['--multi-chrom'] == True:
-          pval_multi_graph(df, arg)
+          #pval_multi_graph(df, arg)
           pval_multi_Vertical_graph(df, arg)
           pval_manhattan_plot(df, arg)
     if arg['--allele-freq-1'] == True and arg['--allele-freq-2'] == True:
@@ -309,7 +309,7 @@ Output options:
     if arg['--pvalue'] == True:
         pval_mono_graph(df, arg)
         if arg['--multi-chrom'] == True:    
-            pval_multi_graph(df, arg)
+            #pval_multi_graph(df, arg)
             pval_multi_Vertical_graph(df, arg)
             pval_manhattan_plot(df, arg)
     if arg['--delta'] == True and arg['--ref-genotype'] == True:

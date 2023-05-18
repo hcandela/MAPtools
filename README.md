@@ -1,4 +1,4 @@
-# **MAPTOOLS: a Command-Line Tool for Mapping-by-Sequencing and QTL-Seq Analysis and Visualization.**
+# **MAPtools: a Command-Line Tool for Mapping-by-Sequencing and QTL-Seq Analysis and Visualization.**
 
 MAPtools is a set of command-line tools designed and tested to work with the output of bcftools. The typical pipeline involves aligning with bowtie2, processing the alignment with samtools and bcftools, and then using MAPtools to analyze the results.
 
