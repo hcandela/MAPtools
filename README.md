@@ -67,21 +67,25 @@ Running MAPtools requires data in VCF/BCF format. The variant calling software c
 
 * Bowtie2: `apt-get install bowtie2`
 * BWA: `apt-get install bwa`
-* htslib, samtools and bcftools: download the latest version from the webpage: [http://www.htslib.org/download]()
+* htslib, samtools and bcftools: download the latest version from the webpage [http://www.htslib.org/download]()
 * SRA toolkit is needed to download the example data:
 
   `wget https://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/3.0.5/sratoolkit.3.0.5-ubuntu64.tar.gz`
 
-  Decompress SRA toolkit:
+* Decompress SRA toolkit:
 
   `tar -xzvf sratoolkit.3.0.5-ubuntu64.tar.gz`
 * pigz is recommended for compressing/decompressing data: `apt-get install pigz`
+
+### Examples
+
+In order to describe the workflow of MAPtools, here we describe the procedure that we used for obtaining the results described in Martinez-Guardiola C, Parreño R and Candela H (2023). MAPtools: command-line ttools for mapping-by-sequencing and QTL-seq analysis and visualization. Publication under review.
 
 ### Running MAPtools: QTL-seq example
 
 For this example, we are using sequencing data analyzed in: Castillejo et al. (2020). *Allelic variation of MYB10 is the major force controlling natural variation in skin and flesh cholor in strawberry* (*Fragaria* spp.) fruit. Plant Cell, 32(12): 3723-3749.
 
-#### 1. Move to maptools directory and download *Fragaria vesca* reference genome version 4.0.1 from [https://www.rosaceae.org/]():
+#### 1. Move to the maptools directory and download the *Fragaria vesca* reference genome version 4.0.1 from [https://www.rosaceae.org/]():
 
 ``wget https://www.rosaceae.org/rosaceae_downloads/Fragaria_vesca/Fvesca-genome.v4.0.a1/assembly/Fragaria_vesca_v4.0.a1.fasta.gz``
 
@@ -89,7 +93,7 @@ For this example, we are using sequencing data analyzed in: Castillejo et al. (2
 
 ``./sratoolkit.3.0.5-ubuntu64/bin/fastq-dump --split-files ERR4463153 ERR4463154 ERR4463155 ERR4463156``
 
-#### 3. Compress fastq reads:
+#### 3. Compress the fastq reads:
 
 ```
 for i in ERR4463153 ERR4463154 ERR4463155 ERR4463156;
@@ -155,6 +159,7 @@ bcftools mpileup -f Fragaria_vesca_v4.0.a1.fasta --annotate FORMAT/AD bam_merged
 ```
 ./maptools qtlplot -i qtl_output.txt --captions -m -c Fvb1,Fvb2,Fvb3,Fvb4,Fvb5,Fvb6,Fvb7 -A 800 -a --bonferroni --ci95 -o ../graphics_qtl/
 ```
+Explanation of options:
 
 ``--captions`` Generates figure captions
 ``-m`` Multi-chromosome plots
@@ -170,6 +175,7 @@ bcftools mpileup -f Fragaria_vesca_v4.0.a1.fasta --annotate FORMAT/AD bam_merged
 For this example, we are using sequencing data analyzed in: Viñegra de la Torre et al. (2022). *Flowering repressor AAA+ ATPase 1 is a novel regulator of perennial flowering in Arabis alpina*. New phytologist, 236: 729-744.
 
 Specifically, we are using the eop002 mutant for the analysis and visualization. This is a MBS of a single sample sequencing data. In the publication, authors found the mutation responsible of the phenotype in chromosome 8, gene Aa_G106560.
+
 
 #### 1. Download and compress SRA reads:
 
@@ -248,24 +254,26 @@ bcftools mpileup -f Arabis_alpina.MPIPZ.version_5.1.chr.all.fasta.gz --annotate 
 ```
 ./maptools.py mbs --data R,Pd -m R --EMS --parental-filter -o mbs_out.txt -i variant_calling_mbs.vcf
 ```
+Explanation of options:
 
-``--data`` Defines the type of data. In this case we gave to the mpileup the recesive sample pool (R) and the parental dominant (Pd)
+``--data`` Defines the type of data. In this case the mpileup has processed the samples in this order: recesive sample pool (R), and parental dominant (Pd)
 ``-m R`` Indicates which pool carries the mutant phenotype
 ``--EMS`` Filter out SNPs not caused by EMS
-``--parental-filter`` Filter out variants present in the parental sequencing.
+``--parental-filter`` Filter out variants present in the parental sequencing
 ``-o`` Output file
 
-#### 6. visualizing data MAPtools:
+#### 6. visualizing data with MAPtools:
 
 ```
 ./maptools.py mbsplot -i mbs_out.txt -m --captions -c chr1,chr2,chr3,chr4,chr5,chr6,chr6,chr7,chr8 -A 10 -b 20 -a -o ../graphics_mbs/
 ```
+Explanation of options:
 
 ``-m`` Multi-chromosome plots
 ``--captions`` Generates figure captions
 ``-c`` List of selected chromosomes for visualization
 ``-A`` Number of adjacent markers to calculate moving average lines
-``-b`` Generates boost plot with an moving average line of the given INT (in this case, 20)
+``-b`` Generates a boost plot with an moving average line of the given INT (in this case, 20)
 ``-a`` Generates all possible plots
 
 #### 7. Analyze MBS data with MAPtools:
@@ -275,6 +283,16 @@ As we can see in the plots, the mutation is located in chromosome 8 and approxim
 ```
 ./maptools.py annotate -d R, Pd -m R --EMS --parental-filter -g gff_arabis.gff3 -f Arabis_alpina.MPIPZ.version_5.1.chr.all.fasta.gz -R chr8:14250000-16700000 -o annotate_mbs.txt
 ```
+Explanation of options:
+
+``-d R,Pd`` Defines the type of data. In this case, the samples are the the recessive pool (R) and the parental dominant (Pd)
+``-m R`` Indicates which pool carries the mutant phenotype. It is not necessary in this example
+``--EMS`` Filter out SNPs not caused by EMS
+``--parental-filter`` Filter out variants present in the parental sequencing.
+``-g`` GFF annotation file
+``-f`` Reference genome file
+``-R`` Region where the analysis will be performed
+``-o`` Output file
 
 ## Generic MBS analysis
 
