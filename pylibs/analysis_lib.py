@@ -1556,16 +1556,17 @@ def write_annotate_header(arg):
 
 def write_annotate_line(arg, result, row):
 	codonREF,codonALT,AAREF,AAALT =  result['CODON_ref'], result['CODON_alt'], result['AA_ref'], result['AA_alt']
+	di = ' > ' if arg['--mutant-pool'] == 'R' else ' < '
 	if codonREF == '.' and codonALT == '.' and AAREF == '.' and AAALT == '.':
 		result['CODON_change'] = '.'
 		result['AA_change'] = '.'
 	else:
 		if row['reorder'] == 1:
-			result['CODON_change'] = codonALT+' > '+codonREF
-			result['AA_change'] = AAALT+' > '+AAREF
+			result['CODON_change'] = codonALT+di+codonREF
+			result['AA_change'] = AAALT+di+AAREF
 		elif row['reorder'] == 0:
-			result['CODON_change'] = codonREF+' > '+codonALT
-			result['AA_change'] = AAREF +' > '+AAALT
+			result['CODON_change'] = codonREF+di+codonALT
+			result['AA_change'] = AAREF +di+AAALT
 	result['INFO']['variant_type'] = arg['variant']
 	att_l = [k+'='+v for k,v in result['INFO'].items()]
 	att = ';'.join(att_l)
