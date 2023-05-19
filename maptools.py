@@ -12,6 +12,7 @@ Available commands:
    qtlplot
    merge
    annotate
+   citation
 
 Version:
    Maptools version: 1.00
