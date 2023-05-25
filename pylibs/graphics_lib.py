@@ -147,7 +147,7 @@ def load_dataframe_plotting(arg):
     if 'mbsplot' in arg.keys():
         arg = check_mbs_opts(arg)
     if 'qtlplot' in arg.keys():
-        arg = check_qtl_opts(arg)
+        arg = check_qtl_opts(arg, df)
     return arg, df
 
 def load_dataframe(arg):
@@ -290,7 +290,7 @@ def check_mbs_opts(arg):
     return arg
 
 
-def check_qtl_opts(arg):
+def check_qtl_opts(arg, df):
     arg['titles'] = titles_qtl
     arg['lines'] = lines_qtl
 
@@ -310,6 +310,11 @@ def check_qtl_opts(arg):
             arg['--multi-chrom'] = True
         if 'ED' in arg['--fields']:
             arg['--euclidean-distance'] = True
+            for ch in arg['--chromosomes']:
+                d = df[df['#CHROM'] == ch]
+                if len(d) < RANG:
+                    arg['--euclidean-distance'] = False
+                    print(f'Warning: there is not enough markers in {ch} to calculate ED100', file=sys.stderr)
         if 'G' in arg['--fields']:
             arg['--g-statistic'] = True
         if arg['--pvalue'] and arg['--delta'] and arg['--euclidean-distance'] and arg['--g-statistic']:
@@ -1523,7 +1528,7 @@ def qtl_mixed_plot(df, arg):
         ax[2].set_yticklabels(labels=ticks_y, fontsize=8)
         if arg['--moving-avg'] != False:
             plot_avg(d, arg, ax[2], 'DELTA')
-        if arg['--ci95']:
+        if arg['--ci95'] and arg['--moving-avg'] != False:
             calc_ci(d, arg, ax[2])
             ax[2].axhline(y=0, color = 'black', linestyle='dashed', linewidth=0.75)
         ax[2].spines['top'].set_visible(False)

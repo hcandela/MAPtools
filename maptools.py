@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+Program: MAPtools
+Version: 1.00
+Contact: hcandela@umh.es
+
 Usage:
    maptools.py <command> <args>...
    maptools.py <command>
@@ -13,16 +17,13 @@ Available commands:
    merge
    annotate
    citation
-
-Version:
-   Maptools version: 1.00
 """
 
 from docopt import docopt
 from pylibs.commands import *
 
 if __name__ == '__main__':
-    args = docopt(__doc__, version='maptools version=0.1', options_first=True)
+    args = docopt(__doc__, version=v_maptools, options_first=True)
     if not args['<command>']:
         print(__doc__,end='', file=sys.stderr)
         sys.exit()

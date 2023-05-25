@@ -32,14 +32,14 @@ def check_args(__doc__,arg:dict):
 				print(f'Error: \"{d}\" is not a valid sample name.', file=sys.sterr)
 				sys.exit()
 	if 'qtl' in arg.keys():
-		translate = {'H':'D','L':'R','Ph':'Pd','Pl':'Pr'}
+		translate = {'H':'D','L':'R','P':'Pd'}
 		for d in arg['--data']:
 			if d not in translate.keys():
 				print(f'Error: \"{d}\" is not a valid sample name.', file=sys.sterr)
 				sys.exit()
 		arg['--data'] = [translate[i] for i in arg['--data']]
-		for k,v in translate.items():
-			arg['--ref-genotype'] = arg['--ref-genotype'].replace(k,v)
+		if arg['--ref-genotype'] == 'P':
+			arg['--ref-genotype'] = 'D'
 	if arg['--input'] == None and arg['pipe'] == True:
 		print(__doc__, end='\n', file=sys.stderr)
 		sys.exit()
@@ -174,9 +174,6 @@ def check_qtl_args(arg:dict):
 	if 'D' not in data or 'R' not in data:
 		print('Error: You should include the 2 pools in QTL-seq experiment (--data H,L)', file=sys.stderr)
 		sys.exit()
-	if 'Pr' in data and 'Pd' in data:
-		print('Error: You should include only one re-sequenced parental in data (--data H,L,Px)', file=sys.stderr)
-		sys.exit()
 
 	if arg['--max-depth'] == 'inf':
 		arg['--max-depth'] = np.inf
@@ -310,7 +307,7 @@ def qtl_calc(inp, arg):
 		ratio1 = b/(a+b)
 		ratio2 = d/(c+d)
 		delta = ratio1 - ratio2
-		if no_ref == 'miss' and 'Pd' not in data and 'Pr' not in data:
+		if no_ref == 'miss' and 'Pd' not in data:
 			return [ratio1, ratio2,abs(delta),ed,g,pva,pva10]
 		else:
 			return [ratio1,ratio2,delta,ed,g,pva,pva10]
@@ -1612,7 +1609,7 @@ def read_header(arg:dict,line:str):
 			sys.exit()
 		elif len(arg['--data']) <= len(bam_list):
 			if 'qtl' in arg.keys():
-				translate = {'D':'H','R':'L','Pd':'Ph','Pr':'Pl'}
+				translate = {'D':'H','R':'L','Pd':'P'}
 				d = [translate[i] for i in arg['--data']]
 				arg['pools'] = {d[i]:bam_list[i] for i in range(len(d))}
 				pools = '##bamFiles:genotypes='+','.join(':'.join((key,val)) for (key, val) in arg['pools'].items()) + '\n'
@@ -1673,7 +1670,7 @@ def read_header_merge(arg:dict):
 					elif ar == '-d' or ar == '--data':
 						ar_index = qtl_argv.index(ar)
 						data = qtl_argv[ar_index+1].split(',')
-						result.append(True if 'Pl' in data or 'Ph' in data else False)
+						result.append(True if 'P' in data else False)
 				#arg['--ref-genotype'] = True if True in result else False
 				if not True in result:
 					print('Error: A reference or a parental resequencing is needed in order to execute the \"merge\" command.', file=sys.stderr)

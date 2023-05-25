@@ -96,13 +96,13 @@ lines_qtl = {-6:'The {} line indicates the weighted moving average of the -log(p
         
          
 }
-v_maptools='Maptools version: 1.00'
-v_annotate= 'Annotate variants version: 1.00'
-v_mbs= 'Mapping by Sequencing analysis version: 1.00'
-v_mbsplot = 'Mapping by Sequencing plots version: 1.00'
-v_qtl= 'QTL-Seq analysis version: 1.00'
-v_qtlplot= 'QTL-Seq plots version: 1.00'
-v_merge='Merge mbs or qtl analysis version: 1.00'
+v_maptools='MAPtools version 1.00'
+v_annotate= 'MAPtools annotate command version 1.00'
+v_mbs= 'MAPtools mbs command version 1.00'
+v_mbsplot = 'MAPtools mbsplot command version 1.00'
+v_qtl= 'MAPtools qtl command version 1.00'
+v_qtlplot= 'MAPtools qtlplot command version 1.00'
+v_merge='MAPtools merge command version 1.00'
 
 variable_descriptions={
    '#CHROM':'##CHROM=<ID=*, Description=\"Chromosome name.\">\n',\

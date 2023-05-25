@@ -13,33 +13,52 @@ Usage:
   maptools.py mbs
 
 Options:
-  -h, --help                    Show this screen.
-  -v, --version                 Show the version
-  -i, --input FILE              VCF input file. Can also come from a pipe.
+  -h, --help                    show this help message and exit
+  -v, --version                 print version information and exit
+  -i, --input FILE              input file in uncompressed vcf format
 
 Input Options:
-  -d, --data LIST               Pools genotype: dominant(D), recessive(R), parental dominant(Pd),
-                                parental recessive(Pr), wild-type recessive (Wr) and wild-type
-                                dominant (Wd) [default: D,R].
-  -r, --ref-genotype STR        Which parental houses the reference, \"miss\" for missing genotype [default: miss].
-  -m, --mutant-pool STR         Which pool has the mutant phenotype [default: R].
+  -d, --data LIST               comma separated list of sequenced samples [default: D,R]
+                                Available options:
+                                  D   bulk of phenotypically dominant individuals from a segregating population
+                                  R   bulk of phenotypically recessive individuals from a segregating population
+                                  Pd  re-sequencing of the dominant parent genome
+                                  Pr  re-sequencing of the recessive parent genome
+                                  Wd  re-sequencing of the wild-type strain isogenic to a dominant mutant
+                                  Wr  re-sequencing of the wild-type strain isogenic to a recessive mutant
+                              
+  -r, --ref-genotype STR        indicate if the reference genome sequence corresponds to one of the parents
+                                of the mapping population [default: miss]
+                                Available options:
+                                  D     reference genome corresponds to the phenotypically dominant parent
+                                  R     reference genome corresponds to the phenotypically recessive parent
+                                  miss  reference genome does not match the sequence of either parent
 
+  -m, --mutant-pool STR         indicate the bulk established from phenotypically individuals from the
+                                segregating population [default: R]
+                                Available options:
+                                  D   for a dominant mutation
+                                  R   for a recessive mutation
 Output Options:
-  -o, --output FILE             Write output to file.
+  -o, --output FILE             write output to FILE [standard output]
   -O, --output-type TYPE        \"txt\" tab separated, \"csv\" comma separated [default: txt]
     
 Filter Options:
-  -C, --max-depth INT           Maximum allele depth [default: inf].
-  -c, --min-depth INT           Minimum allele depth [default: 0].
-  -Q, --max-ratio INT           Maximum allele frequency in dominant pool [default: 100].
-  -q, --min-ratio INT           Minimum allele frequency in dominant pool [default: 0].
-  --EMS                         Filter out SNPs other than caused by EMS (\"G\" > \"A\" or \"C\" > \"T\").
-  -I, --skip-indels             Filter out insertions and deletions.
-  --parental-filter             Filter out variants if Parental (-d \"R\",\"Pr\"| \"Pd\"| \"Wr\"| \"Wd\")
-                                sample is provided.
-  --het-filter                  Focuses on markers that are clearly heterozygous in the dominant pool (\"1\"/\"0\")
-                                genotype or depth in the interval [-c,-C] and allele frequency in the interval [-q, -Q]).
-  --no-filter                   Disable all filters.                 
+  -C, --max-depth INT           maximum read depth in the D and R bulks for a position to be considered [default: inf]
+  -c, --min-depth INT           minimum read depth in the D and R bulks for a position to be considered [default: 0]
+  -Q, --max-ratio INT           maximum allele frequency in the D bulk [default: 100]
+  -q, --min-ratio INT           minimum allele frequency in the D bulk [default: 0]
+                                Note: you can set different -q and -Q values to enforce that markers are heterozygous
+                                in the D bulk, by only considering those whose allele frequency in the interval [-q, -Q].
+                                Requires --het-filter
+                  
+  --EMS                         ignore SNPs not caused by EMS (keeps \"G\" > \"A\" or \"C\" > \"T\")
+  -I, --skip-indels             ignore indels
+  --parental-filter             ignore variants shared with parental strain (requires one of: \"Pr\", \"Pd\",
+                                \"Wr\" or \"Wd\", specified with -d)
+  --het-filter                  selects markers that are heterozygous in the D pool, either because the allele frequencies
+                                are in the [-q, -Q] interval or because their GT is \"0/1\" in the vcf input
+  --no-filter                   disable all filters              
     """
     arg = docopt(mbs_doc, argv=None, help=True,version=v_mbs)
     arg['pipe'] = sys.stdin.isatty()
@@ -85,24 +104,31 @@ Usage:
   maptools.py qtl
 
 Options:
-  -h, --help                    Show this screen.
-  -v, --version                 Show the version.
-  -i, --input FILE              VCF input file. Can also come from a pipe.
+  -h, --help                    show this help message and exit
+  -v, --version                 print version information and exit
+  -i, --input FILE              input file in uncompressed vcf format
 
 Input Options:
-  -d, --data LIST               Pools genotype: High (H), Low (L), parental high(Ph) or
-                                parental low(Pl) [default: H,L].
-  -r, --ref-genotype STR        Which parental houses the reference: \"H\", \"L\" or \"miss\"
-                                (for missing genotype) [default: miss].
+  -d, --data LIST               comma separated list of sequenced samples [default: H,L]
+                                Available options:
+                                  H   bulk of individuals with the highest values for a quantitative trait
+                                  L   bulk of individuals with the lowest values for a quantitative trait
+                                  P   re-sequencing of a parent of the mapping population
+
+  -r, --ref-genotype STR        indicate if the reference genome sequence corresponds to one of the parents
+                                of the mapping population [default: miss]
+                                Available options:
+                                  P     reference genome corresponds to one of the parents of the cross
+                                  miss  reference genome does not match the sequence of either parent
   
 Filter Options:
-  -C, --max-depth INT           Maximum read depth [default: inf].
-  -c, --min-depth INT           Minimum read depth [default: 0].
-  -I, --skip-indels             Filter out insertions and deletions.
-  --no-filter                   Disable all filters.
+  -C, --max-depth INT           maximum read depth in the H and L bulks for a position to be considered [default: inf]
+  -c, --min-depth INT           minimum read depth in the H and L bulks for a position to be considered [default: 0]
+  -I, --skip-indels             ignore indels
+  --no-filter                   disable all filters
 
 Output Options:
-  -o, --output FILE             Write output file.
+  -o, --output FILE             write output to FILE [standard output]
   -O, --output-type TYPE        \"txt\" tab separated, \"csv\" comma separated [default: txt]
   """
     arg = docopt(qtl_doc, argv=None, help=True, version=v_qtl)
@@ -149,16 +175,16 @@ Usage:
   maptools.py merge
 
 Options:
-  -h, --help                    Show this screen.
-  -v, --version                 Show the version.
-  -i, --input FILE              Maptools MBS or QTL-Seq output.
+  -h, --help                    show this help message and exit
+  -v, --version                 print version information and exit
+  -i, --input FILE              input file produced by the mbs or qtl commands
 
 Input Options:                   
-  -w, --window INT              Number of adjacent markers to merge the data [default: 20].
-  -c, --chromosomes LIST        Chromosomes names selection (separeted by comma) [default: all].
+  -w, --window INT              number of markers per bin [default: 20]
+  -c, --chromosomes LIST        comma-separated list of chromosome names [default: all]
   
 Output Options:
-  -o, --output FILE             Write output to file.
+  -o, --output FILE             write output to FILE [standard output]
   -O, --output-type TYPE        \"txt\" tab separated, \"csv\" comma separated [default: txt]
   """
   arg = docopt(merge_doc, argv=None, help=True, version=v_merge)
@@ -185,33 +211,36 @@ Usage:
   maptools.py mbsplot
 
 Options:
-  -h, --help                    Show this screen.
-  -v, --version                 Show the version.
-  -i, --input FILE              Maptools \"mbs\" output.
-  -c, --chromosomes LIST        List of chromosome selection names (separeted by comma) [default: all].
-  -C, --captions                Generates figure captions.
+  -h, --help                    show this help message and exit
+  -v, --version                 print version information and exit
+  -i, --input FILE              input file produced by the mbs command
+  -c, --chromosomes LIST        comma-separated list of chromosome names [default: all]
+  -C, --captions                automatically generate figure legends
 
-Graphics options:
-  -A, --moving-avg INT          Number of adjacent markers for the calculation of moving average lines.
-  -m, --multi-chrom             Multi-chromosome plots.
-  -b, --boost INT               Number of adjacent markers for the calculation of moving average for boost.
-  -t, --alpha FLOAT             Dots transparency (0.0 to 1.0) [default: 0.4]
-  --palette STR                 Select the colour palette for your plots: \"standard\",\"color_blind\" or 
-                                \"custom\" [default: standard].
+Plot options:
+  -A, --moving-avg INT          add moving averages to plots, calculated using INT adjacent markers
+  -b, --boost INT               add boost to allele frequency plots, calculated as the average boost
+                                values of INT adjacent markers
+  -t, --alpha FLOAT             marker transparency in plots (0 - 1) [default: 0.4]
+  --bonferroni                  add Bonferroni threshold to p-value plots. Requires -p or -a
+  --palette STR                 select a colour palette [default: standard]
+                                Available options: \"standard\", \"color_blind\" or \"custom\" 
 
-Graphics types:
-  -p, --pvalue                  Generates p-value plots.
-  --bonferroni                  Show bonferroni test line in p-value plots.
-  -D, --allele-freq-1           Generates allele frequency plots for the dominant pool (AF1).
-  -R, --allele-freq-2           Generates allele frequency plots for the recessive pool (AF2).
-  -X, --combine                 Combined plots with AF1 and AF2 lines. Use it together with --moving-avg.
-  -M, --max-allele-freq2        Represents the maximum allele frequency in recessive pool.
-                                Recomended when data is not phased.
-  -a, --all                     Generates all possible plot types.
+Plot types:
+  -p, --pvalue                  generate p-value plots
+  -D, --allele-freq-1           generate allele frequency plots for the D bulk (AF1)
+  -R, --allele-freq-2           generate allele frequency plots for the R bulk (AF2)
+  -M, --max-allele-freq2        plot the frequency of the most abundant allele in R bulk. Use -M when the
+                                alleles cannot be assigned to the parents with certainty
+  -X, --combine                 overlay the moving average of AF2 on the AF1 plot, and vice versa. Requires
+                                --moving-avg.
+  -m, --multi-chrom             generate multi-chromosome plots for each statistic and the chromosomes 
+                                especified with -c. Manhattan plots require -p or -a
+  -a, --all                     generate all possible plots
   
 Output options:
-  -o, --outdir DIR              Output directory [default: graphics].
-  -O, --output-type TYPE        Output format: pdf, svg, jpg [default: pdf].
+  -o, --outdir DIR              output plot files to DIR [default: graphics]
+  -O, --output-type TYPE        available types: \"pdf\", \"svg\", \"jpg\" [default: pdf]
   """
     arg = docopt(mbsplot_doc, argv=None, help=True,version=v_mbsplot)
     arg = test_plot(arg, mbsplot_doc)
@@ -258,37 +287,38 @@ Usage:
   maptools.py qtlplot
 
 Options:
-  -h, --help                    Show this screen.
-  -v, --version                 Show the version.
-  -i, --input FILE              Maptools \"qtl\" output.
-  -c, --chromosomes LIST        List of chromosome selection names (separeted by comma) [default: all].
-  -C, --captions                Generates figure captions.
+  -h, --help                    show this help message and exit
+  -v, --version                 print version information and exit
+  -i, --input FILE              input file produced by the qtl command
+  -c, --chromosomes LIST        comma-separated list of chromosome names [default: all]
+  -C, --captions                automatically generate figure legends
 
-Graphic options:
-  -A, --moving-avg INT          Number of adjacent markers for the calculation of moving average lines.
-  -m, --multi-chrom             Multi-chromosome plots.
-  -t, --alpha FLOAT             Dots transparency (0.0 to 1.0) [default: 0.4]
-  --palette STR                 Select the colour palette for your plots: \"standard\",\"color_blind\" or 
-                                \"custom\" [default: standard].
+Plot options:
+  -A, --moving-avg INT          add moving averages to plots, calculated using INT adjacent markers
+  -t, --alpha FLOAT             marker transparency in plots (0 - 1) [default: 0.4]
+  --bonferroni                  add Bonferroni threshold to p-value plots. Requires -p or -a
+  --ci95                        add 95% confidence interval to delta plots. Requires -A
+  --palette STR                 select a colour palette [default: standard]
+                                Available options: \"standard\", \"color_blind\" or \"custom\" 
 
-Graphic types:
-  -p, --pvalue                  Generates p-value plots.
-  --bonferroni                  Show bonferroni test line in p-value plots.
-  -d, --delta                   Generates Delta (AFrecessive High pool - AFrecessive Low pool) plots.
-  --ci95                        Show the  95% cofindence interval in Delta plots.
-  -H, --allele-freq-H           Generates the alelle frequency plots for the pool of high phenotype.
-  -L, --allele-freq-L           Generates the allele frecuency plots for the pool of low phenotype.
-  -X, --combine                 Combined plots with high and low lines. Use it together with --moving-avg.
-  -E, --euclidean-distance      Generates Euclidean distance plots between individual SNPs and in groups of
-                                100 adjacent markers.
-  -G, --g-statistic             Generates G-statistic plots for individual SNPs.
-  -Q, --qtl-seq                 Generates muti-plots with ED, G, DELTA and p-value graphics
-                                for each chromosome.
-  -a, --all                     Generates all possible plot types.
+Plot types:
+  -p, --pvalue                  generate p-value plots
+  -H, --allele-freq-H           generate allele frequency plots for the H bulk (AF1)
+  -L, --allele-freq-L           generate allele frequency plots for the L bulk (AF2)
+  -d, --delta                   generate Delta plots (AF1 - AF2)
+  -X, --combine                 overlay the moving average of AF2 on the AF1 plot, and vice versa. Requires
+                                --moving-avg
+  -E, --euclidean-distance      plot Euclidean distances, both individually (EDm) and as ED100^4 values
+  -G, --g-statistic             generate G-statistic plots for individual markers
+  -Q, --qtl-seq                 generate multipanel figure with ED, G, DELTA and p-value plots
+                                for individual chromosomes
+  -m, --multi-chrom             generate multi-chromosome plots for each statistic and the chromosomes 
+                                especified with -c. Manhattan plots require -p or -a 
+  -a, --all                     generate all possible plots
   
 Output options:
-  -o, --outdir DIR              Output directory [default: graphics].
-  -O, --output-type TYPE        Output format: pdf, svg, jpg [default: pdf].
+  -o, --outdir DIR              output plot files to DIR [default: graphics]
+  -O, --output-type TYPE        available types: \"pdf\", \"svg\", \"jpg\" [default: pdf]
   """
     arg = docopt(qtlplot_doc, argv=None, help=True,version=v_qtlplot)
     arg = test_plot(arg, qtlplot_doc)
@@ -344,37 +374,58 @@ Usage:
   maptools.py annotate
 
 Options:
-  -h, --help                    Show this screen.
-  -v, --version                 Show the version.
-  -i, --input FILE              VCF input file. Can also come from a pipe.
-  -g, --gff FILE                GFF3 input file.
-  -f, --fasta-reference FILE    FASTA reference file (The same used to align the reads).
+  -h, --help                    show this help message and exit
+  -v, --version                 print version information and exit
+  -i, --input FILE              input file in uncompressed vcf format
+  -g, --gff FILE                genome annotation file in gff3 format
+  -f, --fasta-reference FILE    genome sequence file in fasta format
 
 Input Options:
-  -d, --data LIST               Pools genotype: dominant(D), recessive(R), parental dominant(Pd),
-                                parental recessive(Pr), wild-type recessive(Wr) and
-                                wild-type dominant(Wr) [default: D,R].
-  -r, --ref-genotype STR        Which parental houses the reference, \"miss\" for missing genotype [default: miss].
-  -m, --mutant-pool STR         Which pool has the mutant phenotype [default: R].
-  -R, --region REGION           Region of the genome to explore (... -R chrName:Startpos-Endpos).
-  -t, --transl-table INT        Translation table [default: 1].
+  -d, --data LIST               comma separated list of sequenced samples [default: D,R]
+                                Available options:
+                                  D   bulk of phenotypically dominant individuals from a segregating population
+                                  R   bulk of phenotypically recessive individuals from a segregating population
+                                  Pd  re-sequencing of the dominant parent genome
+                                  Pr  re-sequencing of the recessive parent genome
+                                  Wd  re-sequencing of the wild-type strain isogenic to a dominant mutant
+                                  Wr  re-sequencing of the wild-type strain isogenic to a recessive mutant
+
+  -r, --ref-genotype STR        indicate if the reference genome sequence corresponds to one of the parents
+                                of the mapping population [default: miss]
+                                Available options:
+                                  D     reference genome corresponds to the phenotypically dominant parent
+                                  R     reference genome corresponds to the phenotypically recessive parent
+                                  miss  reference genome does not match the sequence of either parent
+
+  -m, --mutant-pool STR         indicate the bulk established from phenotypically individuals from the
+                                segregating population [default: R]
+                                Available options:
+                                  D   for a dominant mutation
+                                  R   for a recessive mutation
+
+  -R, --region REGION           region of the genome to explore (-R chrName:Startpos-Endpos)
+  -t, --transl-table INT        translation table [default: 1]
 
 Output Options:
-  -o, --output FILE             Write output to file.
-  -O, --output-type TYPE        \"txt\" tab separated, \"csv\" comma separated [default: txt].
+  -o, --output FILE             write output to FILE [standard output]
+  -O, --output-type TYPE        \"txt\" tab separated, \"csv\" comma separated [default: txt]
 
 Filter Options:
-  -C, --max-depth INT           Maximum allele depth [default: inf].
-  -c, --min-depth INT           Minimum allele depth [default: 0].
-  -Q, --max-ratio INT           Maximum allele frequency in dominant pool [default: 100].
-  -q, --min-ratio INT           Minimum allele frequency in dominant pool [default: 0].
-  --EMS                         Filter out SNPs other than caused by EMS (\"G\" > \"A\" or \"C\" > \"T\").
-  -I, --skip-indels             Filter out insertions and deletions.
-  --parental-filter             Filter out variants if Parental (-d \"R\",\"Pr\"| \"Pd\"| \"Wr\"| \"Wd\")
-                                sample is provided.                            
-  --het-filter                  Focuses on markers that are clearly heterozygous in the dominant pool.
-                                (depth in the interval [-c,-C] and allele frequency in the interval [-q, -Q]).
-  --no-filter                   Disable all filters.                           
+  -C, --max-depth INT           maximum read depth in the D and R bulks for a position to be considered [default: inf]
+  -c, --min-depth INT           minimum read depth in the D and R bulks for a position to be considered [default: 0]
+  -Q, --max-ratio INT           maximum allele frequency in the D bulk [default: 100]
+  -q, --min-ratio INT           minimum allele frequency in the D bulk [default: 0]
+                                Note: you can set different -q and -Q values to enforce that markers are heterozygous
+                                in the D bulk, by only considering those whose allele frequency in the interval [-q, -Q].
+                                Requires --het-filter
+                  
+  --EMS                         ignore SNPs not caused by EMS (keeps \"G\" > \"A\" or \"C\" > \"T\")
+  -I, --skip-indels             ignore indels
+  --parental-filter             ignore variants shared with parental strain (requires one of: \"Pr\", \"Pd\",
+                                \"Wr\" or \"Wd\", specified with -d)
+  --het-filter                  selects markers that are heterozygous in the D pool, either because the allele frequencies
+                                are in the [-q, -Q] interval or because their GT is \"0/1\" in the vcf input
+  --no-filter                   disable all filters                         
   """
   arg = docopt(annotate_doc, argv=None, help=True, version=v_annotate)
   arg['pipe'] = sys.stdin.isatty()
@@ -435,7 +486,11 @@ Filter Options:
   ##
 def citation(argv):
   cite_doc="""
-If you find MAPtools useful, please include the following citation in your scientific manuscripts:
+Program: MAPtools
+Version: 1.00
+Contact: hcandela@umh.es
+
+If you find MAPtools useful, please include the following citation in your scientific publications:
 
 Martínez-Guardiola, C., Parreño, R. and Candela, H. (2023). MAPtools: Command-Line Tools for
 Mapping-by-Sequencing and QTL-Seq Analysis and Visualization. Submitted.                     
