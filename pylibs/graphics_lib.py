@@ -29,6 +29,10 @@ def read_header_plot(arg):
     arg['--contigs'] = dict()
     with open(arg['--input'],'r') as handle:
         for line in handle:
+            if line.startswith('##maptools_mbsCommand='):
+                if 'mbsplot' not in arg.keys():
+                    print('Error: the input data must come from the qtl command', file=sys.stderr)
+                    sys.exit()
             if line.startswith('##maptools_mergeCommand='):
                 names = ['-w','--window']
                 merge_argv = line.split('=')[1].split(' ')
@@ -37,6 +41,9 @@ def read_header_plot(arg):
                         w_index = merge_argv.index(w)
                 arg['--window'] = merge_argv[w_index+1]
             if line.startswith('##maptools_qtlCommand='):
+                if 'qtlplot' not in arg.keys():
+                    print('Error: the input data must come from the qtl command', file=sys.stderr)
+                    sys.exit()
                 names = ['-r', '--ref-genotype','-d','--data']
                 qtl_argv = line.split('=')[1].split(' ')
                 result = list()
