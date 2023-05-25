@@ -41,7 +41,7 @@ Input Options:
                                   R   for a recessive mutation
 Output Options:
   -o, --output FILE             write output to FILE [standard output]
-  -O, --output-type TYPE        \"txt\" tab separated, \"csv\" comma separated [default: txt]
+  -O, --output-type TYPE        txt: tab separated, csv: comma separated [default: txt]
     
 Filter Options:
   -C, --max-depth INT           maximum read depth in the D and R bulks for a position to be considered [default: inf]
@@ -52,10 +52,10 @@ Filter Options:
                                 in the D bulk, by only considering those whose allele frequency in the interval [-q, -Q].
                                 Requires --het-filter
                   
-  --EMS                         ignore SNPs not caused by EMS (keeps \"G\" > \"A\" or \"C\" > \"T\")
+  --EMS                         ignore SNPs not caused by EMS (keeps G/C-to-A/T transition mutations)
   -I, --skip-indels             ignore indels
-  --parental-filter             ignore variants shared with parental strain (requires one of: \"Pr\", \"Pd\",
-                                \"Wr\" or \"Wd\", specified with -d)
+  --parental-filter             ignore variants shared with parental strain (requires one of: Pr, Pd,
+                                Wr or Wd, specified with -d)
   --het-filter                  selects markers that are heterozygous in the D pool, either because the allele frequencies
                                 are in the [-q, -Q] interval or because their GT is \"0/1\" in the vcf input
   --no-filter                   disable all filters              
@@ -129,7 +129,7 @@ Filter Options:
 
 Output Options:
   -o, --output FILE             write output to FILE [standard output]
-  -O, --output-type TYPE        \"txt\" tab separated, \"csv\" comma separated [default: txt]
+  -O, --output-type TYPE        txt: tab separated, csv: comma separated [default: txt]
   """
     arg = docopt(qtl_doc, argv=None, help=True, version=v_qtl)
     # print(arg)
@@ -185,7 +185,7 @@ Input Options:
   
 Output Options:
   -o, --output FILE             write output to FILE [standard output]
-  -O, --output-type TYPE        \"txt\" tab separated, \"csv\" comma separated [default: txt]
+  -O, --output-type TYPE        txt: tab separated, csv: comma separated [default: txt]
   """
   arg = docopt(merge_doc, argv=None, help=True, version=v_merge)
   arg = check_merge(arg, merge_doc)
@@ -240,7 +240,7 @@ Plot types:
   
 Output options:
   -o, --outdir DIR              output plot files to DIR [default: graphics]
-  -O, --output-type TYPE        available types: \"pdf\", \"svg\", \"jpg\" [default: pdf]
+  -O, --output-type TYPE        available types: pdf, svg, jpg [default: pdf]
   """
     arg = docopt(mbsplot_doc, argv=None, help=True,version=v_mbsplot)
     arg = test_plot(arg, mbsplot_doc)
@@ -318,7 +318,7 @@ Plot types:
   
 Output options:
   -o, --outdir DIR              output plot files to DIR [default: graphics]
-  -O, --output-type TYPE        available types: \"pdf\", \"svg\", \"jpg\" [default: pdf]
+  -O, --output-type TYPE        available types: pdf, svg, jpg [default: pdf]
   """
     arg = docopt(qtlplot_doc, argv=None, help=True,version=v_qtlplot)
     arg = test_plot(arg, qtlplot_doc)
@@ -408,7 +408,7 @@ Input Options:
 
 Output Options:
   -o, --output FILE             write output to FILE [standard output]
-  -O, --output-type TYPE        \"txt\" tab separated, \"csv\" comma separated [default: txt]
+  -O, --output-type TYPE        txt: tab separated, csv: comma separated [default: txt]
 
 Filter Options:
   -C, --max-depth INT           maximum read depth in the D and R bulks for a position to be considered [default: inf]
@@ -419,10 +419,10 @@ Filter Options:
                                 in the D bulk, by only considering those whose allele frequency in the interval [-q, -Q].
                                 Requires --het-filter
                   
-  --EMS                         ignore SNPs not caused by EMS (keeps \"G\" > \"A\" or \"C\" > \"T\")
+  --EMS                         ignore SNPs not caused by EMS (keeps G/C-to-A/T transition mutations)
   -I, --skip-indels             ignore indels
-  --parental-filter             ignore variants shared with parental strain (requires one of: \"Pr\", \"Pd\",
-                                \"Wr\" or \"Wd\", specified with -d)
+  --parental-filter             ignore variants shared with parental strain (requires one of: Pr, Pd,
+                                Wr or Wd, specified with -d)
   --het-filter                  selects markers that are heterozygous in the D pool, either because the allele frequencies
                                 are in the [-q, -Q] interval or because their GT is \"0/1\" in the vcf input
   --no-filter                   disable all filters                         
