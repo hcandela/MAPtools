@@ -42,7 +42,7 @@ def read_header_plot(arg):
                 arg['--window'] = merge_argv[w_index+1]
             if line.startswith('##maptools_qtlCommand='):
                 if 'qtlplot' not in arg.keys():
-                    print('Error: the input data must come from the qtl command', file=sys.stderr)
+                    print('Error: the input data must come from the mbs command', file=sys.stderr)
                     sys.exit()
                 names = ['-r', '--ref-genotype','-d','--data']
                 qtl_argv = line.split('=')[1].split(' ')
