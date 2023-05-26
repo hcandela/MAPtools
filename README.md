@@ -52,17 +52,15 @@ MAPtools has been tested in pipelines involving the following software:
 
 We provide a step-by-step protocol to reproduce the analyses presented in Figure 1 of the MAPtools article. In this figure, we re-analyze publicly available QTL-seq data from Castillejo *et al*. (2020) and MBS data from Viñegra de la Torre *et al*. (2022).
 
-> Castillejo *et al*. (2020). *Allelic variation of MYB10 is the major force controlling natural variation in skin and flesh cholor in strawberry* (*Fragaria* spp.) fruit. *Plant Cell* **32:** 3723-3749
+> Castillejo *et al*. (2020). Allelic variation of MYB10 is the major force controlling natural variation in skin and flesh cholor in strawberry (*Fragaria* spp.) fruit. *Plant Cell* **32:** 3723-3749
 
-> Viñegra de la Torre *et al*. (2022). *Flowering repressor AAA+ ATPase 1 is a novel regulator of perennial flowering in Arabis alpina*. *New Phytologist* **236:** 729-744
+> Viñegra de la Torre *et al*. (2022). Flowering repressor AAA+ ATPase 1 is a novel regulator of perennial flowering in *Arabis alpina*. *New Phytologist* **236:** 729-744
 
 ### Analysis of QTL-seq data
 
-For this tutorial, you will need to download the raw data from Castillejo *et al*. (2020), which are available from the NCBI SRA database with accession numbers ERR4463153, ERR4463154, ERR4463155, and ERR4463156. You will also need to download a FASTA file with the [reference genome sequence of *Fragaria vesca*](https://www.rosaceae.org/species/fragaria_vesca/genome_v4.0.a1).
+For this tutorial, you will need to download the raw sequencing data from Castillejo *et al*. (2020), which are available from the [NCBI SRA database](https://www.ncbi.nlm.nih.gov/sra) with accession numbers ERR4463153, ERR4463154, ERR4463155, and ERR4463156. You will also need to download a FASTA file with the [reference genome sequence of *Fragaria vesca*](https://www.rosaceae.org/species/fragaria_vesca/genome_v4.0.a1).
 
-#### 2. Download SRA reads:
-
-Accession numbers are ERR4463153, ERR4463154, ERR4463155, and ERR4463156. We downloaded them using sratoolkit's fastq-dump with the option "--split-files" to obtain 2 files of paired-end reads for each accession.
+We downloaded the data using sratoolkit's fastq-dump with the option "--split-files" to obtain 2 files of paired-end reads for each accession.
 
 ```
 ./fastq-dump --split-files ERR4463153 ERR4463154 ERR4463155 ERR4463156
