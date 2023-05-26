@@ -60,7 +60,27 @@ We provide a step-by-step protocol to reproduce the analyses presented in Figure
 
 For this tutorial, you will need to download the raw sequencing data from Castillejo *et al*. (2020), which are available from the [NCBI SRA database](https://www.ncbi.nlm.nih.gov/sra) with accession numbers ERR4463153, ERR4463154, ERR4463155, and ERR4463156. You will also need to download a FASTA file with the [reference genome sequence of *Fragaria vesca*](https://www.rosaceae.org/species/fragaria_vesca/genome_v4.0.a1).
 
-We downloaded the data using sratoolkit's fastq-dump with the option "--split-files" to obtain 2 files of paired-end reads for each accession.
+#### 1. Map the reads to the reference genome using your read mapper of choice
+
+1.1. With Bowtie2:
+
+Index the reference genome using bowtie2-build:
+```
+bowtie2-build Fragaria_vesca_v4.0.a1.fasta.gz INDEX
+```
+Map the reads to the reference genome using bowtie2. Repeat this step for each available sample:
+
+```
+bowtie2 -x INDEX --no-mixed --no-discordant --no-unal -1 ERR4463153_1.fastq.gz -2 ERR4463153_2.fastq.gz  -S ERR4463153.sam
+```
+Convert the SAM files into sorted BAM files using samtools:
+```
+samtools sort -o ERR4463153.bam ERR4463153.sam
+```
+
+
+
+We downloaded the data using sratoolkit's fastq-dump with the option "--split-files" to obtain 2 files of paired-end reads for each accession
 
 ```
 ./fastq-dump --split-files ERR4463153 ERR4463154 ERR4463155 ERR4463156
@@ -70,13 +90,6 @@ We downloaded the data using sratoolkit's fastq-dump with the option "--split-fi
 
 Compressing the reads in .gz format is highly recommended. Gzip or similars can be used for this purpose.
 
-#### 4. Create the bowtie/bwa index:
-
-This is an example with bowtie2. Substitute the names in the brackets for your preferences
-
-```
-bowtie2-build Fragaria_vesca_v4.0.a1.fasta.gz {INDEX}
-```
 
 #### 5. Align the SRA reads to the reference genome:
 
