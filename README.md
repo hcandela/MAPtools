@@ -56,13 +56,9 @@ We provide a step-by-step protocol to reproduce the analyses presented in Figure
 
 > Viñegra de la Torre *et al*. (2022). *Flowering repressor AAA+ ATPase 1 is a novel regulator of perennial flowering in Arabis alpina*. *New Phytologist* **236:** 729-744
 
-### Running MAPtools: QTL-seq example
+### Analysis of QTL-seq data
 
-For this example, we are using sequencing data analyzed in: Castillejo et al. (2020). *Allelic variation of MYB10 is the major force controlling natural variation in skin and flesh cholor in strawberry* (*Fragaria* spp.) fruit. Plant Cell, 32(12): 3723-3749.
-
-#### 1. Download reference genome:
-
-Move to the maptools directory and download the *Fragaria vesca* reference genome version 4.0.1 from [https://www.rosaceae.org/species/fragaria_vesca/genome_v4.0.a1]().
+For this tutorial, you will need to download the raw data from Castillejo *et al*. (2020), which are available from the NCBI SRA database with accession numbers ERR4463153, ERR4463154, ERR4463155, and ERR4463156. You will also need to download a FASTA file with the [reference genome sequence of *Fragaria vesca*](https://www.rosaceae.org/species/fragaria_vesca/genome_v4.0.a1).
 
 #### 2. Download SRA reads:
 
