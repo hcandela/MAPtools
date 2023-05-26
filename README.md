@@ -45,7 +45,7 @@ MAPtools has been tested in pipelines involving the following software:
 
 * **Bowtie2** version **2.4.2**
 * **BWA** version **0.7.17-r1188**
-* **BCFtools** version **1.16**
+* **SAMtools** and **BCFtools** version **1.16**
 * **GATK** version **4.0.5.1**
 
 ## Tutorial
@@ -65,81 +65,88 @@ For this tutorial, you will need to download the raw sequencing data from Castil
 1.1. With Bowtie2:
 
 Index the reference genome using bowtie2-build:
+
 ```
 bowtie2-build Fragaria_vesca_v4.0.a1.fasta.gz INDEX
 ```
+
 Map the reads to the reference genome using bowtie2. Repeat this step for each available sample:
 
 ```
 bowtie2 -x INDEX --no-mixed --no-discordant --no-unal -1 ERR4463153_1.fastq.gz -2 ERR4463153_2.fastq.gz  -S ERR4463153.sam
 ```
-Convert the SAM files into sorted BAM files using samtools:
+
+1.2. With BWA:
+
+Index the reference genome using the index command of BWA:
+
+```
+bwa index -p INDEX Fragaria_vesca_v4.0.a1.fasta.gz 
+```
+
+Map the reads to the reference genome using the mem command of BWA. Repeat this step for each available sample:
+
+```
+bwa mem INDEX ERR4463153_1.fastq.gz ERR4463153_2.fastq.gz -o ERR4463153.sam
+```
+
+#### 2. Convert the SAM files into sorted BAM files using samtools
+
 ```
 samtools sort -o ERR4463153.bam ERR4463153.sam
 ```
 
 
-
-We downloaded the data using sratoolkit's fastq-dump with the option "--split-files" to obtain 2 files of paired-end reads for each accession
-
-```
-./fastq-dump --split-files ERR4463153 ERR4463154 ERR4463155 ERR4463156
-```
-
-#### 3. Compress the fastq reads:
-
-Compressing the reads in .gz format is highly recommended. Gzip or similars can be used for this purpose.
-
-
-#### 5. Align the SRA reads to the reference genome:
-
-Do this **for each pair of reads**:
+In this experiment, each bulk has been sequenced twice. For this reason, we need to merge the BAM files for the ERR4463155 and ERR4463156 samples, both of which with white fruits:
 
 ```
-bowtie2 -x {INDEX} -p {number_of_threads} --no-mixed --no-discordant -1 {ERR4463153_1} -2 {ERR4463153_2} --no-unal -S {qtl_ERR4463153.sam}
-```
-
-#### 6. Process the SAM files into sorted BAM files:
-
-Do this **for each pair of reads**:
-
-```
-samtools sort -@ {threads} -o {qtl_ERR4463153.bam} {qtl_ERR4463153.sam}
-```
-
-#### 7. Merge and indexing BAM files of the same pool:
-
-In this experiment, there are 2 pools of individuals divided in 2 accessions each, so we need to merge the bam files for the white- and red-fruit pools:
-
-* White strawberry pool:
-
-```
-samtools merge -@ {number_of_threads} {white_pool.bam} {qtl_ERR4463155.bam} {qtl_ERR4463156.bam}
+samtools merge -o white.bam ERR4463155.bam ERR4463156.bam
 ```
 
 ```
-samtools index {white_pool.bam}
+samtools index white.bam
 ```
 
-* Red strawberry pool:
+Similarly, merge the BAM files for the ERR4463153 and ERR4463154 samples, both of which with red fruits:
 
 ```
-samtools merge -@ {number_of_threads} {red_pool.bam} {qtl_ERR4463153.bam} {qtl_ERR4463154.bam}
+samtools merge -o red.bam ERR4463153.bam ERR4463154.bam
 ```
 
 ```
-samtools index red_pool.bam
+samtools index red.bam
 ```
 
-#### 8. Variant calling (use bcftools v1.16 or higher)
+#### 3. Perform the variant calling using BCFtools or GATK
+
+3.1 With BCFtools:
+
+Use the `mpileup` and `call` commands of BCFtools to prepare a single VCF file containing the AD (Allele Depth) field for each bulk:
 
 ```
-bcftools mpileup -f Fragaria_vesca_v4.0.a1.fasta --annotate FORMAT/AD bam_merged_white_pool.bam bam_merged_red_pool.bam | bcftools call -mv -o variant_calling_qtl.vcf
+bcftools mpileup -f Fragaria_vesca_v4.0.a1.fasta --annotate FORMAT/AD white.bam red.bam | bcftools call -mv -o variants.vcf
 ```
 
-You may also need indexing the genome with ``samtools faidx``
+You might need to index the genome with ``samtools faidx``
 
-#### 9. Running MAPtools:
+3.2 With GATK:
+
+If you plan to do the variant calling with GATK, note that GATK requires BAM files with the RG field set. You can add this field with the `addreplacerg` command of samtools:
+
+```
+samtools addreplacerg -r ID:red -r SM:red -o fixed_red.bam red.bam
+
+samtools addreplacerg -r ID:white -r SM:white -o fixed_white.bam white.bam
+```
+
+Use the `HaplotypeCaller` command of GATK to prepare a single VCF file containing the AD (Allele Depth) field for each bulk:
+
+```
+gatk HaplotypeCaller --output variants.vcf -I fixed_white.bam -I fixed_red.bam --reference Fragaria_vesca_v4.0.a1.fasta
+
+```
+
+#### 4. Running MAPtools:
 
 * First, we analyze the data with ``qtl`` option, assuming that the white and red are the extreme phenotypes "low" and "high", respectively. ``-I`` option is used to ignore indels for this example:
 
@@ -164,75 +171,91 @@ You may also need indexing the genome with ``samtools faidx``
 ``--ci95`` Show the 95% confidence interval in delta plots.
 ``-o`` Output folder.
 
-#### Running MAPtools: MBS-seq example
+#### Analysis of MBS data
 
-For this example, we are using sequencing data analyzed in: Viñegra de la Torre et al. (2022). *Flowering repressor AAA+ ATPase 1 is a novel regulator of perennial flowering in Arabis alpina*. New phytologist, 236: 729-744.
+For this tutorial, you will need to download the raw sequencing data from Viñegra de la Torre *et al*. (2022), which are available from the [NCBI SRA database](https://www.ncbi.nlm.nih.gov/sr) with accession numbers SRR15564670, SRR11140832, and SRR11140833. You will also need to download the FASTA file with the [reference genome sequence of *Arabis alpina*](http://www.arabis-alpina.org/data/ArabisAlpina/assemblies/V5.1/), and the [genome annotation file in GFF3 format](http://www.arabis-alpina.org/data/ArabisAlpina/assemblies/V5.1/)
 
-Specifically, we are using the eop002 mutant for the analysis and visualization. This is a MBS of a single sample sequencing data. In the publication, authors found the mutation responsible of the phenotype in chromosome 8, gene Aa_G106560.
+#### 1. Map the reads to the reference genome using your read mapper of choice
 
-#### 1. Download the reference genome and the GFF annotation
+1.1. With Bowtie2:
 
-We obtained the reference genome from the [Arabis alpina genomic resources page](http://www.arabis-alpina.org/data/ArabisAlpina/assemblies/V5.1/).
-
-#### 2. Download and compress SRA reads:
-
-* Mutant reads:
+Index the reference genome using bowtie2-build:
 
 ```
-./fastq-dump --split-files SRR15564670
+bowtie2-build Arabis_alpina.MPIPZ.version_5.1.chr.all.fasta.gz INDEX
 ```
 
-* Parent reads (2 accession numbers):
+Map the reads to the reference genome using bowtie2. Repeat this step for each available sample:
 
 ```
-./fastq-dump --split-files SRR11140832 SRR11140833
+bowtie2 -x INDEX --no-mixed --no-discordant --no-unal -1 SRR15564670_1.fastq.gz -2 SRR15564670_2.fastq.gz  -S SRR15564670.sam
 ```
 
-Compressing the reads in .gz format is highly recommended. Gzip or similars can be used for this purpose.
+1.2. With BWA:
 
-#### 3. Follow steps 4 - 6 of the QTL example:
-
-Generate the bowtie/bwa index, align the reads and convert the resultant SAM file into BAM format. Substitute the names in the brackets for your preferences.
+Index the reference genome using the index command of BWA:
 
 ```
-bowtie2-build Arabis_alpina.MPIPZ.version_5.1.chr.all.fasta.gz {INDEX}
+bwa index -p INDEX Arabis_alpina.MPIPZ.version_5.1.chr.all.fasta.gz 
 ```
 
-* For each pair of reads:
+Map the reads to the reference genome using the mem command of BWA. Repeat this step for each available sample:
 
 ```
-bowtie2 -x {INDEX} -p {number_of_threads} --no-mixed --no-discordant -1 {SRR15564670_1} -2 {SRR15564670_2} --no-unal -S {mbs_SRR15564670.sam}
+bwa mem INDEX SRR15564670_1.fastq.gz SRR15564670_2.fastq.gz -o SRR15564670.sam
 ```
 
-```
-samtools sort -@ {number_of_threads} -o mbs_SRR15564670.bam mbs_SRR15564670.sam
-```
-
-* Parent reads need to be merged:
+#### 2. Convert the SAM files into sorted BAM files using samtools
 
 ```
-samtools merge -@ {number_of_threads} {mbs_pep1.bam} {mbs_SRR11140832.bam} {mbs_SRR11140833.bam}
+samtools sort -o mutant.bam SRR15564670.sam
 ```
 
-* Indexing:
+
+In this experiment, the parental sample has been sequenced twice. For this reason, we need to merge the BAM files for the SRR11140832 and SRR11140833 files:
 
 ```
-samtools index {mbs_SRR15564670.bam}
+samtools merge -o parental.bam SRR11140832.bam SRR11140833.bam
 ```
 
 ```
-samtools index {mbs_pep1.bam}
+samtools index parental.bam
 ```
 
-#### 4. Perform variant calling:
-
 ```
-bcftools mpileup -f Arabis_alpina.MPIPZ.version_5.1.chr.all.fasta.gz --annotate FORMAT/AD {mbs_SRR15564670.bam} {mbs_pep1.bam} | bcftools call -mv -o {variant_calling_mbs.vcf}
+samtools index mutant.bam
 ```
 
-* Indexing of the fasta reference with ``samtools faidx`` may be needed.
+#### 3. Perform the variant calling using BCFtools or GATK
 
-#### 5. Running MAPtools:
+3.1 With BCFtools:
+
+Use the `mpileup` and `call` commands of BCFtools to prepare a single VCF file containing the AD (Allele Depth) field for each bulk:
+
+```
+bcftools mpileup -f Arabis_alpina.MPIPZ.version_5.1.chr.all.fasta.gz  --annotate FORMAT/AD mutant.bam parental.bam | bcftools call -mv -o variants.vcf
+```
+
+You might need to index the genome with ``samtools faidx``
+
+3.2 With GATK:
+
+If you plan to do the variant calling with GATK, note that GATK requires BAM files with the RG field set. You can add this field with the `addreplacerg` command of samtools:
+
+```
+samtools addreplacerg -r ID:mutant -r SM:mutant -o fixed_mutant.bam mutant.bam
+
+samtools addreplacerg -r ID:parental -r SM:parental -o fixed_parental.bam parental.bam
+```
+
+Use the `HaplotypeCaller` command of GATK to prepare a single VCF file containing the AD (Allele Depth) field for each bulk:
+
+```
+gatk HaplotypeCaller --output variants.vcf -I fixed_mutant.bam -I fixed_parental.bam --reference Arabis_alpina.MPIPZ.version_5.1.chr.all.fasta.gz
+
+```
+
+#### 4. Running MAPtools:
 
 * First, we analyze the data with ``mbs`` option assuming that the mutant phenotype is in the recesive pool. Also, we have processed the samples of the recesive pool and the parental dominant resequencing with BCFtools, in that specific order:
 
