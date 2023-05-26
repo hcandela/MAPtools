@@ -151,13 +151,13 @@ gatk HaplotypeCaller --output variants.vcf -I fixed_white.bam -I fixed_red.bam -
 * First, we analyze the data with ``qtl`` option, assuming that the white and red are the extreme phenotypes "low" and "high", respectively. ``-I`` option is used to ignore indels for this example:
 
 ```
-./maptools qtl --data L,H -i variant_calling_out.vcf -o qtl_output.txt -I
+./maptools.py qtl --data L,H -i variants.vcf -o qtl.txt -I
 ```
 
 * Now we can plot the results using ``qtlplot``:
 
 ```
-./maptools qtlplot -i qtl_output.txt --captions -m -c Fvb1,Fvb2,Fvb3,Fvb4,Fvb5,Fvb6,Fvb7 -A 800 -a --bonferroni --ci95 -o ../graphics_qtl/
+./maptools.py qtlplot -i qtl.txt --captions -m -c Fvb1,Fvb2,Fvb3,Fvb4,Fvb5,Fvb6,Fvb7 -A 800 -a --bonferroni --ci95 -o graphics_qtl/
 ```
 
 * Explanation of options:
@@ -260,7 +260,7 @@ gatk HaplotypeCaller --output variants.vcf -I fixed_mutant.bam -I fixed_parental
 * First, we analyze the data with ``mbs`` option assuming that the mutant phenotype is in the recesive pool. Also, we have processed the samples of the recesive pool and the parental dominant resequencing with BCFtools, in that specific order:
 
 ```
-./maptools.py mbs --data R,Pd -m R --EMS --parental-filter -o {mbs_out.txt} -i {variant_calling_mbs.vcf}
+./maptools.py mbs --data R,Pd -m R --EMS --parental-filter -o mbs.txt -i variants.vcf
 ```
 
 * Explanation of options:
@@ -271,12 +271,12 @@ gatk HaplotypeCaller --output variants.vcf -I fixed_mutant.bam -I fixed_parental
 ``--parental-filter``: filter out variants present in the parental sequencing.
 ``-o``: output file.
 
-#### 6. visualizing data with MAPtools:
+#### 5. visualizing data with MAPtools:
 
 We generate a plot of the data generated with ``mbsplot``. In this case it is recommended to specify the chromosomes that are going to be ploted, as there are a lot of individual contigs in the reference fasta.
 
 ```
-./maptools.py mbsplot -i {mbs_out.txt} -m --captions -c chr1,chr2,chr3,chr4,chr5,chr6,chr6,chr7,chr8 -A 10 -b 20 -a -o {../graphics_mbs/}
+./maptools.py mbsplot -i mbs.txt -m --captions -c chr1,chr2,chr3,chr4,chr5,chr6,chr6,chr7,chr8 -A 10 -b 20 -a -o graphics_mbs/
 ```
 
 * Explanation of options:
@@ -289,12 +289,12 @@ We generate a plot of the data generated with ``mbsplot``. In this case it is re
 ``-a``: generates all possible plots.
 ``-o``: output directory.
 
-#### 7. Analyze MBS data with MAPtools:
+#### 6. Analyze MBS data with MAPtools:
 
 As we can observe in the plots, the mutation is located in chromosome 8 and approximately between positions 14250000 and 16700000, so we can analyze this region:
 
 ```
-./maptools.py annotate --data R,Pd -m R --EMS --parental-filter -i {variant_calling_mbs.vcf} -g {gff_arabis.gff3} -f Arabis_alpina.MPIPZ.version_5.1.chr.all.fasta.gz -R chr8:14250000-16700000 -o {annotate_mbs.txt}
+./maptools.py annotate --data R,Pd -m R --EMS --parental-filter -i variants.vcf -g gff_arabis.gff3 -f Arabis_alpina.MPIPZ.version_5.1.chr.all.fasta.gz -R chr8:14250000-16700000 -o annotate_mbs.txt
 ```
 
 * Explanation of options:
@@ -309,55 +309,6 @@ As we can observe in the plots, the mutation is located in chromosome 8 and appr
 ``-R``: region where the analysis will be performed.
 ``-o``: output file.
 
-## Generic MBS analysis
-
-Use bowtie2 to map the reads from each pool to the reference genome:
-
-```
-bowtie2-build genome.fasta GENOMEINDEX
-```
-
-```
-bowtie2 -x GENOMEINDEX -U dominant_pool.fastq.gz --no-unal -S dominant.sam
-```
-
-```
-bowtie2 -x GENOMEINDEX -U recessive_pool.fastq.gz --no-unal -S recessive.sam
-```
-
-Use the sort command of SAMtools to sort the output files by coordinate and convert them to BAM format:
-
-```
-samtools sort -o dominant.bam dominant.sam
-```
-
-```
-samtools sort -o recessive.bam recessive.sam
-```
-
-Process the resulting BAM files with the mpileup and call commands of BCFtools:
-
-```
-bcftools mpileup -f genome.fasta --annotate FORMAT/AD dominant.bam recessive.bam | bcftools call -mv -V indels -o output.vcf
-```
-
-Use MAPtools to process the BCF or VCF files produced by BCFtools:
-
-```
-cat output.vcf | maptools mbs -d D,R -r R -m D -o mbs_results.txt
-```
-
-```
-maptools mbsplot -i mbs_results.txt -c 1,2,3 --captions -A 200 -m --all --bonferroni
-```
-
-```
-maptools merge -i mbs_results.txt -w 2 -o reprocessed_results.txt
-```
-
-```
-cat output.vcf | maptools annotate -g genome.gff3 -f reference.fasta -d D,R -r D -m R -o annotation.txt -R 1:1-10000000
-```
 
 ## **Citation**
 
