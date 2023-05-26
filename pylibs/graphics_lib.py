@@ -56,7 +56,7 @@ def read_header_plot(arg):
                     elif ar == '-d' or ar == '--data':
                         ar_index = qtl_argv.index(ar)
                         data = qtl_argv[ar_index+1].split(',')
-                        result.append(True if 'Pl' in data or 'Ph' in data else False)
+                        result.append(True if 'P' in data else False)
 
                 arg['--ref-genotype'] = True if True in result else False
 
