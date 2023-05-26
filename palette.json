@@ -1,4 +1,6 @@
 {
+    "DPI" : 600,
+
     "mbs" : {   "standard": {
                     "dots":["#5770db","dark blue"],
                     "MAX_SNPidx2":["#db57b2","pink"],
@@ -8,7 +10,7 @@
                     "BOOST":["#dbc257","gold"]
                 },
                 "color_blind": {
-                    "dots":["#949494","gray"],
+                    "dots":["#606263","gray"],
                     "MAX_SNPidx2":["#d55e00","dark orange"],
                     "log10PVALUE":["#cc78bc","magenta"],
                     "SNPidx1":["#0173b2","blue"],
@@ -23,6 +25,14 @@
                     "SNPidx1":[],
                     "SNPidx2":[],
                     "BOOST":[]
+                },
+                "rainbow": {
+                    "dots":["#4b0082","purple"],
+                    "MAX_SNPidx2":["#ff0000","red"],
+                    "log10PVALUE":["#ffff00","yellow"],
+                    "SNPidx1":["#ee82ee","violet"],
+                    "SNPidx2":["#ffa500","orange"],
+                    "BOOST":["#008000","green"]
                 } 
         },
     "qtl" : {   "standard" : {
@@ -36,7 +46,7 @@
                     "ci":["#ff7f00","orange"]
                 },
                 "color_blind" : {
-                    "dots":["#949494","gray"],
+                    "dots":["#606263","gray"],
                     "MAX_SNPidx2":["#d55e00","dark orange"],
                     "log10PVALUE":["#cc78bc","magenta"],
                     "SNPidx1":["#57db80","light green"],
@@ -55,9 +65,17 @@
                     "SNPidx2":[],
                     "mvg":[],
                     "ci":[]
-
+                },
+                "rainbow" : {
+                    "dots":["#4b0082","purple"],
+                    "MAX_SNPidx2":["#ff0000","red"],
+                    "log10PVALUE":["#ffff00","yellow"],
+                    "SNPidx1":["#ee82ee","violet"],
+                    "DELTA":["#008000","green"],
+                    "SNPidx2":["#ffa500","orange"],
+                    "mvg":["#ee82ee","violet"],
+                    "ci":["#ffff00","yellow"]
                 }
-
     }
 }
 

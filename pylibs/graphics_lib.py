@@ -226,6 +226,7 @@ def check_merge(arg,__doc__):
         sys.exit()
     # Checking graphic types
     return arg
+
 def read_palette(arg):
     try:
         with open("palette.json") as json_file:
@@ -233,17 +234,17 @@ def read_palette(arg):
     except FileNotFoundError:
         print('Error: Plese put the file \"palette.json\" in the MAPtools folder.', file=sys.stderr)
         sys.exit()
-    
+    arg['DPI'] = data['DPI']
     ant = 'mbs' if 'mbsplot' in arg.keys() else 'qtl'
     palette = arg['--palette']
     if palette not in data[ant].keys():
-        print('Error: Select a correct palette\'s name: \"standard\",\"color_blind\" or \"custom\".', file=sys.stderr)
+        print('Error: Select a correct palette\'s name', file=sys.stderr)
         sys.exit()
-    if palette == 'custom':
-        for key,val in data[ant]['custom'].items():
-            if val == list():
-                palette = 'standard'
-                break
+    
+    for key,val in data[ant][palette].items():
+        if val == list():
+            palette = 'standard'
+            break
     arg['--palette'] = {k: v[0] for k, v in data[ant][palette].items()}
     arg['color_names'] = {k: v[1] for k, v in data[ant][palette].items()}
         
@@ -536,7 +537,7 @@ def plot_ED(df, arg):
         rtch = rt.format(chrom[ch])
         filename = rtch + typ
         filename = check_save(arg, filename)
-        plt.savefig(arg['--outdir']+filename)
+        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'])
         plt.close()
 
         cap = list()
@@ -577,7 +578,7 @@ def plot_G(df, arg):
         rtch = rt.format(chrom[ch])
         filename = rtch + typ
         filename = check_save(arg, filename)
-        plt.savefig(arg['--outdir']+filename)
+        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'])
         plt.close()
         cap = list()
 
@@ -631,7 +632,7 @@ def pval_multi_graph(df, arg):
 
         filename = check_save(arg, filename)
         f_name.append(filename)
-        plt.savefig(arg['--outdir']+filename)
+        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'])
         plt.close()
     cap = list()
     if arg['--captions']:
@@ -693,7 +694,7 @@ def pval_manhattan_plot(df, arg):
     filename = rt + typ
     filename = check_save(arg, filename)
     f_name.append(filename)
-    plt.savefig(arg['--outdir']+filename)
+    plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'])
     plt.close()
     cap = list()
     if arg['--captions']:
@@ -751,7 +752,7 @@ def pval_mono_graph(df, arg):
         filename=rtch + typ
         filename=check_save(arg, filename)
 
-        plt.savefig(arg['--outdir']+filename)
+        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'])
         plt.close()
 
         if arg['--captions']:
@@ -805,7 +806,7 @@ def qq_plot(df, arg):
         # mov_avg.to_csv(path_or_buf='./mov_avg_pvalue.txt',sep='\t', header=True)
         filename='chr_{}_qqplot'.format(chrom[i]) + typ
         filename=check_save(arg, filename)
-        plt.savefig(arg['--outdir']+filename)
+        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'])
 
 
 def AF1_AF2_mono_graph(df, arg):
@@ -841,7 +842,7 @@ def AF1_AF2_mono_graph(df, arg):
         rtch1 = rt1.format(chrom[i])
         filename=rtch1 + typ
         filename=check_save(arg, filename)
-        plt.savefig(arg['--outdir']+filename)
+        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'])
         plt.close()
         cap = list()
         if arg['--captions']:
@@ -874,7 +875,7 @@ def AF1_AF2_mono_graph(df, arg):
         rtch2 = rt2.format(chrom[i])
         filename=rtch2 + typ
         filename=check_save(arg, filename)
-        plt.savefig(arg['--outdir']+filename)
+        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'])
         plt.close()
         cap = list()
         if arg['--captions']:
@@ -962,7 +963,7 @@ def AF_mono_graph(df, arg, g_type):
         rtch = rt.format(chrom[i])
         filename=rtch + typ
         filename=check_save(arg, filename)
-        plt.savefig(arg['--outdir']+filename)
+        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'])
         plt.close()
         cap = list()
         if arg['--captions']:
@@ -1027,7 +1028,7 @@ def pval_multi_Vertical_graph(df, arg):
         filename= rt + typ
         filename=check_save(arg, filename)
         f_name.append(filename)
-        plt.savefig(arg['--outdir']+filename)
+        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'])
         plt.close()
     cap = list()
     if arg['--captions']:
@@ -1085,7 +1086,7 @@ def ED_multi_Vertical_graph(df, arg):
         filename= rt + typ
         filename=check_save(arg, filename)
         f_name.append(filename)
-        plt.savefig(arg['--outdir']+filename)
+        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'])
         plt.close()
     cap = list()
     if arg['--captions']:
@@ -1139,7 +1140,7 @@ def G_multi_Vertical_graph(df, arg):
         filename= rt + typ
         filename=check_save(arg, filename)
         f_name.append(filename)
-        plt.savefig(arg['--outdir']+filename)
+        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'])
         plt.close()
     cap = list()
     if arg['--captions']:
@@ -1242,7 +1243,7 @@ def AF_multi_Vertical_graph(df, arg, g_type):
         filename= rt + typ
         filename=check_save(arg, filename)
         f_name.append(filename)
-        plt.savefig(arg['--outdir']+filename)
+        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'])
         plt.close()
     cap = list()
     if arg['--captions']:
@@ -1311,7 +1312,7 @@ def AF12_multi_Vertical_graph(df, arg):
         filename=rt1+typ
         filename=check_save(arg, filename)
         f1_name.append(filename)
-        plt.savefig(arg['--outdir']+filename)
+        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'])
         plt.close()
     cap = list()
     if arg['--captions']:
@@ -1363,7 +1364,7 @@ def AF12_multi_Vertical_graph(df, arg):
         filename=rt2+typ
         filename=check_save(arg, filename)
         f2_name.append(filename)
-        plt.savefig(arg['--outdir']+filename)
+        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'])
         plt.close()
 
     cap = list()
@@ -1455,7 +1456,7 @@ def AF1_AF2_pval_mono(df, arg):
         rtch = rt.format(chrom[i])
         filename=rtch + typ
         filename=check_save(arg, filename)
-        plt.savefig(arg['--outdir']+filename)
+        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'])
         plt.close()
         cap = list()
 
@@ -1567,7 +1568,7 @@ def qtl_mixed_plot(df, arg):
         rtch = rt.format(chrom[i])
         filename=rtch + typ
         filename=check_save(arg, filename)
-        plt.savefig(arg['--outdir']+filename)
+        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'])
         plt.close()
         cap = list()
 
@@ -1660,7 +1661,7 @@ def snp_index_graph(df, arg):
         rtch = rt.format(chrom[i])
         filename=rtch + typ
         filename=check_save(arg, filename)
-        plt.savefig(arg['--outdir']+filename)
+        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'])
         plt.close()
         cap = list()
         if arg['--captions']:
@@ -1846,5 +1847,5 @@ def Delta2_Vertical_graph(df, arg):
         filename='delta2multiV'+typ
         filename=check_save(arg, filename)
         f1_name.append(filename)
-        plt.savefig(arg['--outdir']+filename)
+        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'])
         plt.close()
