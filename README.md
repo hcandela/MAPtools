@@ -147,11 +147,16 @@ gatk HaplotypeCaller --output variants.vcf -I fixed_white.bam -I fixed_red.bam -
 
 #### 4. Running MAPtools:
 
+
+4.1 Analyze your data with the ``qtl`` command:
+
 Use the ``qtl`` command to process the ``variants.vcf`` file produced in the previous step. You need to specify which samples are available using the ``--data`` option, indicating them in the same order as in the VCF file. In this experiment, the white and red bulks have been designated as L (low) and H (high), respectively. With the ``-I`` option, the analysis skips the indels and focuses on nucleotide substitutions:
 
 ```
 ./maptools.py qtl --data L,H -i variants.vcf -o qtl.txt -I
 ```
+
+4.2 Generate plots with the ``qtlplot`` command:
 
 Use the ``qtlplot`` command to automatically generate plots using the output of the previous command, which was saved to the ``qtl.txt`` file:
 
