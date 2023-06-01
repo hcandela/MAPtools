@@ -170,7 +170,7 @@ In the above example, we used the following options:
 ``--ci95`` marks the 95% confidence interval in delta plots
 ``-o`` specifies the output folder
 
-#### Analysis of MBS data
+### Analysis of MBS data
 
 For this tutorial, you will need to download the raw sequencing data from Viñegra de la Torre *et al*. (2022), which are available from the [NCBI SRA database](https://www.ncbi.nlm.nih.gov/sra) with accession numbers SRR15564670, SRR11140832, and SRR11140833. Available sequenced samples include a bulk of mutant individuals from an isogenic segregating population (SRR15564670), and two replicates of the resequencing of the non-mutagenized parent involved in the cross (SRR11140832, SRR11140833).
 
