@@ -1739,7 +1739,7 @@ def plotDistanceAvg(d, chrom, arg, ax, field):
     interval_ranges = [x for x in range(0, max_x, arg['--distance-avg'])]
     interval_labels = [f'{start}-{end-1}' for start, end in zip(interval_ranges, interval_ranges[1:])]
     d['Interval'] = pd.cut(d['POS'], bins=interval_ranges, labels=interval_labels)
-    res = d.groupby('Interval').mean()
+    res = d[['Interval','POS',field]].groupby('Interval').mean()
     res = res.dropna()
 
     ax.plot(res['POS'], res[field], c=c_, lw=2)
