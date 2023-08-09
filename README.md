@@ -96,8 +96,7 @@ bwa mem INDEX ERR4463153_1.fastq.gz ERR4463153_2.fastq.gz -o ERR4463153.sam
 samtools sort -o ERR4463153.bam ERR4463153.sam
 ```
 
-
-In this experiment, each bulk has been sequenced twice. For this reason, we need to merge the BAM files for the ERR4463155 and ERR4463156 samples, both of which with white fruits:
+In this particular experiment, each bulk has been sequenced twice. For this reason, we merge the BAM files for the ERR4463155 and ERR4463156 samples, both of which with white fruits:
 
 ```
 samtools merge -o white.bam ERR4463155.bam ERR4463156.bam
@@ -148,32 +147,39 @@ gatk HaplotypeCaller --output variants.vcf -I fixed_white.bam -I fixed_red.bam -
 
 #### 4. Running MAPtools:
 
-* First, we analyze the data with ``qtl`` option, assuming that the white and red are the extreme phenotypes "low" and "high", respectively. ``-I`` option is used to ignore indels for this example:
+
+4.1 Analyze your data with the ``qtl`` command:
+
+Use the ``qtl`` command to process the ``variants.vcf`` file produced in the previous step. You need to specify which samples are available using the ``--data`` option, indicating them in the same order as in the VCF file. In this experiment, the white and red bulks have been designated as L (low) and H (high), respectively. With the ``-I`` option, the analysis skips the indels and focuses on nucleotide substitutions:
 
 ```
 ./maptools.py qtl --data L,H -i variants.vcf -o qtl.txt -I
 ```
 
-* Now we can plot the results using ``qtlplot``:
+4.2 Generate plots with the ``qtlplot`` command:
+
+Use the ``qtlplot`` command to automatically generate plots using the output of the previous command, which was saved to the ``qtl.txt`` file:
 
 ```
 ./maptools.py qtlplot -i qtl.txt --captions -m -c Fvb1,Fvb2,Fvb3,Fvb4,Fvb5,Fvb6,Fvb7 -A 800 -a --bonferroni --ci95 -o graphics_qtl/
 ```
 
-* Explanation of options:
+In the above example, we used the following options:
 
-``--captions`` Generates figure captions.
-``-m`` Multi-chromosome plots.
-``-c`` List of selected chromosomes for visualization.
-``-A`` Number of adjacent markers to calculate moving average lines.
-``-a`` Generates all possible plots.
-``--bonferroni`` Show bonferroni test line in p-value plots.
-``--ci95`` Show the 95% confidence interval in delta plots.
-``-o`` Output folder.
+``--captions`` generates figure legends
+``-m`` produces multi-panel plots
+``-c`` selects specific chromosomes to plot
+``-A`` specifies how many markers to include in the moving average
+``-a`` generates all possible plots
+``--bonferroni`` adds Bonferroni threshold to p-value plots
+``--ci95`` marks the 95% confidence interval in delta plots
+``-o`` specifies the output folder
 
-#### Analysis of MBS data
+### Analysis of MBS data
 
-For this tutorial, you will need to download the raw sequencing data from Viñegra de la Torre *et al*. (2022), which are available from the [NCBI SRA database](https://www.ncbi.nlm.nih.gov/sr) with accession numbers SRR15564670, SRR11140832, and SRR11140833. You will also need to download the FASTA file with the [reference genome sequence of *Arabis alpina*](http://www.arabis-alpina.org/data/ArabisAlpina/assemblies/V5.1/), and the [genome annotation file in GFF3 format](http://www.arabis-alpina.org/data/ArabisAlpina/assemblies/V5.1/)
+For this tutorial, you will need to download the raw sequencing data from Viñegra de la Torre *et al*. (2022), which are available from the [NCBI SRA database](https://www.ncbi.nlm.nih.gov/sra) with accession numbers SRR15564670, SRR11140832, and SRR11140833. Available sequenced samples include a bulk of mutant individuals from an isogenic segregating population (SRR15564670), and two replicates of the resequencing of the non-mutagenized parent involved in the cross (SRR11140832, SRR11140833).
+
+You will also need to download the FASTA file with the [reference genome sequence of *Arabis alpina*](http://www.arabis-alpina.org/data/ArabisAlpina/assemblies/V5.1/), and the [genome annotation file in GFF3 format](http://www.arabis-alpina.org/data/ArabisAlpina/assemblies/V5.1/)
 
 #### 1. Map the reads to the reference genome using your read mapper of choice
 
@@ -209,17 +215,20 @@ bwa mem INDEX SRR15564670_1.fastq.gz SRR15564670_2.fastq.gz -o SRR15564670.sam
 
 ```
 samtools sort -o mutant.bam SRR15564670.sam
+
+samtools sort -o SRR11140832.bam SRR11140832.sam
+
+samtools sort -o SRR11140833.bam SRR11140833.sam
 ```
 
-
-In this experiment, the parental sample has been sequenced twice. For this reason, we need to merge the BAM files for the SRR11140832 and SRR11140833 files:
-
-```
-samtools merge -o parental.bam SRR11140832.bam SRR11140833.bam
-```
+Because the parent has been sequenced twice, merge the BAM files for the SRR11140832 and SRR11140833 samples:
 
 ```
-samtools index parental.bam
+samtools merge -o parent.bam SRR11140832.bam SRR11140833.bam
+```
+
+```
+samtools index parent.bam
 ```
 
 ```
@@ -233,7 +242,7 @@ samtools index mutant.bam
 Use the `mpileup` and `call` commands of BCFtools to prepare a single VCF file containing the AD (Allele Depth) field for each bulk:
 
 ```
-bcftools mpileup -f Arabis_alpina.MPIPZ.version_5.1.chr.all.fasta.gz  --annotate FORMAT/AD mutant.bam parental.bam | bcftools call -mv -o variants.vcf
+bcftools mpileup -f Arabis_alpina.MPIPZ.version_5.1.chr.all.fasta.gz  --annotate FORMAT/AD mutant.bam parent.bam | bcftools call -mv -o variants.vcf
 ```
 
 You might need to index the genome with ``samtools faidx``
@@ -245,72 +254,75 @@ If you plan to do the variant calling with GATK, note that GATK requires BAM fil
 ```
 samtools addreplacerg -r ID:mutant -r SM:mutant -o fixed_mutant.bam mutant.bam
 
-samtools addreplacerg -r ID:parental -r SM:parental -o fixed_parental.bam parental.bam
+samtools addreplacerg -r ID:parent -r SM:parent -o fixed_parent.bam parent.bam
 ```
 
 Use the `HaplotypeCaller` command of GATK to prepare a single VCF file containing the AD (Allele Depth) field for each bulk:
 
 ```
-gatk HaplotypeCaller --output variants.vcf -I fixed_mutant.bam -I fixed_parental.bam --reference Arabis_alpina.MPIPZ.version_5.1.chr.all.fasta.gz
+gatk HaplotypeCaller --output variants.vcf -I fixed_mutant.bam -I fixed_parent.bam --reference Arabis_alpina.MPIPZ.version_5.1.chr.all.fasta.gz
 
 ```
 
 #### 4. Running MAPtools:
 
-* First, we analyze the data with ``mbs`` option assuming that the mutant phenotype is in the recesive pool. Also, we have processed the samples of the recesive pool and the parental dominant resequencing with BCFtools, in that specific order:
+4.1 Analyze your data with the ``mbs`` command:
+
+Use the `mbs` command to process the ``variants.vcf`` file produced in the previous step. You need to specify which samples are available using the ``--data`` option, indicating them in the same order as in the VCF file. In this experiment, a bulk of phenotypically recessive individuals and a wild-type parent have been designated as R and Pd, respectively.
 
 ```
 ./maptools.py mbs --data R,Pd -m R --EMS --parental-filter -o mbs.txt -i variants.vcf
 ```
 
-* Explanation of options:
+In the above example, we used the following options:
 
-``--data``: defines the type of data. In this case the ``bcftools mpileup`` has processed the samples in this order: recesive sample pool (R), and parental dominant (Pd).
-``-m R``: indicates which pool carries the mutant phenotype.
-``--EMS``: filter out SNPs not caused by EMS.
-``--parental-filter``: filter out variants present in the parental sequencing.
-``-o``: output file.
+``--data`` indicates the available samples
+``-m R`` indicates that the mutation is recessive
+``--EMS`` focuses on G/C-to-A/T transition mutations
+``--parental-filter`` excludes variants also present in the Pd sample
+``-o`` specifies the output file
 
-#### 5. visualizing data with MAPtools:
+4.2 Generate plots with the ``mbsplot`` command:
 
-We generate a plot of the data generated with ``mbsplot``. In this case it is recommended to specify the chromosomes that are going to be ploted, as there are a lot of individual contigs in the reference fasta.
+Use the ``mbsplot`` command to automatically generate plots using the output of the previous command, which was saved to the ``mbs.txt`` file:
 
 ```
-./maptools.py mbsplot -i mbs.txt -m --captions -c chr1,chr2,chr3,chr4,chr5,chr6,chr6,chr7,chr8 -A 10 -b 20 -a -o graphics_mbs/
+./maptools.py mbsplot -i mbs.txt --captions -m -c chr1,chr2,chr3,chr4,chr5,chr6,chr6,chr7,chr8 -A 10 -b 20 -a -o graphics_mbs/
 ```
 
-* Explanation of options:
+In the above example, we used the following options:
 
-``-m``: multi-chromosome plots.
-``--captions``: generates figure captions.
-``-c``: list of selected chromosomes for visualization.
-``-A``: number of adjacent markers to calculate moving average lines.
-``-b``: generates a boost plot with an moving average line of the given INT (in this case, 20).
-``-a``: generates all possible plots.
-``-o``: output directory.
+``--captions`` generates figure legends
+``-m`` produces multi-panel plots
+``-c`` selects specific chromosomes to plot
+``-A`` specifies how many markers to include in the moving average
+``-b`` adds the boost to the allele-frequency plots as a moving average of 20 markers
+``-a`` generates all possible plots
+``-o`` specifies the output directory
 
-#### 6. Analyze MBS data with MAPtools:
+4.3 Annotate the variants with the ``annotate`` command:
 
-As we can observe in the plots, the mutation is located in chromosome 8 and approximately between positions 14250000 and 16700000, so we can analyze this region:
+Use the ``annotate`` command to predict the effect of the variants detected. In the example, we have used the ``-R`` option to focus on an interval located on chromosome 8.
 
 ```
 ./maptools.py annotate --data R,Pd -m R --EMS --parental-filter -i variants.vcf -g gff_arabis.gff3 -f Arabis_alpina.MPIPZ.version_5.1.chr.all.fasta.gz -R chr8:14250000-16700000 -o annotate_mbs.txt
 ```
 
-* Explanation of options:
+In the above example, we used the following options:
 
-``--data R,Pd``: defines the type of data. In this case, the samples are the the recessive pool (R) and the parental dominant (Pd).
-``-m R``: indicates which pool carries the mutant phenotype. It is not necessary in this example, but it is present to improve clarity.
-``--EMS``: filter out SNPs not caused by EMS.
-``--parental-filter``: filter out variants present in the parental sequencing.
-``-i``: input file in VCF format'
-``-g``: GFF annotation file.
-``-f``: reference genome file.
-``-R``: region where the analysis will be performed.
-``-o``: output file.
-
+``--data R,Pd``indicates the available samples
+``-m R`` indicates that the mutation is recessive
+``--EMS`` focuses on G/C-to-A/T transition mutations
+``--parental-filter`` excludes variants also present in the Pd sample
+``-i`` input VCF file produced by the variant caller
+``-g`` GFF annotation file
+``-f`` reference genome file
+``-R`` chromosome and interval to analyze
+``-o`` specifies the output file
 
 ## **Citation**
 
+If you find this software useful, please cite:
+
 César Martínez-Guardiola, Ricardo Parreño, Héctor Candela (2023).
-MAPtools: a Command-Line Tool for Mapping-by-Sequencing and QTL-Seq Analysis and Visualization. Submitted.
+MAPtools: Command-Line Tools for Mapping-by-Sequencing and QTL-Seq Analysis and Visualization. Submitted.
