@@ -219,6 +219,7 @@ Options:
 
 Plot options:
   -A, --moving-avg INT          add moving averages to plots, calculated using INT adjacent markers
+  -W, --distance-avg INT        add the average of the values, calculated as the physical distance for markers within a range INT bp
   -b, --boost INT               add boost to allele frequency plots, calculated as the average boost
                                 values of INT adjacent markers
   -t, --alpha FLOAT             marker transparency in plots (0 - 1) [default: 0.4]

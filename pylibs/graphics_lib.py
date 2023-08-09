@@ -113,6 +113,10 @@ def test_plot(arg, __doc__):
     arg['--alpha'] = float(arg['--alpha'])
     arg['lim'] = 1e-90
     arg['--output-type'] = '.'+arg['--output-type']
+
+    if arg['--moving-avg'] != None and arg['--distance-avg'] != None:
+        print('Error: Options -A and -W are incompatible', file=sys.stderr)
+        sys.exit()
     if arg['--moving-avg'] == None:
         arg['--moving-avg'] = False
     else:
@@ -120,6 +124,14 @@ def test_plot(arg, __doc__):
         if arg['--moving-avg'] <= 0:
             print(
                 'Error: The window size for moving average (-A) must be an integer higher than zero.', file=sys.stderr)
+            sys.exit()
+    if arg['--distance-avg'] == None:
+        arg['--distance-avg'] = False
+    else:
+        arg['--distance-avg'] = int(arg['--distance-avg'])
+        if arg['--distance-avg'] <= 0:
+            print(
+                'Error: The window size for distance average (-W) must be an integer higher than zero.', file=sys.stderr)
             sys.exit()
     return arg
 
@@ -739,6 +751,8 @@ def pval_mono_graph(df, arg):
         ax.set_xlabel(xlabel='Chromosomal position (bp)', fontsize=15)
         ax.set_ylabel(ylabel='log'+r'$_{10}$'+'(p-value)', fontsize=12, labelpad=15)
         ax.tick_params(axis='y', which='major', labelsize=8)
+        if arg['--distance-avg'] != False:
+            plotDistanceAvg(d, chrom[i], arg, ax, 'log10PVALUE')
         if arg['--moving-avg'] != False:
             plot_avg(d, arg, ax, 'log10PVALUE')
         if arg['--bonferroni']:
@@ -766,47 +780,6 @@ def pval_mono_graph(df, arg):
                 cap.append(arg['lines'][2].format(str(arg['n_markers'])))
             write_caption(f, cap,arg)
 
-
-def qq_plot(df, arg):
-    #TODO
-    df['DP']=df['DPdom_1']+df['DPrec_1']+df['DPdom_2']+df['DPrec_2']
-    chrom=arg['--chromosomes']
-    typ=arg['--output-type']
-    inp_file=arg['--input']
-    r=pd.DataFrame()
-    r['A']=df.DPdom_1
-    r['B']=df.DPrec_1
-    r['C']=df.DPdom_2
-    r['D']=df.DPrec_2
-    r['#CHROM']=df['#CHROM']
-    r['obs_logPVALUE']=-1*df.log10PVALUE
-    r['e_logPVALUE']=r.apply(expected_pvalue, axis=1)
-    r=r.dropna()
-    for i in range(len(chrom)):
-        r_=r[r['#CHROM'] == chrom[i]]
-        x=r_['e_logPVALUE']
-        y=r_['obs_logPVALUE']
-        fig, ax=plt.subplots(figsize=(5, 5))
-        ax.scatter(x, y, s=0.5, c='royalblue', vmin=0, vmax=100, alpha=0.4)
-        # ax.set(xlim=(0, max_x), ylim=(min_y, 0))
-        # ax.set_xticks(ticks=np.arange(0,max_x,5e6))#,fontdict={'family':'arial', 'size':'8'})
-        # ax.set_xticklabels(labels=np.arange(0,max_x,5e6),fontdict={'family':'arial', 'size':'8'})
-        # ax.xaxis.set_major_formatter(ScalarFormatter())
-        # ax.ticklabel_format(axis='x', style='scientific', scilimits=(6,6), useMathText=True)
-        ax.set_xlabel(xlabel='Expected '+'-log' +
-                      r'$_{10}$'+'(p-value)', fontdict={'family': 'arial', 'size': '8'})
-        ax.set_ylabel(ylabel='Observed '+'log' +
-                      r'$_{10}$'+'(p-value)', fontdict={'family': 'arial', 'size': '8'})
-        # ax.set_yticks(ticks=np.arange(round(min_y),0,2))
-        # ax.set_yticklabels(labels=np.arange(round(min_y),0,2),fontdict={'family':'arial', 'size':'8'})
-        # ax.axhline(y=threshold, color='black', xmin=0,xmax=max_x_ch, linestyle='dashed', linewidth=0.75)
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-
-        # mov_avg.to_csv(path_or_buf='./mov_avg_pvalue.txt',sep='\t', header=True)
-        filename='chr_{}_qqplot'.format(chrom[i]) + typ
-        filename=check_save(arg, filename)
-        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'])
 
 
 def AF1_AF2_mono_graph(df, arg):
@@ -1733,6 +1706,44 @@ def plot_avg(d, arg, ax, field):
                d['DP'].rolling(arg['--moving-avg']).sum())
     
     ax.plot(d['avgx'], d['avgy'], c=c_, lw=2)#lw=0.75
+
+def plotDistanceAvg(d, chrom, arg, ax, field):
+    if field == 'SNPidx2':
+        #d['DP']=d['DPdom_2']+d['DPrec_2']
+        c_=arg['--palette']['SNPidx2']
+    elif field == 'SNPidx1':
+        #d['DP']=d['DPdom_1']+d['DPrec_1']
+        c_=arg['--palette']['SNPidx1']
+    elif field == 'MAX_SNPidx2':
+        #if 'SNPidx2' not in arg['--fields']:
+        #    d['DP']=d['DPdom_1']+d['DPrec_1']
+        #else:
+        #    d['DP']=d['DPdom_2']+d['DPrec_2']
+        c_=arg['--palette']['MAX_SNPidx2']
+    elif field == 'log10PVALUE':
+        #d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
+        c_=arg['--palette']['log10PVALUE']
+    elif field == 'ED100_4':
+        #d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
+        c_=arg['--palette']['log10PVALUE']
+    elif field == 'DELTA':
+        #d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
+        c_=arg['--palette']['DELTA']
+    elif field == 'G':
+        #d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
+        c_=arg['--palette']['mvg']
+    elif field == 'delta2':
+        #d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
+        c_=arg['--palette']['SNPidx1']
+    max_x = arg['contigs'][chrom]
+    interval_ranges = [x for x in range(0, max_x, arg['--distance-avg'])]
+    interval_labels = [f'{start}-{end-1}' for start, end in zip(interval_ranges, interval_ranges[1:])]
+    d['Interval'] = pd.cut(d['POS'], bins=interval_ranges, labels=interval_labels)
+    res = d.groupby('Interval').mean()
+    res = res.dropna()
+
+    ax.plot(res['POS'], res[field], c=c_, lw=2)
+
 
 def plot_avg_qtl_SNPidx(d, arg, ax):
     color = arg['--palette']['mvg']
