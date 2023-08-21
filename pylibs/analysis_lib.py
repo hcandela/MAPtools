@@ -1685,7 +1685,7 @@ def read_header_merge(arg:dict):
 						ref = mbs_argv[ar_index+1]
 						result.append(True if ref != 'miss' else False)
 					elif ar == '-d' or ar == '--data':
-						ar_index = mbs_argv(ar)
+						ar_index = mbs_argv.index(ar)
 						data = mbs_argv[ar_index+1].split(',')
 						result.append(True if 'Pd' in data or 'Pr' in data else False)
 				#arg['--ref-genotype'] = True if True in result else False

@@ -34,12 +34,19 @@ def read_header_plot(arg):
                     print('Error: the input data must come from the qtl command', file=sys.stderr)
                     sys.exit()
             if line.startswith('##maptools_mergeCommand='):
-                names = ['-w','--window']
                 merge_argv = line.split('=')[1].split(' ')
-                for w in names:
-                    if w in merge_argv:
-                        w_index = merge_argv.index(w)
-                arg['--window'] = merge_argv[w_index+1]
+                if '-w' or '--window' in merge_argv:
+                    names = ['-w','--window']
+                    for w in names:
+                        if w in merge_argv:
+                            w_index = merge_argv.index(w)
+                            arg['--window'] = merge_argv[w_index+1]
+                if '-D' or '--distance' in merge_argv:
+                    names = ['-D','--distance']
+                    for w in names:
+                        if w in merge_argv:
+                            w_index = merge_argv.index(w)
+                            arg['--distance'] = merge_argv[w_index+1]
             if line.startswith('##maptools_qtlCommand='):
                 if 'qtlplot' not in arg.keys():
                     print('Error: the input data must come from the mbs command', file=sys.stderr)
@@ -232,10 +239,25 @@ def check_merge(arg,__doc__):
             arg['--output'] = None
 
     arg['lim'] = 1e-90
-    arg['--window'] = int(arg['--window'])
-    if arg['--window'] <= 0:
-        print('Error: The window size must be an integer higher than zero.', file=sys.stderr)
+
+    if arg['--window'] != None and arg['--distance'] != None:
+        print('Error: Optios -w and -D are incompatible.', file=sys.stderr)
         sys.exit()
+    if arg['--window'] == None:
+        arg['--window'] = False
+    else:
+        arg['--window'] = int(arg['--window'])
+        if arg['--window'] <= 0:
+            print('Error: The window size must be an integer greater than zero.', file=sys.stderr)
+            sys.exit()
+    
+    if arg['--distance'] == None:
+        arg['--distance'] = False
+    else:
+        arg['--distance'] = int(arg['--distance'])
+        if arg['--distance'] <= 0:
+            print('Error: The distance size must be an integer greater than zero.', file=sys.stderr)
+            sys.exit()
     # Checking graphic types
     return arg
 
@@ -244,7 +266,7 @@ def read_palette(arg):
         with open("palette.json") as json_file:
             data = json.load(json_file)
     except FileNotFoundError:
-        print('Error: Plese put the file \"palette.json\" in the MAPtools folder.', file=sys.stderr)
+        print('Error: Please put the file \"palette.json\" in the MAPtools folder.', file=sys.stderr)
         sys.exit()
     arg['DPI'] = data['DPI']
     ant = 'mbs' if 'mbsplot' in arg.keys() else 'qtl'
@@ -423,10 +445,20 @@ def grouped_by(df, arg):
     write_line(n_head, arg['fsal'])
     for ch in range(len(chrom)):
         d = df[df['#CHROM'] == chrom[ch]]
-        d.index = np.arange(len(d))
-        d_list = [i for i in range(len(d))]
-        g_list = [d_list[i:i+w]
-            for i in range(0, len(d_list), w)]  # indexes for each group
+        if arg['--window'] != False:
+            d.index = np.arange(len(d))
+            d_list = [i for i in range(len(d))]
+            g_list = [d_list[i:i+w] for i in range(0, len(d_list), w)]  # indexes for each group
+        else:
+            D = arg['--distance']
+            maxPos = arg['--contigs'][chrom[ch]]
+            intRanges = [x for x in range(0, maxPos,D)]
+            if intRanges[-1] < maxPos:
+                intRanges.append(maxPos)
+            intLabels = [f'{start}-{end-1}' for start, end in zip(intRanges, intRanges[1:])]
+            d['Interval'] = pd.cut(d['POS'], bins=intRanges, labels=intLabels)
+            grouped_indices = d.groupby('Interval').apply(lambda group: group.index.tolist())
+            g_list = [indices for indices in grouped_indices if indices]
 
         for g in g_list:  # for each group in group list
             res = list()
@@ -1709,40 +1741,47 @@ def plot_avg(d, arg, ax, field):
 
 def plotDistanceAvg(d, chrom, arg, ax, field):
     if field == 'SNPidx2':
-        #d['DP']=d['DPdom_2']+d['DPrec_2']
+        d['DP']=d['DPdom_2']+d['DPrec_2']
         c_=arg['--palette']['SNPidx2']
     elif field == 'SNPidx1':
-        #d['DP']=d['DPdom_1']+d['DPrec_1']
+        d['DP']=d['DPdom_1']+d['DPrec_1']
         c_=arg['--palette']['SNPidx1']
     elif field == 'MAX_SNPidx2':
-        #if 'SNPidx2' not in arg['--fields']:
-        #    d['DP']=d['DPdom_1']+d['DPrec_1']
-        #else:
-        #    d['DP']=d['DPdom_2']+d['DPrec_2']
+        if 'SNPidx2' not in arg['--fields']:
+            d['DP']=d['DPdom_1']+d['DPrec_1']
+        else:
+            d['DP']=d['DPdom_2']+d['DPrec_2']
         c_=arg['--palette']['MAX_SNPidx2']
     elif field == 'log10PVALUE':
-        #d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
+        d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
         c_=arg['--palette']['log10PVALUE']
     elif field == 'ED100_4':
-        #d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
+        d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
         c_=arg['--palette']['log10PVALUE']
     elif field == 'DELTA':
-        #d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
+        d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
         c_=arg['--palette']['DELTA']
     elif field == 'G':
-        #d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
+        d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
         c_=arg['--palette']['mvg']
     elif field == 'delta2':
-        #d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
+        d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
         c_=arg['--palette']['SNPidx1']
     max_x = arg['contigs'][chrom]
+    d['prodx'] = d['DP']*d['POS']
+    d['prody'] = d['DP']*d[field]
     interval_ranges = [x for x in range(0, max_x, arg['--distance-avg'])]
+    if interval_ranges[-1] < max_x:
+        interval_ranges.append(max_x)
     interval_labels = [f'{start}-{end-1}' for start, end in zip(interval_ranges, interval_ranges[1:])]
     d['Interval'] = pd.cut(d['POS'], bins=interval_ranges, labels=interval_labels)
-    res = d[['Interval','POS',field]].groupby('Interval').mean()
+
+    res = d.groupby('Interval').agg({'prodx': sum, 'prody': sum, 'DP': sum})
+    res['POSx'] = (res['prodx']/res['DP'])
+    res['VALy'] = (res['prody']/res['DP'])
     res = res.dropna()
 
-    ax.plot(res['POS'], res[field], c=c_, lw=2)
+    ax.plot(res['POSx'], res['VALy'], c=c_, lw=2)
 
 
 def plot_avg_qtl_SNPidx(d, arg, ax):
@@ -1806,6 +1845,8 @@ def write_caption(f, text, arg):
         f.write(sentence+' ')
     if '--window' in arg.keys():
         f.write('The dots correspond to genomic regions defined by non-overlapping bins of {} consecutive markers'.format(str(arg['--window'])))
+    if '--distance' in arg.keys():
+        f.write('The dots correspond to bins of all markers within a range of {} pb'.format(str(arg['--distance'])))
     f.write('\n'*2)
     f.close()
 

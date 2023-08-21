@@ -180,7 +180,8 @@ Options:
   -i, --input FILE              input file produced by the mbs or qtl commands
 
 Input Options:                   
-  -w, --window INT              number of markers per bin [default: 20]
+  -w, --window INT              number of markers per bin
+  -D, --distance INT            chromosome distance to cluster markers within a range of INT bp
   -c, --chromosomes LIST        comma-separated list of chromosome names [default: all]
   
 Output Options:
