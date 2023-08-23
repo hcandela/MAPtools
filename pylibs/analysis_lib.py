@@ -38,6 +38,9 @@ def check_args(__doc__,arg:dict):
 				print(f'Error: \"{d}\" is not a valid sample name.', file=sys.sterr)
 				sys.exit()
 		arg['--data'] = [translate[i] for i in arg['--data']]
+		if arg['--ref-genotype'] not in {'P','miss'}:
+			print('Error: Reference genotype\'s tag (-r) should be \'P\' or \'miss\'', file=sys.stderr)
+			sys.exit()
 		if arg['--ref-genotype'] == 'P':
 			arg['--ref-genotype'] = 'D'
 	if arg['--input'] == None and arg['pipe'] == True:

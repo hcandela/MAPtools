@@ -122,24 +122,24 @@ def test_plot(arg, __doc__):
     arg['lim'] = 1e-90
     arg['--output-type'] = '.'+arg['--output-type']
 
-    if arg['--moving-avg'] != False:
-    #    arg['--moving-avg'] = False
-    #else:
+    if arg['--moving-avg'] == False or arg['--moving-avg'] == None :
+        arg['--moving-avg'] = False
+    else:
         arg['--moving-avg'] = int(arg['--moving-avg'])
         if arg['--moving-avg'] <= 0:
             print(
                 'Error: The window size for moving average (-A) must be an integer higher than zero.', file=sys.stderr)
             sys.exit()
-    if arg['--distance-avg'] != False:
-    #    arg['--distance-avg'] = False
-    #else:
+    if arg['--distance-avg'] == False or arg['--distance-avg'] == None:
+        arg['--distance-avg'] = False
+    else:
         arg['--distance-avg'] = int(arg['--distance-avg'])
         if arg['--distance-avg'] <= 0:
             print(
                 'Error: The window size for distance average (-W) must be an integer higher than zero.', file=sys.stderr)
             sys.exit()
     if arg['--moving-avg'] != False and arg['--distance-avg'] != False:
-        print(arg['--moving-avg'], arg['--distance-avg'])
+        #print(arg['--moving-avg'], arg['--distance-avg'])
         print('Error: Options -A and -W are incompatible', file=sys.stderr)
         sys.exit()
     return arg
@@ -1832,9 +1832,9 @@ def snp_index_graph(df, arg):
             distanceSNPidx(d, arg, ax, chrom[i])
         if arg['--ci95']:
             if arg['--moving-avg'] != False:
-                calc_ci(d, arg, ax)
+                calc_ci(d, arg, ax[2])
             if arg['--distance-avg'] != False:
-                distanceCI(d, arg, ax, chrom[i])
+                distanceCI(d, arg, ax[2], chrom[i])
         # Save file
         fig.subplots_adjust(hspace=0.1)
         rtch = rt.format(chrom[i])
