@@ -220,9 +220,12 @@ Options:
 
 Plot options:
   -A, --moving-avg INT          add moving averages to plots, calculated using INT adjacent markers
-  -W, --distance-avg INT        add the average of the values, calculated as the physical distance for markers within a range INT bp
+  -W, --distance-avg INT        add the average of the values, calculated as the physical distance
+                                for markers within a INT(bp)-range
   -b, --boost INT               add boost to allele frequency plots, calculated as the average boost
                                 values of INT adjacent markers
+  -B, --distance-boost INT      add boost to allele frequency plots, calculated as the physical distance
+                                for markers within a INT(bp)-range
   -t, --alpha FLOAT             marker transparency in plots (0 - 1) [default: 0.4]
   --bonferroni                  add Bonferroni threshold to p-value plots. Requires -p or -a
   --palette STR                 select a colour palette [default: standard]
@@ -235,7 +238,7 @@ Plot types:
   -M, --max-allele-freq2        plot the frequency of the most abundant allele in R bulk. Use -M when the
                                 alleles cannot be assigned to the parents with certainty
   -X, --combine                 overlay the moving average of AF2 on the AF1 plot, and vice versa. Requires
-                                --moving-avg.
+                                --moving-avg or --distance-avg.
   -m, --multi-chrom             generate multi-chromosome plots for each statistic and the chromosomes 
                                 especified with -c. Manhattan plots require -p or -a
   -a, --all                     generate all possible plots
@@ -250,7 +253,6 @@ Output options:
     arg, df = load_dataframe_plotting(arg)
     #print(arg)
     arg['version'] = v_mbsplot
-    #Delta2_Vertical_graph(df, arg)
     if arg['--pvalue'] == True:
         pval_mono_graph(df, arg)
         if arg['--multi-chrom'] == True:
@@ -258,9 +260,9 @@ Output options:
           pval_multi_Vertical_graph(df, arg)
           pval_manhattan_plot(df, arg)
     if arg['--allele-freq-1'] == True and arg['--allele-freq-2'] == True:
-        if arg['--combine'] and arg['--moving-avg'] != False:
+        if arg['--combine'] and (arg['--moving-avg'] != False or arg['--distance-avg'] != False):
             AF1_AF2_mono_graph(df, arg)
-            if arg['--combine'] and arg['--moving-avg'] != False: 
+            if arg['--multi-chrom'] != False: 
               AF12_multi_Vertical_graph(df, arg)
     if arg['--allele-freq-1'] == True and arg['--allele-freq-2'] == True and arg['--pvalue'] == True:
         #print('Allele Frequencies & P-value vertical single chromosome')
@@ -297,6 +299,8 @@ Options:
 
 Plot options:
   -A, --moving-avg INT          add moving averages to plots, calculated using INT adjacent markers
+  -W, --distance-avg INT        add the average of the values, calculated as the physical distance
+                                for markers within a INT(bp)-range
   -t, --alpha FLOAT             marker transparency in plots (0 - 1) [default: 0.4]
   --bonferroni                  add Bonferroni threshold to p-value plots. Requires -p or -a
   --ci95                        add 95% confidence interval to delta plots. Requires -A
@@ -323,6 +327,7 @@ Output options:
   -O, --output-type TYPE        available types: pdf, svg, jpg [default: pdf]
   """
     arg = docopt(qtlplot_doc, argv=None, help=True,version=v_qtlplot)
+    #print(arg)
     arg = test_plot(arg, qtlplot_doc)
     arg = read_header_plot(arg)
     #print(arg)
@@ -356,12 +361,12 @@ Output options:
       df = get_ED100_4(df, arg, RANG)
       qtl_mixed_plot(df, arg)
     if arg['--allele-freq-H'] == True and arg['--allele-freq-L'] == True:
-        if arg['--combine'] and arg['--moving-avg'] != False:
+        if arg['--combine'] and (arg['--moving-avg'] != False or arg['--distance-avg'] != False):
             AF1_AF2_mono_graph(df, arg)
         if arg['--multi-chrom'] == True:
             AF_multi_Vertical_graph(df, arg, 'SNPidx1')
             AF_multi_Vertical_graph(df, arg, 'SNPidx2')
-            if arg['--combine'] and arg['--moving-avg'] != False:
+            if arg['--combine'] and (arg['--moving-avg'] != False or arg['--distance-avg'] != False):
                 AF12_multi_Vertical_graph(df, arg)
 
     if arg['--allele-freq-H'] == True:

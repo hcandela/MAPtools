@@ -72,6 +72,7 @@ def read_header_plot(arg):
                 id = s[0].split('=')[1]
                 length = s[1].split('=')[1]
                 arg['--contigs'][id] = int(length)
+
             if line.startswith('#CHROM'):
                 arg['header'] = line.rstrip().split('\t')
                 if 'qtlplot' in arg.keys():
@@ -121,25 +122,26 @@ def test_plot(arg, __doc__):
     arg['lim'] = 1e-90
     arg['--output-type'] = '.'+arg['--output-type']
 
-    if arg['--moving-avg'] != None and arg['--distance-avg'] != None:
-        print('Error: Options -A and -W are incompatible', file=sys.stderr)
-        sys.exit()
-    if arg['--moving-avg'] == None:
-        arg['--moving-avg'] = False
-    else:
+    if arg['--moving-avg'] != False:
+    #    arg['--moving-avg'] = False
+    #else:
         arg['--moving-avg'] = int(arg['--moving-avg'])
         if arg['--moving-avg'] <= 0:
             print(
                 'Error: The window size for moving average (-A) must be an integer higher than zero.', file=sys.stderr)
             sys.exit()
-    if arg['--distance-avg'] == None:
-        arg['--distance-avg'] = False
-    else:
+    if arg['--distance-avg'] != False:
+    #    arg['--distance-avg'] = False
+    #else:
         arg['--distance-avg'] = int(arg['--distance-avg'])
         if arg['--distance-avg'] <= 0:
             print(
                 'Error: The window size for distance average (-W) must be an integer higher than zero.', file=sys.stderr)
             sys.exit()
+    if arg['--moving-avg'] != False and arg['--distance-avg'] != False:
+        print(arg['--moving-avg'], arg['--distance-avg'])
+        print('Error: Options -A and -W are incompatible', file=sys.stderr)
+        sys.exit()
     return arg
 
 def load_dataframe_plotting(arg):
@@ -284,12 +286,24 @@ def read_palette(arg):
         
 
 def check_mbs_opts(arg):
+    if arg['--boost'] != None and arg['--distance-boost'] != None:
+        print('Error: Options -b and -B are incompatible', file=sys.stderr)
+        sys.exit()
+    
     if arg['--boost'] == None:
         arg['--boost'] = False
     else:
         arg['--boost'] = int(arg['--boost'])
         if arg['--boost'] <= 0:
-            print('Error: The window size for boost must be an integer higher than zero.', file=sys.stderr)
+            print('Error: The window size for boost (-b) must be an integer higher than zero.', file=sys.stderr)
+            sys.exit()
+    
+    if arg['--distance-boost'] == None:
+        arg['--distance-boost'] = False
+    else:
+        arg['--distance-boost'] = int(arg['--distance-boost'])
+        if arg['--distance-boost'] <= 0:
+            print('Error: The window size for boost (-B) must be an integer higher than zero.', file=sys.stderr)
             sys.exit()
     arg['titles'] = titles_mbs
     arg['lines'] = lines_mbs
@@ -618,7 +632,8 @@ def plot_G(df, arg):
         ax.spines['right'].set_visible(False)
         if arg['--moving-avg'] != False:
             plot_avg(d, arg, ax, 'G')
-
+        if arg['--distance-avg'] != False:
+            plotDistanceAvg(d, chrom[ch], arg, ax, 'G')
         rtch = rt.format(chrom[ch])
         filename = rtch + typ
         filename = check_save(arg, filename)
@@ -633,6 +648,8 @@ def plot_G(df, arg):
             cap.append(arg['lines'][11].format(arg['color_names']['dots']))
             if arg['--moving-avg'] != False:
                 cap.append(arg['lines'][12].format(arg['color_names']['mvg'], str(arg['--moving-avg'])))
+            if arg['--distance-avg'] != False:
+                cap.append(arg['lines'][-13].format(arg['color_names']['mvg'], str(arg['--distance-avg'])))
             write_caption(f,cap,arg)
 
 def pval_multi_graph(df, arg):
@@ -663,6 +680,8 @@ def pval_multi_graph(df, arg):
             ax[i].tick_params(axis='y', which='major', labelsize=8)
             if arg['--moving-avg'] != False:
                     plot_avg(d, arg, ax[i], 'log10PVALUE')
+            if arg['--distance-avg'] != False:
+                    plotDistanceAvg(d, chrom[i], arg, ax[i], 'log10PVALUE')
             if arg['--bonferroni']:
                 threshold = log(0.05/len(df.axes[0]))/log(10)
                 max_x_ch = (max(d['POS'])/max_x)
@@ -685,6 +704,8 @@ def pval_multi_graph(df, arg):
         cap.append(arg['lines'][0].format(arg['color_names']['dots']))
         if arg['--moving-avg'] != False:
             cap.append(arg['lines'][1].format(arg['color_names']['log10PVALUE'], str(arg['--moving-avg'])))
+        if arg['--distance-avg'] != False:
+            cap.append(arg['lines'][-7].format(arg['color_names']['log10PVALUE'], str(arg['--distance-avg'])))
         if arg['--bonferroni']:
             cap.append(arg['lines'][2].format(str(arg['n_markers'])))
         write_caption(f, cap,arg)
@@ -726,6 +747,21 @@ def pval_manhattan_plot(df, arg):
             d['avgx']=(d['prodx'].rolling(arg['--moving-avg']).sum() / \
             d['DP'].rolling(arg['--moving-avg']).sum())
             ax[i].plot(d['avgx'], -d['avgy'], c=c_, lw=2)#lw=0.75
+        if arg['--distance-avg'] != False:
+            d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
+            c_=arg['--palette']['log10PVALUE']
+            d['prody']=d['log10PVALUE'] * d['DP']
+            d['prodx'] = d['DP']*d['POS']
+            interval_ranges = [x for x in range(0, max_x, arg['--distance-avg'])]
+            if interval_ranges[-1] < max_x:
+                interval_ranges.append(max_x)
+            interval_labels = [f'{start}-{end-1}' for start, end in zip(interval_ranges, interval_ranges[1:])]
+            d['Interval'] = pd.cut(d['POS'], bins=interval_ranges, labels=interval_labels)
+            res = d.groupby('Interval').agg({'prodx': sum, 'prody': sum, 'DP': sum})
+            res['POSx'] = (res['prodx']/res['DP'])
+            res['VALy'] = (res['prody']/res['DP'])
+            res = res.dropna()
+            ax[i].plot(res['POSx'], -res['VALy'], c=c_, lw=2)
         if arg['--bonferroni']:
             threshold = -log(0.05/len(df.axes[0]))/log(10)
             max_x_ch = (max(d['POS'])/max_x)
@@ -747,6 +783,8 @@ def pval_manhattan_plot(df, arg):
         cap.append(arg['lines'][-5].format(arg['color_names']['dots']))
         if arg['--moving-avg'] != False:
             cap.append(arg['lines'][-6].format(arg['color_names']['log10PVALUE'], str(arg['--moving-avg'])))
+        if arg['--distance-avg'] != False:
+            cap.append(arg['lines'][-8].format(arg['color_names']['log10PVALUE'], str(arg['--distance-avg'])))
         if arg['--bonferroni']:
             cap.append(arg['lines'][2].format(str(arg['n_markers'])))
         write_caption(f, cap,arg) 
@@ -808,6 +846,8 @@ def pval_mono_graph(df, arg):
             cap.append(arg['lines'][0].format(arg['color_names']['dots']))
             if arg['--moving-avg'] != False:
                 cap.append(arg['lines'][1].format(arg['color_names']['log10PVALUE'], str(arg['--moving-avg'])))
+            if arg['--distance-avg'] != False:
+                cap.append(arg['lines'][-7].format(arg['color_names']['log10PVALUE'], str(arg['--distance-avg'])))
             if arg['--bonferroni']:
                 cap.append(arg['lines'][2].format(str(arg['n_markers'])))
             write_caption(f, cap,arg)
@@ -839,8 +879,11 @@ def AF1_AF2_mono_graph(df, arg):
         ax.set_yticks(ticks=[0, 0.25, 0.5, 0.75, 1])
         ax.set_yticklabels(labels=[0, 0.25, 0.5, 0.75, 1], fontsize=8)
         if arg['--moving-avg'] != False:
-            plot_avg(d, arg, ax, 'SNPidx1')
             plot_avg(d, arg, ax, 'SNPidx2')
+            plot_avg(d, arg, ax, 'SNPidx1')
+        if arg['--distance-avg'] != False:
+            plotDistanceAvg(d, chrom[i], arg, ax, 'SNPidx2')
+            plotDistanceAvg(d, chrom[i], arg, ax, 'SNPidx1')
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
 
@@ -858,6 +901,9 @@ def AF1_AF2_mono_graph(df, arg):
             if arg['--moving-avg'] != False:
                 cap.append(arg['lines'][3].format(arg['color_names']['SNPidx1'], str(arg['--moving-avg'])))
                 cap.append(arg['lines'][4].format(arg['color_names']['SNPidx2'], str(arg['--moving-avg'])))
+            if arg['--distance-avg'] != False:
+                cap.append(arg['lines'][-9].format(arg['color_names']['SNPidx1'], str(arg['--distance-avg'])))
+                cap.append(arg['lines'][-10].format(arg['color_names']['SNPidx2'], str(arg['--distance-avg'])))
             write_caption(f,cap,arg) 
         # AF2
         fig, ax=plt.subplots(figsize=(10, 4.2))
@@ -874,6 +920,9 @@ def AF1_AF2_mono_graph(df, arg):
         if arg['--moving-avg'] != False:
             plot_avg(d, arg, ax, 'SNPidx1')
             plot_avg(d, arg, ax, 'SNPidx2')
+        if arg['--distance-avg'] != False:
+            plotDistanceAvg(d, chrom[i], arg, ax, 'SNPidx1')
+            plotDistanceAvg(d, chrom[i], arg, ax, 'SNPidx2')
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
 
@@ -891,6 +940,9 @@ def AF1_AF2_mono_graph(df, arg):
             if arg['--moving-avg'] != False:
                 cap.append(arg['lines'][4].format(arg['color_names']['SNPidx2'], str(arg['--moving-avg'])))
                 cap.append(arg['lines'][3].format(arg['color_names']['SNPidx1'], str(arg['--moving-avg'])))
+            if arg['--distance-avg'] != False:
+                cap.append(arg['lines'][-9].format(arg['color_names']['SNPidx2'], str(arg['--distance-avg'])))
+                cap.append(arg['lines'][-10].format(arg['color_names']['SNPidx1'], str(arg['--distance-avg'])))
             write_caption(f,cap,arg)
 
 
@@ -903,33 +955,48 @@ def AF_mono_graph(df, arg, g_type):
     boost = False
     for i in range(len(chrom)):
         if g_type == 'SNPidx1':
-            key = 3
-            key2 = -2
-            t,_,rt=arg['titles'][key]
+            key2 = -2 
+            if arg['--moving-avg'] != False:
+                key = 3
+            if arg['--distance-avg'] != False:
+                key = -9
+            t,_,rt=arg['titles'][3]
         if g_type == 'SNPidx2':
-            key = 4
             key2 = -1
-            t,_,rt=arg['titles'][key]
+            if arg['--moving-avg'] != False:
+                key = 4
+            if arg['--distance-avg'] != False:
+                key = -10
+            t,_,rt=arg['titles'][4]
         if g_type == 'MAX_SNPidx2':
             ylab = 'Maximum Allele Frequency'
-            key = 5
             key2 = -3
-            t,rt=arg['titles'][key]
+            if arg['--moving-avg'] != False:
+                key = 5
+            if arg['--distance-avg'] != False:
+                key = -11
+            t,rt=arg['titles'][5]
             ticks_y=[0.5, 0.75, 1]
             lim_y=(0.5, 1)
         if g_type == 'DELTA':
             if arg['--ref-genotype'] == True:
                 ylab = '$\Delta$'+' (SNP-index)'
-                key = 5
                 key2 = -3
-                t,rt = arg['titles'][key]
+                if arg['--moving-avg'] != False:
+                    key = 5
+                if arg['--distance-avg'] != False:
+                    key = -11
+                t,rt = arg['titles'][5]
                 ticks_y=[-1, 0, 1]
                 lim_y=(-1.2, 1.2)
             else:
                 ylab = '|$\Delta$'+' (SNP-index)|'
-                key = 5
                 key2 = -4
-                t,rt = arg['titles'][key]
+                if arg['--moving-avg'] != False:
+                    key = 5
+                if arg['--distance-avg'] != False:
+                    key = -11
+                t,rt = arg['titles'][5]
                 ticks_y=[0, 0.25, 0.5, 0.75, 1]
                 lim_y=(0, 1.2)
         d=df[df['#CHROM'] == chrom[i]]
@@ -949,17 +1016,31 @@ def AF_mono_graph(df, arg, g_type):
         ax.set_yticklabels(labels=ticks_y, fontsize=8)
         if arg['--moving-avg'] != False:
             plot_avg(d, arg, ax, g_type)
+        if arg['--distance-avg'] != False:
+            plotDistanceAvg(d, chrom[i], arg, ax, g_type)
         if 'mbsplot' in arg.keys():
             if arg['--boost'] != False:
+                keyB = 6
                 if 'SNPidx1' in arg['--fields'] and 'SNPidx2' not in arg['--fields']:
                     plot_boost(d, arg, ax, max_x)
                     boost = True
                 if g_type == 'SNPidx2' or g_type == 'MAX_SNPidx2':
                     plot_boost(d, arg, ax, max_x)
                     boost = True
+            if arg['--distance-boost'] != False:
+                keyB = -12
+                if 'SNPidx1' in arg['--fields'] and 'SNPidx2' not in arg['--fields']:
+                    plotDistanceBoost(d, arg, ax, max_x, chrom[i])
+                    boost = True
+                if g_type == 'SNPidx2' or g_type == 'MAX_SNPidx2':
+                    plotDistanceBoost(d, arg, ax, max_x, chrom[i])
+                    boost = True
         if 'qtlplot' in arg.keys():
-            if arg['--ci95'] and arg['--moving-avg'] != False and g_type == 'DELTA':
-                calc_ci(d, arg, ax)
+            if arg['--ci95'] and g_type == 'DELTA':
+                if arg['--moving-avg'] != False:
+                    calc_ci(d, arg, ax)
+                if arg['--distance-avg'] != False:
+                    distanceCI(d, arg, ax, chrom[i])
                 ax.axhline(y=0, color='black', linestyle='dashed', linewidth=0.75)
 
         ax.spines['top'].set_visible(False)
@@ -978,9 +1059,14 @@ def AF_mono_graph(df, arg, g_type):
             cap.append(arg['lines'][key2].format(arg['color_names']['dots']))
             if arg['--moving-avg'] != False:
                 cap.append(arg['lines'][key].format(arg['color_names'][g_type], str(arg['--moving-avg'])))
+            if arg['--distance-avg'] != False:
+                cap.append(arg['lines'][key].format(arg['color_names'][g_type], str(arg['--distance-avg'])))
             if 'mbsplot' in arg.keys():
                 if boost == True:
-                    cap.append(arg['lines'][6].format(arg['color_names']['BOOST'], str(arg['--boost'])))
+                    if arg['--boost'] != False:
+                        cap.append(arg['lines'][keyB].format(arg['color_names']['BOOST'], str(arg['--boost'])))
+                    if arg['--distance-boost'] != False:
+                        cap.append(arg['lines'][keyB].format(arg['color_names']['BOOST'], str(arg['--distance-boost'])))
             if 'qtlplot' in arg.keys():
                 if arg['--ci95'] and g_type == 'DELTA':
                     cap.append(arg['lines'][7].format(arg['color_names']['ci'], str(arg['n_markers'])))
@@ -1013,6 +1099,8 @@ def pval_multi_Vertical_graph(df, arg):
             ax[i].tick_params(axis='y', which='major', labelsize=8)
             if arg['--moving-avg'] != False:
                 plot_avg(d, arg, ax[i], 'log10PVALUE')
+            if arg['--distance-avg'] != False:
+                plotDistanceAvg(d, chrom[i], arg, ax[i], 'log10PVALUE')
             if arg['--bonferroni']:
                 threshold=log(0.05/len(df.axes[0]))/log(10)
                 max_x_ch=(max(d['POS'])/max_x)
@@ -1044,6 +1132,8 @@ def pval_multi_Vertical_graph(df, arg):
         cap.append(arg['lines'][0].format(arg['color_names']['dots']))
         if arg['--moving-avg'] != False:
             cap.append(arg['lines'][1].format(arg['color_names']['log10PVALUE'],str(arg['--moving-avg'])))
+        if arg['--distance-avg'] != False:
+                cap.append(arg['lines'][-7].format(arg['color_names']['log10PVALUE'], str(arg['--distance-avg'])))
         if arg['--bonferroni']:
             cap.append(arg['lines'][2].format(str(arg['n_markers'])))
         write_caption(f,cap,arg)
@@ -1132,6 +1222,8 @@ def G_multi_Vertical_graph(df, arg):
             ax[i].spines['right'].set_visible(False)
             if arg['--moving-avg'] != False:
                 plot_avg(d, arg, ax[i], 'G')
+            if arg['--distance-avg'] != False:
+                plotDistanceAvg(d, chrom[i], arg, ax[i], 'G')
             if len(chrom) == 1:
                 ax[1].remove()
             if i == len(chrom)-1 or len(chrom) == 1:
@@ -1156,6 +1248,8 @@ def G_multi_Vertical_graph(df, arg):
         cap.append(arg['lines'][11].format(arg['color_names']['dots']))
         if arg['--moving-avg'] != False:
             cap.append(arg['lines'][12].format(arg['color_names']['mvg'], str(arg['--moving-avg'])))
+        if arg['--distance-avg'] != False:
+                cap.append(arg['lines'][-13].format(arg['color_names']['mvg'], str(arg['--distance-avg'])))
         write_caption(f,cap,arg)
 
 def AF_multi_Vertical_graph(df, arg, g_type):
@@ -1168,33 +1262,48 @@ def AF_multi_Vertical_graph(df, arg, g_type):
     labs_list = list()
     f_name = list()
     if g_type == 'SNPidx1':
-        key = 7
         key2 = -2
-        t,_,rt=arg['titles'][key]
+        if arg['--moving-avg'] != False:
+            key = 3
+        if arg['--distance-avg'] != False:
+            key = -9
+        t,_,rt=arg['titles'][7]
     if g_type == 'SNPidx2':
-        key = 8
         key2 = -1
-        t,_,rt=arg['titles'][key]
+        if arg['--moving-avg'] != False:
+            key = 4
+        if arg['--distance-avg'] != False:
+            key = -10
+        t,_,rt=arg['titles'][8]
     if g_type == 'MAX_SNPidx2':
-        key = 9
+        ylab = 'Maximum Allele Frequency'
         key2 = -3
-        t,rt=arg['titles'][key]
-        ylab='MAX Allele Frequency'
+        if arg['--moving-avg'] != False:
+            key = 5
+        if arg['--distance-avg'] != False:
+            key = -11
+        t,rt=arg['titles'][9]
         ticks_y=[0.5, 0.75, 1]
         lim_y=(0.5, 1)
     if g_type == 'DELTA':
         if arg['--ref-genotype'] == True:
             ylab = '$\Delta$' + '(SNP-index)'
-            key = 9
             key2 = -3
-            t,rt = arg['titles'][key]
+            if arg['--moving-avg'] != False:
+                key = 5
+            if arg['--distance-avg'] != False:
+                key = -11
+            t,rt = arg['titles'][9]
             ticks_y = [-1,0,1]
             lim_y = (-1.2, 1.2)
         else:
             ylab = '|$\Delta$' + '(SNP-index)|'
-            key = 9
             key2 = -4
-            t,rt = arg['titles'][key]
+            if arg['--moving-avg'] != False:
+                key = 5
+            if arg['--distance-avg'] != False:
+                key = -11
+            t,rt = arg['titles'][9]
             ticks_y = [0,0.25,0.5,0.75,1]
             lim_y = (0, 1.2)
 
@@ -1220,17 +1329,31 @@ def AF_multi_Vertical_graph(df, arg, g_type):
             ax[i].set_yticklabels(labels=ticks_y, fontsize=8)
             if arg['--moving-avg'] != False:
                 plot_avg(d, arg, ax[i], g_type)
+            if arg['--distance-avg'] != False:
+                plotDistanceAvg(d, chrom[i], arg, ax[i], g_type)
             if 'mbsplot' in arg.keys():
                 if arg['--boost'] != False:
+                    keyB = 6
                     if 'SNPidx1' in arg['--fields'] and 'SNPidx2' not in arg['--fields']:
                         plot_boost(d, arg, ax[i], max_x)
                         boost = True
                     if g_type == 'SNPidx2' or g_type == 'MAX_SNPidx2':
                         plot_boost(d, arg, ax[i], max_x)
                         boost = True
+                if arg['--distance-boost'] != False:
+                    keyB = -12
+                    if 'SNPidx1' in arg['--fields'] and 'SNPidx2' not in arg['--fields']:
+                        plotDistanceBoost(d, arg, ax[i], max_x, chrom[i])
+                        boost = True
+                    if g_type == 'SNPidx2' or g_type == 'MAX_SNPidx2':
+                        plotDistanceBoost(d, arg, ax[i], max_x, chrom[i])
+                        boost = True
             if 'qtlplot' in arg.keys():
-                if arg['--ci95'] and arg['--moving-avg'] != False and g_type == 'DELTA':
-                    calc_ci(d, arg, ax[i])
+                if arg['--ci95'] and g_type == 'DELTA':
+                    if arg['--moving-avg'] != False:
+                        calc_ci(d, arg, ax[i])
+                    if arg['--distance-avg'] != False:
+                        distanceCI(d, arg, ax[i], chrom[i])
                     ax[i].axhline(y=0, color='black', linestyle='dashed', linewidth=0.75)
 
             ax[i].spines['top'].set_visible(False)
@@ -1258,11 +1381,15 @@ def AF_multi_Vertical_graph(df, arg, g_type):
         cap = cap + labs_list
         cap.append(arg['lines'][key2].format(arg['color_names']['dots']))
         if arg['--moving-avg'] != False:
-            key = key - 4
             cap.append(arg['lines'][key].format(arg['color_names'][g_type], str(arg['--moving-avg'])))
+        if arg['--distance-avg'] != False:
+            cap.append(arg['lines'][key].format(arg['color_names'][g_type], str(arg['--distance-avg'])))
         if 'mbsplot' in arg.keys():
             if boost == True:
-                cap.append(arg['lines'][6].format(arg['color_names']['BOOST'], str(arg['--boost'])))
+                if arg['--boost'] != False:
+                    cap.append(arg['lines'][keyB].format(arg['color_names']['BOOST'], str(arg['--boost'])))
+                if arg['--distance-boost'] != False:
+                    cap.append(arg['lines'][keyB].format(arg['color_names']['BOOST'], str(arg['--distance-boost'])))
         if 'qtlplot' in arg.keys() and g_type == 'DELTA':
             if arg['--ci95']:
                 cap.append(arg['lines'][7].format(arg['color_names']['ci'], str(arg['n_markers'])))
@@ -1302,6 +1429,9 @@ def AF12_multi_Vertical_graph(df, arg):
             if arg['--moving-avg'] != False:
                 plot_avg(d, arg, ax[i], 'SNPidx2')
                 plot_avg(d, arg, ax[i], 'SNPidx1')
+            if arg['--distance-avg'] != False:
+                plotDistanceAvg(d, chrom[i], arg, ax[i], 'SNPidx2')
+                plotDistanceAvg(d, chrom[i], arg, ax[i], 'SNPidx1')
             ax[i].spines['top'].set_visible(False)
             ax[i].spines['right'].set_visible(False)
             if len(chrom) == 1:
@@ -1329,6 +1459,9 @@ def AF12_multi_Vertical_graph(df, arg):
         if arg['--moving-avg'] != False:
             cap.append(arg['lines'][3].format(arg['color_names']['SNPidx1'], str(arg['--moving-avg'])))
             cap.append(arg['lines'][4].format(arg['color_names']['SNPidx2'], str(arg['--moving-avg'])))
+        if arg['--distance-avg'] != False:
+            cap.append(arg['lines'][-9].format(arg['color_names']['SNPidx1'], str(arg['--distance-avg'])))
+            cap.append(arg['lines'][-10].format(arg['color_names']['SNPidx2'], str(arg['--distance-avg'])))
         write_caption(f,cap,arg)
     
     #AF1&2
@@ -1354,6 +1487,9 @@ def AF12_multi_Vertical_graph(df, arg):
             if arg['--moving-avg'] != False:
                 plot_avg(d, arg, ax[i], 'SNPidx1')
                 plot_avg(d, arg, ax[i], 'SNPidx2')
+            if arg['--distance-avg'] != False:
+                plotDistanceAvg(d, chrom[i], arg, ax[i], 'SNPidx1')
+                plotDistanceAvg(d, chrom[i], arg, ax[i], 'SNPidx2')
             ax[i].spines['top'].set_visible(False)
             ax[i].spines['right'].set_visible(False)
             if len(chrom) == 1:
@@ -1382,6 +1518,9 @@ def AF12_multi_Vertical_graph(df, arg):
         if arg['--moving-avg'] != False:
             cap.append(arg['lines'][4].format(arg['color_names']['SNPidx2'], str(arg['--moving-avg'])))
             cap.append(arg['lines'][3].format(arg['color_names']['SNPidx1'], str(arg['--moving-avg'])))
+        if arg['--distance-avg'] != False:
+            cap.append(arg['lines'][-9].format(arg['color_names']['SNPidx2'], str(arg['--distance-avg'])))
+            cap.append(arg['lines'][-10].format(arg['color_names']['SNPidx1'], str(arg['--distance-avg'])))
         write_caption(f,cap,arg)
 
 def AF1_AF2_pval_mono(df, arg):
@@ -1413,7 +1552,14 @@ def AF1_AF2_pval_mono(df, arg):
                 plot_avg(d, arg, ax[0], 'SNPidx2')
                 plot_avg(d, arg, ax[0], 'SNPidx1')
             else:
-               plot_avg(d, arg, ax[0], 'SNPidx1') 
+               plot_avg(d, arg, ax[0], 'SNPidx1')
+        
+        if arg['--distance-avg'] != False:
+            if arg['--combine']:
+                plotDistanceAvg(d, chrom[i], arg, ax[0], 'SNPidx2')
+                plotDistanceAvg(d, chrom[i], arg, ax[0], 'SNPidx1')
+            else:
+               plotDistanceAvg(d, chrom[i], arg, ax[0], 'SNPidx1')
         ax[0].spines['top'].set_visible(False)
         ax[0].spines['right'].set_visible(False)
 
@@ -1432,6 +1578,12 @@ def AF1_AF2_pval_mono(df, arg):
                 plot_avg(d, arg, ax[1], 'SNPidx2')
             else:
                plot_avg(d, arg, ax[1], 'SNPidx2')
+        if arg['--distance-avg'] != False:
+            if arg['--combine']:
+                plotDistanceAvg(d, chrom[i], arg, ax[1], 'SNPidx1')
+                plotDistanceAvg(d, chrom[i], arg, ax[1], 'SNPidx2')
+            else:
+               plotDistanceAvg(d, chrom[i], arg, ax[1], 'SNPidx2')
         ax[1].spines['top'].set_visible(False)
         ax[1].spines['right'].set_visible(False)
 
@@ -1445,6 +1597,8 @@ def AF1_AF2_pval_mono(df, arg):
         ax[2].tick_params(axis='y', which='major', labelsize=8)
         if arg['--moving-avg'] != False:
             plot_avg(d, arg, ax[2], 'log10PVALUE')
+        if arg['--distance-avg'] != False:
+            plotDistanceAvg(d, chrom[i], arg, ax[2], 'log10PVALUE')
         if arg['--bonferroni']:
             threshold=log(0.05/len(df.axes[0]))/log(10)
             max_x_ch=(max(d['POS'])/max_x)
@@ -1473,6 +1627,11 @@ def AF1_AF2_pval_mono(df, arg):
             if arg['--moving-avg'] != False:
                 cap.append(arg['lines'][3].format(arg['color_names']['SNPidx1'], str(arg['--moving-avg'])))
                 cap.append(arg['lines'][4].format(arg['color_names']['SNPidx2'], str(arg['--moving-avg'])))
+                cap.append(arg['lines'][1].format(arg['color_names']['SNPidx2'], str(arg['--moving-avg'])))
+            if arg['--distance-avg'] != False:
+                cap.append(arg['lines'][-9].format(arg['color_names']['SNPidx1'], str(arg['--distance-avg'])))
+                cap.append(arg['lines'][-10].format(arg['color_names']['SNPidx2'], str(arg['--distance-avg'])))
+                cap.append(arg['lines'][-7].format(arg['color_names']['SNPidx2'], str(arg['--distance-avg'])))
             if arg['--bonferroni']:
                 cap.append(arg['lines'][2].format(str(arg['n_markers'])))
             write_caption(f,cap,arg)
@@ -1503,6 +1662,8 @@ def qtl_mixed_plot(df, arg):
         
         if arg['--moving-avg'] != False:
             plot_avg(d, arg, ax[0], 'G' )
+        if arg['--distance-avg'] != False:
+            plotDistanceAvg(d, chrom[i], arg, ax[0], 'G')
         ax[0].spines['top'].set_visible(False)
         ax[0].spines['right'].set_visible(False)
 
@@ -1541,8 +1702,13 @@ def qtl_mixed_plot(df, arg):
         ax[2].set_yticklabels(labels=ticks_y, fontsize=8)
         if arg['--moving-avg'] != False:
             plot_avg(d, arg, ax[2], 'DELTA')
+        if arg['--distance-avg'] != False:
+            plotDistanceAvg(d, chrom[i], arg, ax[2], 'DELTA')
         if arg['--ci95'] and arg['--moving-avg'] != False:
-            calc_ci(d, arg, ax[2])
+            if arg['--moving-avg'] != False:
+                calc_ci(d, arg, ax[2])
+            if arg['--distance-avg'] != False:
+                distanceCI(d, arg, ax[2], chrom[i])
             ax[2].axhline(y=0, color = 'black', linestyle='dashed', linewidth=0.75)
         ax[2].spines['top'].set_visible(False)
         ax[2].spines['right'].set_visible(False)
@@ -1558,6 +1724,8 @@ def qtl_mixed_plot(df, arg):
         ax[3].tick_params(axis='y', which='major', labelsize=8)
         if arg['--moving-avg'] != False:
             plot_avg(d, arg, ax[3], 'log10PVALUE')
+        if arg['--distance-avg'] != False:
+            plotDistanceAvg(d, chrom[i], arg, ax[3], 'log10PVALUE')
         if arg['--bonferroni']:
             threshold=log(0.05/len(df.axes[0]))/log(10)
             max_x_ch=(max(d['POS'])/max_x)
@@ -1585,9 +1753,10 @@ def qtl_mixed_plot(df, arg):
                 cap.append(arg['lines'][13])
             else:
                cap.append(arg['lines'][14])
-            #if arg['--moving-avg'] != False:
-            #    cap.append(arg['lines'][3].format(arg['color_names']['SNPidx1'], str(arg['--moving-avg'])))
-            #    cap.append(arg['lines'][4].format(arg['color_names']['SNPidx2'], str(arg['--moving-avg'])))
+            if arg['--moving-avg'] != False:
+                cap.append(arg['lines'][8].format(arg['color_names']['mvg'], str(arg['--moving-avg'])))
+            if arg['--distance-avg'] != False:
+                cap.append(arg['lines'][-12].format(arg['color_names']['mvg'], str(arg['--distance-avg'])))
             if arg['--bonferroni']:
                 cap.append(arg['lines'][2].format(str(arg['n_markers'])))
             write_caption(f,cap, arg)
@@ -1659,8 +1828,13 @@ def snp_index_graph(df, arg):
 
         if arg['--moving-avg'] != False:
             plot_avg_qtl_SNPidx(d, arg, ax)
-            if arg['--ci95']:
-                calc_ci(d, arg, ax[2])
+        if arg['--distance-avg'] != False:
+            distanceSNPidx(d, arg, ax, chrom[i])
+        if arg['--ci95']:
+            if arg['--moving-avg'] != False:
+                calc_ci(d, arg, ax)
+            if arg['--distance-avg'] != False:
+                distanceCI(d, arg, ax, chrom[i])
         # Save file
         fig.subplots_adjust(hspace=0.1)
         rtch = rt.format(chrom[i])
@@ -1701,6 +1875,36 @@ def calc_ci(d, arg, ax):
     ax.plot(d['mediamovilx'], d['Avg95u'],color=c_, alpha=0.75, lw=0.4)
     ax.plot(d['mediamovilx'], d['Avg95l'],color=c_, alpha=0.75, lw=0.4)
     ax.fill_between(d['mediamovilx'], d['Avg95l'],d['Avg95u'], color=c_, alpha=0.15)
+
+def distanceCI(d, arg, ax, chrom):
+    max_x = arg['contigs'][chrom]
+    z95=abs(st.norm.ppf(.025/arg['n_markers']))
+    d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
+    d['DP1']=d['DPdom_1']+d['DPrec_1']
+    d['DP2']=d['DPdom_2']+d['DPrec_2']
+    d['prodx']=d['POS'] * d['DP']
+
+    d['CI95u']=d['DELTA'] + z95 * np.sqrt(d['SNPidx2']*(1-d['SNPidx2'])/d['DP2'] + d['SNPidx1']*(1-d['SNPidx1'])/d['DP1'])
+    d['CI95l']=d['DELTA'] - z95 *np.sqrt(d['SNPidx2']*(1-d['SNPidx2'])/d['DP2'] + d['SNPidx1']*(1-d['SNPidx1'])/d['DP1'])
+
+    d['pCIU95']=d['CI95u'] * d['DP']
+    d['pCIL95']=d['CI95l'] * d['DP']
+
+    interval_ranges = [x for x in range(0, max_x, arg['--distance-avg'])]
+    if interval_ranges[-1] < max_x:
+        interval_ranges.append(max_x)
+    interval_labels = [f'{start}-{end-1}' for start, end in zip(interval_ranges, interval_ranges[1:])]
+    d['Interval'] = pd.cut(d['POS'], bins=interval_ranges, labels=interval_labels)
+
+    res = d.groupby('Interval').agg({'prodx': sum, 'pCIU95': sum, 'pCIL95':sum, 'DP': sum})
+    res['POSx'] = (res['prodx']/res['DP'])
+    res['Avg95u'] = (res['pCIU95']/res['DP'])
+    res['Avg95l'] = (res['pCIL95']/res['DP'])
+    res = res.dropna()
+    c_ = arg['--palette']['ci']
+    ax.plot(res['POSx'], res['Avg95u'],color=c_, alpha=0.75, lw=0.4)
+    ax.plot(res['POSx'], res['Avg95l'],color=c_, alpha=0.75, lw=0.4)
+    ax.fill_between(res['POSx'], res['Avg95l'],res['Avg95u'], color=c_, alpha=0.15)
 
 def plot_avg(d, arg, ax, field):
     if field == 'SNPidx2':
@@ -1805,6 +2009,34 @@ def plot_avg_qtl_SNPidx(d, arg, ax):
     ax[2].plot(d['mediamovilx'], d['mediamovilD'], c=arg['--palette']['DELTA'], lw=2)
 
 
+def distanceSNPidx(d, arg, ax, chrom):
+    max_x = arg['contigs'][chrom]
+    d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
+    d['DP1']=d['DPdom_1']+d['DPrec_1']
+    d['DP2']=d['DPdom_2']+d['DPrec_2']
+    d['prodx']=d['POS'] * d['DP']
+    #SNPidx1
+    d['prody1']=d['SNPidx1'] * d['DP1']
+    #SNPidx2
+    d['prody2']=d['SNPidx2'] * d['DP2']
+    # D-SNPidx
+    d['prodyD']=d['DELTA'] * d['DP']
+    interval_ranges = [x for x in range(0, max_x, arg['--distance-avg'])]
+    if interval_ranges[-1] < max_x:
+        interval_ranges.append(max_x)
+    interval_labels = [f'{start}-{end-1}' for start, end in zip(interval_ranges, interval_ranges[1:])]
+    d['Interval'] = pd.cut(d['POS'], bins=interval_ranges, labels=interval_labels)
+    res = d.groupby('Interval').agg({'prodx': sum, 'prody1': sum, 'prody2': sum, 'prodyD': sum,'DP1': sum, 'DP2': sum, 'DP':sum})
+
+    res['POSx'] = (res['prodx']/res['DP'])
+    res['avg1'] = (res['prody1']/res['DP1'])
+    res['avg2'] = (res['prody2']/res['DP2'])
+    res['avgD'] = (res['prodyD']/res['DP'])
+    res = res.dropna()
+    ax[0].plot(res['POSx'], res['avg1'], c=arg['--palette']['SNPidx1'], lw=2)
+    ax[1].plot(res['POSx'], res['avg2'], c=arg['--palette']['SNPidx2'], lw=2)
+    ax[2].plot(res['POSx'], res['avgD'], c=arg['--palette']['DELTA'], lw=2)
+
 def plot_boost(d, arg, ax, max_x):
     # Mediamovil Boost
     if 'SNPidx2' not in arg['--fields']:
@@ -1822,6 +2054,34 @@ def plot_boost(d, arg, ax, max_x):
     ax2.spines['top'].set_visible(False)
     c_=arg['--palette']['BOOST']
     ax2.plot(d['medboostx'], d['medboost'], c=c_, lw=1.25, linestyle='dashed')
+    ax2.set(xlim=(0, max_x), ylim=(0, 1))
+    ax2.set_yticks(ticks=[0, 0.25, 0.5, 0.75, 1])
+    ax2.set_yticklabels(labels=[0, 0.25, 0.5, 0.75, 1], fontsize=8)
+    ax2.set_ylabel(ylabel='Boost', fontsize=12, rotation=90, labelpad=15)
+
+def plotDistanceBoost(d, arg, ax, max_x, chrom):
+    # Mediamovil Boost
+    if 'SNPidx2' not in arg['--fields']:
+        d['DP']=d['DPdom_1']+d['DPrec_1']
+    else:
+        d['DP']=d['DPdom_2']+d['DPrec_2']
+    d['BOOST']=d['BOOST'] * arg['lim']
+    max_x = arg['contigs'][chrom]
+    d['prodx'] = d['DP']*d['POS']
+    d['prody'] = d['DP']*d['BOOST']
+    interval_ranges = [x for x in range(0, max_x, arg['--distance-avg'])]
+    if interval_ranges[-1] < max_x:
+        interval_ranges.append(max_x)
+    interval_labels = [f'{start}-{end-1}' for start, end in zip(interval_ranges, interval_ranges[1:])]
+    d['Interval'] = pd.cut(d['POS'], bins=interval_ranges, labels=interval_labels)
+    res = d.groupby('Interval').agg({'prodx': sum, 'prody': sum, 'DP': sum})
+    res['POSx'] = (res['prodx']/res['DP'])
+    res['VALy'] = (res['prody']/res['DP'])
+    res = res.dropna()
+    ax2=ax.twinx()
+    ax2.spines['top'].set_visible(False)
+    c_=arg['--palette']['BOOST']
+    ax2.plot(res['POSx'], res['VALy'], c=c_, lw=1.25, linestyle='dashed')
     ax2.set(xlim=(0, max_x), ylim=(0, 1))
     ax2.set_yticks(ticks=[0, 0.25, 0.5, 0.75, 1])
     ax2.set_yticklabels(labels=[0, 0.25, 0.5, 0.75, 1], fontsize=8)
