@@ -116,7 +116,7 @@ def test_plot(arg, __doc__):
 
     read_palette(arg)
 
-    if arg['--multi-chrom'] == True and len(arg['--chromosomes']) == 1:
+    if arg['--multi-chrom'] == True and len(arg['--chromosomes'].split(',')) == 1:
         arg['--multi-chrom'] = False
     arg['--alpha'] = float(arg['--alpha'])
     arg['lim'] = 1e-90
@@ -243,7 +243,7 @@ def check_merge(arg,__doc__):
     arg['lim'] = 1e-90
 
     if arg['--window'] != None and arg['--distance'] != None:
-        print('Error: Optios -w and -D are incompatible.', file=sys.stderr)
+        print('Error: Options -w and -D are incompatible.', file=sys.stderr)
         sys.exit()
     if arg['--window'] == None:
         arg['--window'] = False

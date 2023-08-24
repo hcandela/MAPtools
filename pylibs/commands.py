@@ -329,9 +329,7 @@ Output options:
     arg = docopt(qtlplot_doc, argv=None, help=True,version=v_qtlplot)
     #print(arg)
     arg = test_plot(arg, qtlplot_doc)
-    #print(arg)
     arg = read_header_plot(arg)
-    #print(arg)
     arg, df = load_dataframe_plotting(arg)
     arg['version'] = v_qtlplot
     #print(arg)
