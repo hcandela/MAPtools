@@ -551,7 +551,8 @@ def het_filter2(arg, genotype, a, b):
 	dom = a + b
 	flag = list()
 	flag.append(False if GT_dom != {'0','1'} else True)
-	flag.append(True if (a/dom) <= max_ratio and (a/dom) >= min_ratio else False)
+	if dom > 0:
+		flag.append(True if (a/dom) <= max_ratio and (a/dom) >= min_ratio else False)
 	if False in flag:
 		return False
 	else:
