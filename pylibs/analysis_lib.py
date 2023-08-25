@@ -865,6 +865,7 @@ def  find_row(rows, pos, start, end):
 		if pos > end: left = m + 1
 		else:
 			current = m
+
 	return left, right-1
 
 def  find_row_name(rows, pos, key):
@@ -939,7 +940,7 @@ def find_effect(before_nt,after_nt,strand, arg):
 		change.append('Synonymous:.')
 	elif (before[0] != after[0]):
 		if (after[0] == '*'):
-			change.append('Non_synonymous:nonsense')
+			change.append('Nonsynonymous:nonsense')
 		elif (before[0] == '*'):
 			change.append('Nonsynonymous:nonstop')
 		else:
@@ -1092,11 +1093,15 @@ def check_deletion(row, arg, ref, alt):
 	bf,ef = find_row(gff['gene'], coor_f, 0, len(gff['gene']))
 
 	if ei < bi and ef < bf and ei == ef and bi == bf: #INTERGENIC, BETWEEN GENES
-		dis1 = gff['gene'][bi][2] - coor_f
+		if len(gff['gene']) == bi:
+			dis1 = arg['--contigs'][arg['--region'][0]] - pos
+			result['INFO']['right'] = 'chromosome_end'+':'+ str(dis1)
+		else:
+			dis1 = gff['gene'][bi][2] - coor_f
+			result['INFO']['right'] = gff['gene'][bi][6] +':'+ str(dis1)
 		dis2 = coor_i - gff['gene'][ei][3]
 		result['TYPE'] = 'intergenic'
 		result['INFO']['left'] = gff['gene'][ei][6] +':'+ str(dis2)
-		result['INFO']['right'] = gff['gene'][bi][6] +':'+ str(dis1)
 		write_annotate_line(arg, result, row)
 		result['INFO'] = dict()
 	
@@ -1411,6 +1416,10 @@ def check_mutation2(row, arg):
 	result['CODON_ref'], result['CODON_alt'], result['AA_ref'], result['AA_alt'] = '.','.','.','.'
 	gff = arg['gff']
 	pos = int(row['POS'])
+	#if result['POS'] == '24251263':
+	#		b,e = find_row(gff['gene'], pos, 0, len(gff['gene']))
+	#		print(b,e)
+	#		sys.exit()
 	b,e = find_row(gff['gene'], pos, 0, len(gff['gene']))
 	if gff['gene'][b:e+1]:
 		for gene in gff['gene'][b:e+1]:
@@ -1540,11 +1549,15 @@ def check_mutation2(row, arg):
 			find_nc_gene(arg, gff, gene_id, pos, result, row)
 
 	else:
-		dis1 = gff['gene'][b][2] - pos
+		if len(gff['gene']) == b:
+			dis2 = arg['--contigs'][arg['--region'][0]] - pos
+			result['INFO']['right'] = 'chromosome_end'+':'+ str(dis2)
+		else:
+			dis1 = gff['gene'][b][2] - pos
+			result['INFO']['right'] = gff['gene'][b][6] +':'+ str(dis1)
 		dis2 = pos - gff['gene'][e][3]
 		result['TYPE'] = 'intergenic'
 		result['INFO']['left'] = gff['gene'][e][6] +':'+ str(dis2) if e != -1 else '.'
-		result['INFO']['right'] = gff['gene'][b][6] +':'+ str(dis1) if b <= len(gff['gene']) else '.'
 		write_annotate_line(arg, result, row)
 		result['INFO'] = dict()
 
