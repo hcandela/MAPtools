@@ -482,6 +482,7 @@ Filter Options:
   write_annotate_header(arg)
   for idx, row in df.iterrows():
     if len(row['DOM']) > 1 or len(row['REC']) > 1:
+
        is_indel(row, arg)
        continue
     arg['variant'] = 'substitution'

@@ -1062,7 +1062,6 @@ def is_indel(row,arg):
 	reorder = row['reorder']
 	ref = row['DOM'] if reorder == 0 else row['REC']
 	alt = row['REC'] if reorder == 0 else row['DOM']
-
 	if len(alt) > len(ref):
 		ref,alt=NWSellers(ref, alt, 0, -1)
 		row['DOM'] = ref
@@ -1070,6 +1069,7 @@ def is_indel(row,arg):
 		arg['variant'] = 'insertion'
 		check_mutation2(row, arg)
 	elif len(alt) < len(ref):
+		
 		alt,ref=NWSellers(alt, ref, 0, -1)
 		row['DOM'] = ref
 		row['REC'] = alt
@@ -1086,7 +1086,6 @@ def check_deletion(row, arg, ref, alt):
 	pos = int(row['POS'])
 	coor_i = int(pos)
 	coor_f = int(pos) + len(ref) - 1
-
 	result['CODON_ref'], result['CODON_alt'], result['AA_ref'], result['AA_alt'] = '.','.','.','.'
 	gff = arg['gff']
 	bi,ei = find_row(gff['gene'], coor_i, 0, len(gff['gene']))
@@ -1209,6 +1208,22 @@ def check_deletion(row, arg, ref, alt):
 			else:
 				find_nc_gene(arg, gff, gene_id, pos, result, row)
 
+	elif bi == bf and ei == ef and bi < ef: ##genic, in + and - strand
+		genes = gff['gene'][bi:ef+1]
+		for gene in genes:
+			gene_id = gene[6]
+			result['TYPE'] = 'gene'
+			result['STRAND'] = gene[4]
+			b1,e1 = find_row_name(gff['mRNA'], gene_id, 7)
+			b1i,e1i = find_row(gff['mRNA'], coor_i, b1, e1+1)
+			b1f,e1f = find_row(gff['mRNA'], coor_f, b1, e1+1)
+			if gff['mRNA'][b1i:e1f+1]:
+				for mRNA in gff['mRNA'][b1i:e1f+1]:
+					if coor_i <= mRNA[3] and coor_f >= mRNA[2]:	#check if deletion is in range for this iso-form
+						genic_deletion(arg, result, row, coor_i, coor_f, mRNA)
+			else:
+				find_nc_gene(arg, gff, gene_id, pos, result, row)
+
 def genic_deletion(arg, result, row, coor_i, coor_f, mRNA):
 	gff = arg['gff']
 	mRNA_id = mRNA[6]
@@ -1216,6 +1231,7 @@ def genic_deletion(arg, result, row, coor_i, coor_f, mRNA):
 	bi,ei = find_row(gff['exon'], coor_i, b, e+1)
 	bf,ef = find_row(gff['exon'], coor_f, b, e+1)
 	result['PARENT'] = mRNA_id
+
 	if ei < bi and ef < bf and ei == ef and bi == bf:	#Complete intronic deletion
 		result['TYPE'] = 'intron'
 		dis1 = gff['exon'][bi][2] - coor_f
@@ -1416,10 +1432,7 @@ def check_mutation2(row, arg):
 	result['CODON_ref'], result['CODON_alt'], result['AA_ref'], result['AA_alt'] = '.','.','.','.'
 	gff = arg['gff']
 	pos = int(row['POS'])
-	#if result['POS'] == '24251263':
-	#		b,e = find_row(gff['gene'], pos, 0, len(gff['gene']))
-	#		print(b,e)
-	#		sys.exit()
+
 	b,e = find_row(gff['gene'], pos, 0, len(gff['gene']))
 	if gff['gene'][b:e+1]:
 		for gene in gff['gene'][b:e+1]:
