@@ -51,10 +51,10 @@ lines_mbs = {-12:'The {} dashed line is the weighted average of Boost of markers
          4:'The {} line indicates the moving average of the allele frequencies at {} adjacent SNPs, in a pool of individuals exhibiting the mutant phenotype.',
          5:'The {} line indicates the moving average of the maximum allele frequencies at {} adjacent SNPs, in a pool of individuals exhibiting the mutant phenotype.',
          6:'The {} dashed line is the moving average of Boost at {} adjacent SNPs. Boost was calculated from the allele frecuency values of the recessive pool, using the procedure described in SHOREmap (Schneeberger, et al. 2009).',
-         7:'(a) Frequency of haplotypes inherited from the mutant parent exhibiting the wild-type phenotype.'\
-            '(b) Frequency of haplotypes inherited from the mutant parent exhibiting the mutant phenotype.'\
+         7:'(a) Frequency of haplotypes inherited from the mutant parent exhibiting the wild-type phenotype. '\
+            '(b) Frequency of haplotypes inherited from the mutant parent exhibiting the mutant phenotype. '\
                 '(c) p-values of two-tailed Fisher\'s exact tests.'\
-                    'Each {} dot indicates the allele frequency (a,b) or the p-value (c) of biallelic SNP segregating population.'
+                    'Each {} dot indicates the allele frequency (a,b) or the p-value (c) of biallelic SNP segregating population. '
 }
 
 lines_qtl = {-13:'The {} line represents the weighted average of the G-statistic of markers within a {}-bp range.',
