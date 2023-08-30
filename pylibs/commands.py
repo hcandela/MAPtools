@@ -303,7 +303,7 @@ Plot options:
                                 for markers within a INT(bp)-range
   -t, --alpha FLOAT             marker transparency in plots (0 - 1) [default: 0.4]
   --bonferroni                  add Bonferroni threshold to p-value plots. Requires -p or -a
-  --ci95                        add 95% confidence interval to delta plots. Requires -A
+  --ci95                        add 95% confidence interval to delta plots. Requires -A or -W
   --palette STR                 select a colour palette [default: standard]
                                 Available options: \"standard\", \"color_blind\" or \"custom\" 
 
