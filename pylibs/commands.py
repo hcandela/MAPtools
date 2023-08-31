@@ -220,12 +220,12 @@ Options:
 
 Plot options:
   -A, --moving-avg INT          add moving averages to plots, calculated using INT adjacent markers
-  -W, --distance-avg INT        add the average of the values, calculated as the physical distance
-                                for markers within a INT(bp)-range
+  -W, --distance-avg INT        add weighted averages to plots, calculated for all markers located
+                                within an INT bp interval
   -b, --boost INT               add boost to allele frequency plots, calculated as the average boost
                                 values of INT adjacent markers
-  -B, --distance-boost INT      add boost to allele frequency plots, calculated as the physical distance
-                                for markers within a INT(bp)-range
+  -B, --distance-boost INT      add boost to allele frequency plots, calculated for all markers located
+                                within an INT bp interval
   -t, --alpha FLOAT             marker transparency in plots (0 - 1) [default: 0.4]
   --bonferroni                  add Bonferroni threshold to p-value plots. Requires -p or -a
   --palette STR                 select a colour palette [default: standard]
@@ -299,8 +299,8 @@ Options:
 
 Plot options:
   -A, --moving-avg INT          add moving averages to plots, calculated using INT adjacent markers
-  -W, --distance-avg INT        add the average of the values, calculated as the physical distance
-                                for markers within a INT(bp)-range
+  -W, --distance-avg INT        add weighted averages to plots, calculated for all markers located
+                                within an INT bp interval
   -t, --alpha FLOAT             marker transparency in plots (0 - 1) [default: 0.4]
   --bonferroni                  add Bonferroni threshold to p-value plots. Requires -p or -a
   --ci95                        add 95% confidence interval to delta plots. Requires -A or -W
