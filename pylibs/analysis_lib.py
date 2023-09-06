@@ -438,7 +438,7 @@ def vcf_line_parser2(line, arg):
 						pool[alt[i]] = int(AD[i+1])
 					res[p] = pool
 					genotype[p] = GT
-		if len(pools['R']) > 2:
+		if len(res['R']) > 2:
 			fields, pools, genotype = triAllelicSites([z[0], z[1], z[3]],res,genotype)
 			return fields, pools, genotype
 		return [z[0], z[1], z[3]],res,genotype #returns chromosome, position, reference allele, and the data for each bam)
