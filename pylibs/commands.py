@@ -82,8 +82,6 @@ Filter Options:
           read_header(arg,line)
         else:
             fields, pools, genotype = vcf_line_parser2(line, arg)
-            if len(pools['R']) > 2:
-              fields, pools, genotype = triAllelicSites(fields, pools, genotype)
             if (fields, pools, genotype) != (0, 0, 0):
               DOM = fields[2]
               al_count, p_al_count = normalize(pools, DOM, arg)
@@ -461,8 +459,6 @@ Filter Options:
       line = filter_region(line, arg)
       if line != None:
         fields, pools, genotype = vcf_line_parser2(line, arg)
-        if len(pools['R']) > 2:
-           fields, pools, genotype = triAllelicSites(fields, pools, genotype)
         if (fields, pools, genotype) != (0,0,0):
           DOM = fields[2]
           al_count,p_al_count = normalize(pools, DOM, arg, fields)
