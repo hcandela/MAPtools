@@ -610,6 +610,25 @@ def outcross_filter(arg,c,d,e,f):
 	else:
 		return True
 
+def triAllelicSites(fields, pools, genotype):
+	ref = fields[2]		#alelo de la referencia lineal
+	gens = list()
+	for p,g in genotype.items():
+		gens += g
+	if '0' in gens or len(pools['R']) > 3:
+		return 0,0,0
+	else:
+		for p,c in pools.items():
+			del c[ref]
+		new_ref = list(pools['R'].keys())[0]
+		fields[2] = new_ref
+		new_genotype = dict()
+		translate = {'1':'0', '2':'1'}
+		for p,g in genotype.items():
+			g = [translate[i] for i in g]
+			new_genotype[p] = g
+		return fields, pools, new_genotype
+	
 def normalize(pools, REF, arg, r_min=0.03):
 	data = arg['data_w']
 	inf_s = set(data)
