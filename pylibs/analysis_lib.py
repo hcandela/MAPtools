@@ -596,7 +596,7 @@ def parental_filter(arg,genotype):
 	#elif 'Wr' in inf_s or 'Wd' in inf_s:
 	#	flag.append(False if GT_par == {'0','1'} or GT_par == {'1'} else True)
 	elif ('Pd' in inf_s or 'Wd' in inf_s) and arg['--mutant-pool'] == 'R':
-		flag.append(False if '1' in GT_par else True)
+		flag.append(False if '1' in GT_par else True)	
 		#TODO-flag.append(False if GT_par == GT_rec else True)
 	elif ('Pd' in inf_s or 'Wd' in inf_s) and arg['--mutant-pool'] == 'D':
 		flag.append(False if GT_par == {'0'} else True)
@@ -631,7 +631,7 @@ def triAllelicSites(fields, pools, genotype):
 			new_genotype[p] = g
 		return fields, pools, new_genotype
 	
-def normalize(pools, REF, arg, r_min=0.03):
+def normalize(pools, REF, arg, genotype, r_min=0.03):
 	data = arg['data_w']
 	inf_s = set(data)
 	if 'qtl' in arg.keys():
@@ -646,7 +646,7 @@ def normalize(pools, REF, arg, r_min=0.03):
 	al_count = 0
 	wt_l = 0
 	if len(alle) > 2:
-		return 0,0
+		return 0,0,0
 	if len(inf_s) == 1:
 		if ref == 'D' or ref == 'miss':
 			a = rec[alle[0]]
@@ -705,7 +705,7 @@ def normalize(pools, REF, arg, r_min=0.03):
 				al_count = [p_al[1], p_al[0], a, b]
 				wt_l = [e, f]
 			else:
-				al_count, wt_l = 0,0
+				al_count, wt_l, genotype = 0,0,0
 	elif len(inf_s) == 3:
 		if 'Pr' in inf_s:
 			parental = pools['Pr']
@@ -736,14 +736,21 @@ def normalize(pools, REF, arg, r_min=0.03):
 				al_count = [p_al[1], p_al[0], a, b, c, d]
 				wt_l = [e, f]
 		else:
-			al_count, wt_l = 0, 0
+			al_count, wt_l, genotype = 0, 0, 0
 	if wt:
 		if arg['reorder'] == 1:
 			wt_l = [pools[wt][alle[1]], pools[wt][alle[0]]]
 		elif arg['reorder'] == 0:
 			wt_l = [pools[wt][alle[0]], pools[wt][alle[1]]]
-	#elif not wt and ('Pr' not in inf_s or 'Pd' not in inf_s):
-	return al_count, wt_l
+	if arg['reorder'] == 1:
+		new_genotype = dict()
+		translate = {'1':'0', '0':'1'}
+		for p, gen in genotype.items():
+			gen = [translate[i] for i in gen]
+			new_genotype[p] = gen
+		return al_count, wt_l, new_genotype
+	new_genotype = genotype
+	return al_count, wt_l, new_genotype
 	
 
 def check_annotate_args(arg):
