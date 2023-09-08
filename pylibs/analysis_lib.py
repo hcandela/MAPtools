@@ -463,7 +463,7 @@ def filter_mbs(arg, al_count, p_al_count, genotype):
 			#flag.append(het_filter(arg,a,b))
 			flag.append(het_filter2(arg,genotype,a,b))
 		if arg['--EMS']:
-			flag.append(filter_EMS(arg, REF, ALT))	
+			flag.append(filter_EMS(arg, REF, ALT))
 		if arg['--skip-indels']:
 			flag.append(indels_filter(REF,ALT))
 		if arg['--parental-filter'] and ('Pr' in inf_s or 'Pd' in inf_s or 'Wr' in inf_s or 'Wd' in inf_s):
@@ -595,11 +595,15 @@ def parental_filter(arg,genotype):
 	if 'Pr' in inf_s or 'Wr' in inf_s:
 		flag.append(False if GT_par == {'0','1'} else True)
 		if arg['--mutant-pool'] == 'D':
-			flag.append(False if '1' in GT_par else True)
+			flag.append(False if '0' in GT_par else True)
+			if '0' in GT_par:
+				print('parental filter', arg['poss'], arg['count'],arg['pcount'], arg['genot'])
 	#elif 'Wr' in inf_s or 'Wd' in inf_s:
 	#	flag.append(False if GT_par == {'0','1'} or GT_par == {'1'} else True)
 	elif ('Pd' in inf_s or 'Wd' in inf_s) and arg['--mutant-pool'] == 'R':
-		flag.append(False if '1' in GT_par else True)	
+		flag.append(False if '1' in GT_par else True)
+		if '1' in GT_par:
+			print('parental filter', arg['poss'], arg['count'],arg['pcount'], arg['genot'])
 		#TODO-flag.append(False if GT_par == GT_rec else True)
 	elif ('Pd' in inf_s or 'Wd' in inf_s) and arg['--mutant-pool'] == 'D':
 		flag.append(False if GT_par == {'0'} else True)
@@ -717,10 +721,10 @@ def normalize(pools, REF, arg, genotype, r_min=0.03):
 		p_al = sorted(parental, key=lambda key: parental[key], reverse=True)
 		dom = pools['D']
 		r_min = 0.03
-		if parental[p_al[0]] > 0 and parental[p_al[1]]/(parental[p_al[0]] + parental[p_al[1]]) < r_min:
+		if parental[p_al[0]] > 0 and parental[p_al[1]]/(parental[p_al[0]] + parental[p_al[1]]) < r_min:	# Asegurar que el parental esta en homocigosis
 			p_al2 = [key for key,arg in parental.items()]
-			arg['reorder'] = 1 if p_al != p_al2 else 0
 			if 'Pd' in inf_s:
+				arg['reorder'] = 1 if p_al != p_al2 else 0
 				a = dom[p_al[0]]
 				b = dom[p_al[1]]
 				c = rec[p_al[0]]
@@ -730,6 +734,7 @@ def normalize(pools, REF, arg, genotype, r_min=0.03):
 				al_count = [p_al[0], p_al[1], a, b, c, d]
 				wt_l = [e, f] 
 			elif 'Pr' in inf_s:
+				arg['reorder'] = 0 if p_al != p_al2 else 1
 				a = dom[p_al[1]]
 				b = dom[p_al[0]]
 				c = rec[p_al[1]]
@@ -992,9 +997,10 @@ def filter_EMS(arg, REF, ALT):
 		else:
 			return False
 	elif arg['--mutant-pool'] == 'D':
-		if (REF == 'A' and ALT == 'G') or (REF == 'T' and ALT == 'C'):
+		if (REF == 'A' and ALT == 'G') or (REF == 'T' and ALT == 'C'):	
 			return True
 		else:
+			#print('EMS filter',arg['poss'], arg['count'], arg['pcount'], arg['genot'])
 			return False
 
 

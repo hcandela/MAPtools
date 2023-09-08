@@ -86,6 +86,9 @@ Filter Options:
               DOM = fields[2]
               arg['poss'] = fields[1]
               al_count,p_al_count,genotype = normalize(pools, DOM, arg, genotype)
+              arg['count'] = al_count
+              arg['pcount'] = p_al_count
+              arg['genot'] = genotype
               if (al_count,p_al_count,genotype) != (0,0,0):
                 if arg['--no-filter'] == False:
                   flag = filter_mbs(arg,al_count,p_al_count, genotype)
