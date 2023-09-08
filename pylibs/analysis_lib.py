@@ -702,6 +702,8 @@ def normalize(pools, REF, arg, genotype, r_min=0.03):
 				f = p_dom[p_al[1]]
 				al_count = [p_al[0], p_al[1], a, b]
 				wt_l = [e,f]
+			else:
+				return 0,0,0
 		elif inf_s == {'R', 'Pr'}:	#TODO Possibly delete this case
 			p_rec = pools['Pr']
 			p_al = sorted(p_rec, key=lambda key: p_rec[key], reverse=True)
@@ -715,7 +717,7 @@ def normalize(pools, REF, arg, genotype, r_min=0.03):
 				al_count = [p_al[1], p_al[0], a, b]
 				wt_l = [e, f]
 			else:
-				al_count, wt_l, genotype = 0,0,0
+				return 0,0,0
 	elif len(inf_s) == 3:
 		if 'Pr' in inf_s:
 			parental = pools['Pr']
@@ -747,7 +749,7 @@ def normalize(pools, REF, arg, genotype, r_min=0.03):
 				al_count = [p_al[1], p_al[0], a, b, c, d]
 				wt_l = [e, f]
 		else:
-			al_count, wt_l, genotype = 0, 0, 0
+			return 0, 0, 0
 	if wt:
 		if arg['reorder'] == 1:
 			wt_l = [pools[wt][alle[1]], pools[wt][alle[0]]]
