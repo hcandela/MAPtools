@@ -600,14 +600,10 @@ def parental_filter(arg,genotype):
 			flag.append(False if GT_par == {'0'} else True)
 		if arg['--mutant-pool'] == 'D':
 			flag.append(False if '0' in GT_par else True)
-			if '0' in GT_par:
-				print('parental filter', arg['poss'], arg['count'],arg['pcount'], arg['genot'])
 	#elif 'Wr' in inf_s or 'Wd' in inf_s:
 	#	flag.append(False if GT_par == {'0','1'} or GT_par == {'1'} else True)
 	elif ('Pd' in inf_s or 'Wd' in inf_s) and arg['--mutant-pool'] == 'R':
 		flag.append(False if '1' in GT_par else True)
-		if '1' in GT_par:
-			print('parental filter', arg['poss'], arg['count'],arg['pcount'], arg['genot'])
 		#TODO-flag.append(False if GT_par == GT_rec else True)
 	elif ('Pd' in inf_s or 'Wd' in inf_s) and arg['--mutant-pool'] == 'D':
 		if 'Wd' in inf_s:
