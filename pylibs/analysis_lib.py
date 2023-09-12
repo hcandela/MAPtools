@@ -692,9 +692,9 @@ def normalize(pools, REF, arg, genotype, r_min=0.03):
 			arg['reorder'] = 1
 		elif inf_s == {'R', 'Pd'}:
 			p_dom = pools['Pd']
-			p_al = sorted(p_dom, key=lambda key: p_dom[key], reverse=True) #ordered from higher to lower
-			p_al2 = [key for key,arg in p_dom.items()]
-			arg['reorder'] = 1 if p_al != p_al2 else 0
+			p_al = sorted(p_dom, key=lambda key: p_dom[key], reverse=True) #ordered from higher to lower-allele count
+			p_al2 = [key for key,arg in p_dom.items()]					   #original order in vcf file
+			arg['reorder'] = 1 if p_al != p_al2 else 0					   #if distict we are re-ordering the alleles
 			if p_dom[p_al[0]] > 0 and p_dom[p_al[1]]/(p_dom[p_al[0]] + p_dom[p_al[1]]) < 0.03:# or len(p_al) > 2:
 				a = rec[p_al[0]]
 				b = rec[p_al[1]]
@@ -706,9 +706,9 @@ def normalize(pools, REF, arg, genotype, r_min=0.03):
 				return 0,0,0
 		elif inf_s == {'R', 'Pr'}:	#TODO Possibly delete this case
 			p_rec = pools['Pr']
-			p_al = sorted(p_rec, key=lambda key: p_rec[key], reverse=True)
-			p_al2 = [key for key,arg in p_rec.items()]
-			arg['reorder'] = 1 if p_al != p_al2 else 0
+			p_al = sorted(p_rec, key=lambda key: p_rec[key], reverse=True)	#ordered from higher to lower-allele count
+			p_al2 = [key for key,arg in p_rec.items()]						#orginal order in vcf file
+			arg['reorder'] = 0 if p_al != p_al2 else 1						#if distinct we are NOT re-ordering the alleles
 			if p_rec[p_al[0]] > 0 and p_rec[p_al[1]]/(p_rec[p_al[0]] + p_rec[p_al[1]]) < r_min:# or len(p_al) > 2:
 				a = rec[p_al[1]]
 				b = rec[p_al[0]]
