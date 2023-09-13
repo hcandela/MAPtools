@@ -82,12 +82,21 @@ Filter Options:
           read_header(arg,line)
         else:
             fields, pools, genotype = vcf_line_parser2(line, arg)
+
             if (fields, pools, genotype) != (0, 0, 0):
+              if fields[1] == '6970794':
+                print(fields, pools, genotype)
               DOM = fields[2]
               al_count,p_al_count,genotype = normalize(pools, DOM, arg, genotype)
               if (al_count,p_al_count,genotype) != (0,0,0):
                 if arg['--no-filter'] == False:
                   flag = filter_mbs(arg,al_count,p_al_count, genotype)
+                  #if flag == True:
+                  #  arg['poss'] = fields[1]
+                  #  arg['count'] = al_count
+                  #  arg['pcount'] = p_al_count
+                  #  arg['genn'] = genotype
+                  #  print(fields[0],arg['poss'], arg['count'], arg['pcount'], arg['genn'])
                 else:
                    flag = True
                 if flag == True:

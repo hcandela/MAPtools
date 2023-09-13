@@ -586,30 +586,28 @@ def parental_filter(arg,genotype):
 		if len(rest) > 0:
 			p = rest.pop()
 			GT_par = set(genotype[p])
-			flag.append(False if GT_par == GT_dom == GT_rec else True)
+			flag.append(False if GT_par == GT_dom == GT_rec else True)	# Se descartan si los 3 genotipos son iguales
 	elif 'D' not in inf_s: #Si tenemos 2 pools
 		rest = inf_s - {'R'}
 		p = rest.pop()
 		GT_par = set(genotype[p])
 	#Si tenemos 2 o 3 pools y uno es parental o wild-type
+	flag.append(False if GT_par == {'0','1'} else True)		# Si el parental es heterocigótico descartamos
 	if 'Pr' in inf_s or 'Wr' in inf_s:
-		flag.append(False if GT_par == {'0','1'} else True)
-		if arg['--mutant-pool'] == 'R' and 'Wr' in inf_s:
+		if arg['--mutant-pool'] == 'R' and 'Wr' in inf_s:	# Alelo mutante es 1, si ya existía una variante en el wt, es que no es la mutación
 			flag.append(False if GT_par == {'1'} else True)
-		if 'Pr' in inf_s and arg['--mutant-pool'] == 'R':
+		if arg['--mutant-pool'] == 'R' and 'Pr' in inf_s:	# Alelo mutante es 1, si es 0/0 es que en esa posición no esta la mutación
 			flag.append(False if GT_par == {'0'} else True)
 		if arg['--mutant-pool'] == 'D':
-			flag.append(False if '0' in GT_par else True)
-	#elif 'Wr' in inf_s or 'Wd' in inf_s:
-	#	flag.append(False if GT_par == {'0','1'} or GT_par == {'1'} else True)
-	elif ('Pd' in inf_s or 'Wd' in inf_s) and arg['--mutant-pool'] == 'R':
-		flag.append(False if '1' in GT_par else True)
-		#TODO-flag.append(False if GT_par == GT_rec else True)
-	elif ('Pd' in inf_s or 'Wd' in inf_s) and arg['--mutant-pool'] == 'D':
-		if 'Wd' in inf_s:
-			flag.append(False if '0' in GT_par else True)
-		if 'Pd' in inf_s:
-			flag.append(False if GT_par == {'1'} else False)
+			flag.append(False if '0' in GT_par else True)	# Alelo mutante es 0, la mutación no puede estar en el Pr o Wr
+
+	elif 'Pd' in inf_s or 'Wd' in inf_s:
+		if arg['--mutant-pool'] == 'R':
+			flag.append(False if '1' in GT_par else True)	# Alelo mutante es 1, la mutación no puede estar en el Pd o Wd
+		if arg['--mutant-pool'] == 'D' and 'Wd' in inf_s:
+			flag.append(False if '0' in GT_par else True)	# Alelo mutante es 0, si ya existía una variante en el wt, no es la mutación
+		if arg['--mutant-pool'] == 'D' and 'Pd' in inf_s:
+			flag.append(False if GT_par == {'1'} else False)# Alelo mutante es 0, si es 1/1 es que en esa posición no está la mutación
 	if False in flag:
 		return False
 	else:
@@ -628,6 +626,21 @@ def triAllelicSites(fields, pools, genotype):
 	for p,g in genotype.items():
 		gens += g
 	if '0' in gens or len(pools['R']) > 3:
+		for ps, cs in pools.items():
+			allels = [a for a in cs.keys()]
+			break
+		ps = [p for p in pools.keys()]
+		inf = list()
+		for i in range(len(ps)):
+			inf_l =list() 
+			for al in allels:
+				inf_l.append(al+':'+str(pools[ps[i]][al]))
+			inf_l = ','.join(inf_l)
+			inf_g = 'GT '+'/'.join(genotype[ps[i]])
+			inf.append(' '+ps[i]+'--> '+'AD '+inf_l +' ; '+ inf_g)
+		final = ' | '.join(inf)
+			
+		print(f'Warning: it is not possible to orient alleles with the provided information in line:\n{fields[0]}\t{fields[1]}\t{final}', file=sys.stderr)
 		return 0,0,0
 	else:
 		for p,c in pools.items():
