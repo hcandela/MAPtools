@@ -26,6 +26,7 @@ Input Options:
                                   Pr  re-sequencing of the recessive parent genome
                                   Wd  re-sequencing of the wild-type strain isogenic to a dominant mutant
                                   Wr  re-sequencing of the wild-type strain isogenic to a recessive mutant
+                                    Note: Maptools requires that Wd, Wr, Pd and Pr are highly homozygous inbred lines
                               
   -r, --ref-genotype STR        indicate if the reference genome sequence corresponds to one of the parents
                                 of the mapping population [default: miss]
@@ -82,23 +83,12 @@ Filter Options:
           read_header(arg,line)
         else:
             fields, pools, genotype = vcf_line_parser2(line, arg)
-
             if (fields, pools, genotype) != (0, 0, 0):
-              #if fields[1] == '6970794':
-              #  print(fields, pools, genotype)
               DOM = fields[2]
               al_count,p_al_count,genotype = normalize(pools, DOM, arg, genotype)
-              #if fields[1] == '6970794':
-              #  print(fields, pools, genotype)
               if (al_count,p_al_count,genotype) != (0,0,0):
                 if arg['--no-filter'] == False:
                   flag = filter_mbs(arg,al_count,p_al_count, genotype)
-                  #if flag == True:
-                  #  arg['poss'] = fields[1]
-                  #  arg['count'] = al_count
-                  #  arg['pcount'] = p_al_count
-                  #  arg['genn'] = genotype
-                  #  print(fields[0],arg['poss'], arg['count'], arg['pcount'], arg['genn'])
                 else:
                    flag = True
                 if flag == True:
@@ -125,6 +115,7 @@ Input Options:
                                   H   bulk of individuals with the highest values for a quantitative trait
                                   L   bulk of individuals with the lowest values for a quantitative trait
                                   P   re-sequencing of a parent of the mapping population
+                                    Note: Maptools requires that P samples are highly homozygous inbred lines
 
   -r, --ref-genotype STR        indicate if the reference genome sequence corresponds to one of the parents
                                 of the mapping population [default: miss]
@@ -406,6 +397,7 @@ Input Options:
                                   Pr  re-sequencing of the recessive parent genome
                                   Wd  re-sequencing of the wild-type strain isogenic to a dominant mutant
                                   Wr  re-sequencing of the wild-type strain isogenic to a recessive mutant
+                                    Note: Maptools requires that Wd, Wr, Pd and Pr are highly homozygous inbred lines
 
   -r, --ref-genotype STR        indicate if the reference genome sequence corresponds to one of the parents
                                 of the mapping population [default: miss]
@@ -472,10 +464,7 @@ Filter Options:
         fields, pools, genotype = vcf_line_parser2(line, arg)
         if (fields, pools, genotype) != (0,0,0):
           DOM = fields[2]
-          arg['poss'] = fields[1]
           al_count,p_al_count,genotype = normalize(pools, DOM, arg, genotype)
-          #if fields[1] == '6970794':
-          #  print(fields, pools, genotype)
           if (al_count,p_al_count,genotype) != (0,0,0):
             if arg['--no-filter'] == False:
               flag = filter_mbs(arg, al_count, p_al_count, genotype)
@@ -489,9 +478,7 @@ Filter Options:
      print('Warning: There is no variants to analyse. Please reduce filtering.', file=sys.stderr)
      sys.exit()
   load_reference(df,arg)
-  #print(str(arg['ref'].seq[81033575-1:81033653+5]))
   df = df.reset_index()
-  start = time.perf_counter()
   load_gff(arg)
   write_annotate_header(arg)
   for idx, row in df.iterrows():
@@ -501,8 +488,6 @@ Filter Options:
        continue
     arg['variant'] = 'substitution'
     check_mutation2(row,arg)
-  finish = time.perf_counter()
-  #print(f'Variant annotation finished in {round(finish-start, 2)} second(s)')
   
   ##
 def citation(argv):

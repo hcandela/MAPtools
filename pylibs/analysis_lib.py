@@ -101,6 +101,7 @@ def check_args(__doc__,arg:dict):
 	arg['wt'] = wt
 	arg['--contigs'] = dict()
 	arg['lim'] = 1e-90
+	arg['discards'] = True
 	#Call to specific checking function for each command
 	if 'mbs' in arg.keys():
 		arg = check_mbs_args(arg)
@@ -169,6 +170,8 @@ def check_mbs_args(arg:dict):
 	if arg['--max-ratio'] <= arg['--min-ratio']:
 		print('Error: You should choose a correct interval of frequencies(--min-ratio 15 --max-ratio 85)', file=sys.stderr)
 		sys.exit()
+	if ('Pd' not in arg['--data'] or 'Pr' not in arg['--data']) and arg['--ref-genotype'] == 'miss':
+		arg['--parental-filter'] = False
 	return arg
 
 def check_qtl_args(arg:dict):
@@ -442,7 +445,7 @@ def vcf_line_parser2(line, arg):
 				if '.' in gen:
 					return 0,0,0
 		if len(res['R']) > 2:
-			fields, pools, genotype = triAllelicSites([z[0], z[1], z[3]],res,genotype)
+			fields, pools, genotype = triAllelicSites([z[0], z[1], z[3]],res,genotype,arg)
 			return fields, pools, genotype
 		return [z[0], z[1], z[3]],res,genotype #returns chromosome, position, reference allele, and the data for each bam)
 
@@ -620,7 +623,7 @@ def outcross_filter(arg,c,d,e,f):
 	else:
 		return True
 
-def triAllelicSites(fields, pools, genotype):
+def triAllelicSites(fields, pools, genotype, arg):
 	ref = fields[2]		#alelo de la referencia lineal
 	gens = list()
 	for p,g in genotype.items():
@@ -639,8 +642,22 @@ def triAllelicSites(fields, pools, genotype):
 			inf_g = 'GT '+'/'.join(genotype[ps[i]])
 			inf.append(' '+ps[i]+'--> '+'AD '+inf_l +' ; '+ inf_g)
 		final = ' | '.join(inf)
-			
-		print(f'Warning: it is not possible to orient alleles with the provided information in line:\n{fields[0]}\t{fields[1]}\t{final}', file=sys.stderr)
+		fsal = '/'.join(arg['--output'].split('/')[0:-1])
+		fname = arg['filename'].split(arg['--output-type'])[0]
+		if arg['discards'] == True:
+			if arg['--output'] == None:
+				print(f'Warning: it is not possible to orient alleles with the provided information in line(s):\n{fields[0]}\t{fields[1]}\t{final}', file=sys.stderr)
+			else:
+				with open(fsal+'/skippedVariants_'+fname+arg['--output-type'], 'wt') as discards:
+					discards.write('Warning: it is not possible to orient alleles with the provided information in line(s):')
+					discards.write(f'\n{fields[0]}\t{fields[1]}\t{final}')
+			arg['discards'] = False
+		else:
+			if arg['--output'] == None:
+				print(f'\n{fields[0]}\t{fields[1]}\t{final}', file=sys.stderr)
+			else:
+				with open(fsal+'/skippedVariants_'+fname+arg['--output-type'], 'at') as discards:
+					discards.write(f'\n{fields[0]}\t{fields[1]}\t{final}')
 		return 0,0,0
 	else:
 		for p,c in pools.items():
@@ -835,6 +852,9 @@ def check_annotate_args(arg):
 	if not 'R' in arg['--data']:
 		print('Error: You should include the recessive pool (--data R,X)', file=sys.stderr)
 		sys.exit()
+	if ('Pd' not in arg['--data'] or 'Pr' not in arg['--data']) and arg['--ref-genotype'] == 'miss':
+		arg['--parental-filter'] = False
+		print('Warning: Parental filter deactivated. Parental sample or --ref-genotype (D or R) is needed.', file=sys.stderr)
 	return arg
 
 def filter_region(line, arg):

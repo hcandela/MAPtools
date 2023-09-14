@@ -271,6 +271,7 @@ def read_palette(arg):
         print('Error: Please put the file \"palette.json\" in the MAPtools folder.', file=sys.stderr)
         sys.exit()
     arg['DPI'] = data['DPI']
+    arg['DOT_SIZE'] = data['DOT_SIZE']
     ant = 'mbs' if 'mbsplot' in arg.keys() else 'qtl'
     palette = arg['--palette']
     if palette not in data[ant].keys():
@@ -579,7 +580,7 @@ def plot_ED(df, arg):
         x = d[['POS']]
         y = d[['ED']]
         fig, ax = plt.subplots(figsize=(10, 4.2))
-        ax.scatter(x, y, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+        ax.scatter(x, y, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'])
         ax.set(xlim=(0, max_x), ylim=(0, 1.5))
         ax.set_xticks(ticks=np.arange(0, max_x, 5e6))
         ax.set_xticklabels(labels=np.arange(0, max_x, 5e6),fontsize=8)
@@ -618,7 +619,7 @@ def plot_G(df, arg):
         x = d[['POS']]
         y = d[['G']]
         fig, ax = plt.subplots(figsize=(10, 4.2))
-        ax.scatter(x, y, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+        ax.scatter(x, y, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'])
         ax.set(xlim=(0, max_x), ylim=(min_y, max_y))
         ax.set_xticks(ticks=np.arange(0, max_x, 5e6))
         ax.set_xticklabels(labels=np.arange(0, max_x, 5e6),fontsize=8)
@@ -671,7 +672,7 @@ def pval_multi_graph(df, arg):
             max_x = int(arg['contigs'][chrom[i]])
             x = d[['POS']]
             y = d[['log10PVALUE']]
-            ax[i].scatter(x, y, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+            ax[i].scatter(x, y, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'])
             ax[i].set(xlim=(0, max_x), ylim=(min_y, 0))
             ax[i].set_xticks([])
             ax[i].set_xlabel(xlabel='chr {}'.format(chrom[i]), fontsize=8)
@@ -730,7 +731,7 @@ def pval_manhattan_plot(df, arg):
         max_x = int(arg['contigs'][chrom[i]])
         x = d[['POS']]
         y = -d[['log10PVALUE']]
-        ax[i].scatter(x, y, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+        ax[i].scatter(x, y, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'])
         ax[i].set(xlim=(0, max_x), ylim=(0, max_y))
         ax[i].set_xticks([])
         ax[i].set_xlabel(xlabel=f'{chrom[i]}', fontsize=12)
@@ -812,7 +813,7 @@ def pval_mono_graph(df, arg):
         x=d[['POS']]
         y=d[['log10PVALUE']]
         fig, ax=plt.subplots(figsize=(10, 4.2))
-        ax.scatter(x, y, s=0.5, color=arg['--palette']['dots'], alpha=arg['--alpha'])
+        ax.scatter(x, y, s=arg['DOT_SIZE'], color=arg['--palette']['dots'], alpha=arg['--alpha'])
         ax.set(xlim=(0, max_x), ylim=(min_y, 0))
         ax.set_xticks(ticks=np.arange(0, max_x, 5e6))
         ax.set_xticklabels(labels=np.arange(0, max_x, 5e6),fontsize=8)
@@ -868,7 +869,7 @@ def AF1_AF2_mono_graph(df, arg):
         y2=d[['SNPidx2']]
         # AF1
         fig, ax=plt.subplots(figsize=(10, 4.2))
-        ax.scatter(x, y1, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+        ax.scatter(x, y1, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'])
         ax.set(xlim=(0, max_x), ylim=(0, 1))
         ax.set_xticks(ticks=np.arange(0, max_x, 5e6))
         ax.set_xticklabels(labels=np.arange(0, max_x, 5e6),fontsize=8)
@@ -907,7 +908,7 @@ def AF1_AF2_mono_graph(df, arg):
             write_caption(f,cap,arg) 
         # AF2
         fig, ax=plt.subplots(figsize=(10, 4.2))
-        ax.scatter(x, y2, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+        ax.scatter(x, y2, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'])
         ax.set(xlim=(0, max_x), ylim=(0, 1))
         ax.set_xticks(ticks=np.arange(0, max_x, 5e6))
         ax.set_xticklabels(labels=np.arange(0, max_x, 5e6),fontsize=8)
@@ -1004,7 +1005,7 @@ def AF_mono_graph(df, arg, g_type):
         x=d[['POS']]
         y=d[[g_type]]
         fig, ax=plt.subplots(figsize=(10, 4.2))
-        ax.scatter(x, y, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+        ax.scatter(x, y, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'])
         ax.set(xlim=(0, max_x), ylim=lim_y)
         ax.set_xticks(ticks=np.arange(0, max_x, 5e6))
         ax.set_xticklabels(labels=np.arange(0, max_x, 5e6),fontsize=8)
@@ -1089,7 +1090,7 @@ def pval_multi_Vertical_graph(df, arg):
             d=df[df['#CHROM'] == chrom[i]]
             x=d[['POS']]
             y=d[['log10PVALUE']]
-            ax[i].scatter(x, y, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+            ax[i].scatter(x, y, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'])
             ax[i].set(xlim=(0, max_x), ylim=(min_y, 0))
             ax[i].set_xticks(ticks=np.arange(0, max_x, 5e6))
             ax[i].tick_params(labelbottom=False)
@@ -1156,7 +1157,7 @@ def ED_multi_Vertical_graph(df, arg):
             d=df[df['#CHROM'] == chrom[i]]
             x=d[['POS']]
             y=d[['ED']]
-            ax[i].scatter(x, y, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+            ax[i].scatter(x, y, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'])
             ax[i].set(xlim=(0, max_x), ylim=(0, 1.5))
             ax[i].set_xticks(ticks=np.arange(0, max_x, 5e6))
             ax[i].tick_params(labelbottom=False)
@@ -1210,7 +1211,7 @@ def G_multi_Vertical_graph(df, arg):
             d=df[df['#CHROM'] == chrom[i]]
             x=d[['POS']]
             y=d[['G']]
-            ax[i].scatter(x, y, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+            ax[i].scatter(x, y, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'])
             ax[i].set(xlim=(0, max_x), ylim=(min_y, max_y))
             ax[i].set_xticks(ticks=np.arange(0, max_x, 5e6))
             ax[i].tick_params(labelbottom=False)
@@ -1318,7 +1319,7 @@ def AF_multi_Vertical_graph(df, arg, g_type):
             x=d[['POS']]
             y=d[[g_type]]
 
-            ax[i].scatter(x, y, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+            ax[i].scatter(x, y, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'])
             ax[i].set(xlim=(0, max_x), ylim=lim_y)
             ax[i].set_xticks(ticks=np.arange(0, max_x, 5e6))
             ax[i].tick_params(labelbottom=False)
@@ -1417,7 +1418,7 @@ def AF12_multi_Vertical_graph(df, arg):
             x=d[['POS']]
             y=d[['SNPidx1']]
             #AF1&2
-            ax[i].scatter(x, y, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+            ax[i].scatter(x, y, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'])
             ax[i].set(xlim=(0, max_x), ylim=lim_y)
             ax[i].set_xticks(ticks=np.arange(0, max_x, 5e6))
             ax[i].tick_params(labelbottom=False)
@@ -1476,7 +1477,7 @@ def AF12_multi_Vertical_graph(df, arg):
             d=df[df['#CHROM'] == chrom[i]]
             x=d[['POS']]
             y=d[['SNPidx2']]
-            ax[i].scatter(x, y, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+            ax[i].scatter(x, y, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'])
             ax[i].set(xlim=(0, max_x), ylim=lim_y)
             ax[i].set_xticks(ticks=np.arange(0, max_x, 5e6))
             ax[i].tick_params(labelbottom=False)
@@ -1539,7 +1540,7 @@ def AF1_AF2_pval_mono(df, arg):
         y2=d['SNPidx2']
         y3=d['log10PVALUE']
         # SNPidx1
-        ax[0].scatter(x, y1, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+        ax[0].scatter(x, y1, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'])
         ax[0].set(xlim=(0, max_x), ylim=(0, 1))
         ax[0].set_xticks(ticks=np.arange(0, max_x, 5e6))
         ax[0].tick_params(labelbottom=False)
@@ -1564,7 +1565,7 @@ def AF1_AF2_pval_mono(df, arg):
         ax[0].spines['right'].set_visible(False)
 
         # SNPidx2
-        ax[1].scatter(x, y2, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+        ax[1].scatter(x, y2, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'])
         ax[1].set(xlim=(0, max_x), ylim=(0, 1))
         ax[1].set_xticks(ticks=np.arange(0, max_x, 5e6))
         ax[1].tick_params(labelbottom=False)
@@ -1588,7 +1589,7 @@ def AF1_AF2_pval_mono(df, arg):
         ax[1].spines['right'].set_visible(False)
 
         # log10PVALUE
-        ax[2].scatter(x, y3, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+        ax[2].scatter(x, y3, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'])
         ax[2].set(xlim=(0, max_x), ylim=(min_y, 0))
         ax[2].set_xticks(ticks=np.arange(0, max_x, 5e6))
         ax[2].set_xticklabels(labels=np.arange(0, max_x, 5e6),fontsize=8)
@@ -1651,7 +1652,7 @@ def qtl_mixed_plot(df, arg):
         y3=d['DELTA']
         y4=d['log10PVALUE']
         # G-statistic
-        ax[0].scatter(x, y1, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+        ax[0].scatter(x, y1, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'])
         ax[0].set(xlim=(0, max_x), ylim=(min(df['G']), max(df['G'])))
         ax[0].set_xticks(ticks=np.arange(0, max_x, 5e6))
         ax[0].tick_params(labelbottom=False)
@@ -1668,7 +1669,7 @@ def qtl_mixed_plot(df, arg):
         ax[0].spines['right'].set_visible(False)
 
         # ED
-        ax[1].scatter(x, y2, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+        ax[1].scatter(x, y2, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'])
         ax[1].set(xlim=(0, max_x), ylim=(0, 1.5))
         ax[1].set_xticks(ticks=np.arange(0, max_x, 5e6))
         ax[1].tick_params(labelbottom=False)
@@ -1691,7 +1692,7 @@ def qtl_mixed_plot(df, arg):
             ticks_y=[0, 0.25, 0.5, 0.75, 1]
             lim_y=(0, 1.2)
 
-        ax[2].scatter(x, y3, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+        ax[2].scatter(x, y3, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'])
         ax[2].set(xlim=(0, max_x), ylim=lim_y)
         ax[2].set_xticks(ticks=np.arange(0, max_x, 5e6))
         ax[2].tick_params(labelbottom=False)
@@ -1714,7 +1715,7 @@ def qtl_mixed_plot(df, arg):
         ax[2].spines['right'].set_visible(False)
 
         # log10PVALUE
-        ax[3].scatter(x, y4, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+        ax[3].scatter(x, y4, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'])
         ax[3].set(xlim=(0, max_x), ylim=(min(df['log10PVALUE'])*1.05, 0))
         ax[3].set_xticks(ticks=np.arange(0, max_x, 5e6))
         ax[3].set_xticklabels(labels=np.arange(0, max_x, 5e6),fontsize=8)
@@ -1777,7 +1778,7 @@ def snp_index_graph(df, arg):
         y3=d['DELTA']  # delta
 
         #SNPidx1
-        ax[0].scatter(x, y1, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+        ax[0].scatter(x, y1, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'])
         ax[0].set(xlim=(0, max_x), ylim=(0, 1))
         ax[0].set_xticks(ticks=np.arange(0, max_x, 5e6))
         ax[0].tick_params(labelbottom=False)
@@ -1791,7 +1792,7 @@ def snp_index_graph(df, arg):
         ax[0].spines['right'].set_visible(False)
 
         # SNPidx2
-        ax[1].scatter(x, y2, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+        ax[1].scatter(x, y2, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'])
         ax[1].set(xlim=(0, max_x), ylim=(0, 1))
         ax[1].set_xticks(ticks=np.arange(0, max_x, 5e6))
         ax[1].tick_params(labelbottom=False)
@@ -1809,7 +1810,7 @@ def snp_index_graph(df, arg):
             lim_y = (-1.2, 1.2)
         else:
             lim_y = (-1, 1)
-        ax[2].scatter(x, y3, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+        ax[2].scatter(x, y3, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'])
         ax[2].set(xlim=(0, max_x), ylim=lim_y)
         ax[2].set_yticks(ticks=[-1, 0, 1])
         ax[2].tick_params(labelbottom=True)
@@ -2133,7 +2134,7 @@ def Delta2_Vertical_graph(df, arg):
             d['delta2'] = d['DPdom_1']/(d['DPdom_1']+d['DPrec_1']) - d['DPdom_2']/(d['DPdom_2']+d['DPrec_2'])
             y=d[['delta2']]
             #AF1&2
-            ax[i].scatter(x, y, s=0.5, c=arg['--palette']['dots'], alpha=arg['--alpha'])
+            ax[i].scatter(x, y, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'])
             ax[i].set(xlim=(0, max_x), ylim=lim_y)
             ax[i].set_xticks(ticks=np.arange(0, max_x, 5e6))
             ax[i].tick_params(labelbottom=False)
