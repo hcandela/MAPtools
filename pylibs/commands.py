@@ -84,8 +84,6 @@ Filter Options:
             fields, pools, genotype = vcf_line_parser2(line, arg)
 
             if (fields, pools, genotype) != (0, 0, 0):
-              if fields[1] == '6970794':
-                print(fields, pools, genotype)
               DOM = fields[2]
               al_count,p_al_count,genotype = normalize(pools, DOM, arg, genotype)
               if (al_count,p_al_count,genotype) != (0,0,0):
