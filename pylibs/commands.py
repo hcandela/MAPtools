@@ -84,8 +84,12 @@ Filter Options:
             fields, pools, genotype = vcf_line_parser2(line, arg)
 
             if (fields, pools, genotype) != (0, 0, 0):
+              #if fields[1] == '6970794':
+              #  print(fields, pools, genotype)
               DOM = fields[2]
               al_count,p_al_count,genotype = normalize(pools, DOM, arg, genotype)
+              #if fields[1] == '6970794':
+              #  print(fields, pools, genotype)
               if (al_count,p_al_count,genotype) != (0,0,0):
                 if arg['--no-filter'] == False:
                   flag = filter_mbs(arg,al_count,p_al_count, genotype)
@@ -468,7 +472,10 @@ Filter Options:
         fields, pools, genotype = vcf_line_parser2(line, arg)
         if (fields, pools, genotype) != (0,0,0):
           DOM = fields[2]
+          arg['poss'] = fields[1]
           al_count,p_al_count,genotype = normalize(pools, DOM, arg, genotype)
+          #if fields[1] == '6970794':
+          #  print(fields, pools, genotype)
           if (al_count,p_al_count,genotype) != (0,0,0):
             if arg['--no-filter'] == False:
               flag = filter_mbs(arg, al_count, p_al_count, genotype)

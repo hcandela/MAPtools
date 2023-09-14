@@ -607,7 +607,7 @@ def parental_filter(arg,genotype):
 		if arg['--mutant-pool'] == 'D' and 'Wd' in inf_s:
 			flag.append(False if '0' in GT_par else True)	# Alelo mutante es 0, si ya existía una variante en el wt, no es la mutación
 		if arg['--mutant-pool'] == 'D' and 'Pd' in inf_s:
-			flag.append(False if GT_par == {'1'} else False)# Alelo mutante es 0, si es 1/1 es que en esa posición no está la mutación
+			flag.append(False if GT_par == {'1'} else True)# Alelo mutante es 0, si es 1/1 es que en esa posición no está la mutación
 	if False in flag:
 		return False
 	else:
