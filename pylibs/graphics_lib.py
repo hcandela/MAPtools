@@ -272,6 +272,7 @@ def read_palette(arg):
         sys.exit()
     arg['DPI'] = data['DPI']
     arg['DOT_SIZE'] = data['DOT_SIZE']
+    arg['LINE_W'] = data['LINE_W']
     ant = 'mbs' if 'mbsplot' in arg.keys() else 'qtl'
     palette = arg['--palette']
     if palette not in data[ant].keys():
@@ -747,7 +748,7 @@ def pval_manhattan_plot(df, arg):
             d['prodx']=d['POS'] * d['DP']
             d['avgx']=(d['prodx'].rolling(arg['--moving-avg']).sum() / \
             d['DP'].rolling(arg['--moving-avg']).sum())
-            ax[i].plot(d['avgx'], -d['avgy'], c=c_, lw=2)#lw=0.75
+            ax[i].plot(d['avgx'], -d['avgy'], c=c_, lw=arg['LINE_W'])#lw=0.75
         if arg['--distance-avg'] != False:
             d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
             c_=arg['--palette']['log10PVALUE']
@@ -762,7 +763,7 @@ def pval_manhattan_plot(df, arg):
             res['POSx'] = (res['prodx']/res['DP'])
             res['VALy'] = (res['prody']/res['DP'])
             res = res.dropna()
-            ax[i].plot(res['POSx'], -res['VALy'], c=c_, lw=2)
+            ax[i].plot(res['POSx'], -res['VALy'], c=c_, lw=arg['LINE_W'])
         if arg['--bonferroni']:
             threshold = -log(0.05/len(df.axes[0]))/log(10)
             max_x_ch = (max(d['POS'])/max_x)
@@ -970,7 +971,7 @@ def AF_mono_graph(df, arg, g_type):
                 key = -10
             t,_,rt=arg['titles'][4]
         if g_type == 'MAX_SNPidx2':
-            ylab = 'Maximum Allele Frequency'
+            ylab = 'Maximum AF'
             key2 = -3
             if arg['--moving-avg'] != False:
                 key = 5
@@ -1277,7 +1278,7 @@ def AF_multi_Vertical_graph(df, arg, g_type):
             key = -10
         t,_,rt=arg['titles'][8]
     if g_type == 'MAX_SNPidx2':
-        ylab = 'Maximum Allele Frequency'
+        ylab = 'Maximum AF'
         key2 = -3
         if arg['--moving-avg'] != False:
             key = 5
@@ -1705,7 +1706,7 @@ def qtl_mixed_plot(df, arg):
             plot_avg(d, arg, ax[2], 'DELTA')
         if arg['--distance-avg'] != False:
             plotDistanceAvg(d, chrom[i], arg, ax[2], 'DELTA')
-        if arg['--ci95'] and arg['--moving-avg'] != False:
+        if arg['--ci95'] and (arg['--moving-avg'] != False or arg['--distance-avg'] != False):
             if arg['--moving-avg'] != False:
                 calc_ci(d, arg, ax[2])
             if arg['--distance-avg'] != False:
@@ -1942,7 +1943,7 @@ def plot_avg(d, arg, ax, field):
     d['avgx']=(d['prodx'].rolling(arg['--moving-avg']).sum() / \
                d['DP'].rolling(arg['--moving-avg']).sum())
     
-    ax.plot(d['avgx'], d['avgy'], c=c_, lw=2)#lw=0.75
+    ax.plot(d['avgx'], d['avgy'], c=c_, lw=arg['LINE_W'])#lw=0.75
 
 def plotDistanceAvg(d, chrom, arg, ax, field):
     if field == 'SNPidx2':
@@ -1986,7 +1987,7 @@ def plotDistanceAvg(d, chrom, arg, ax, field):
     res['VALy'] = (res['prody']/res['DP'])
     res = res.dropna()
 
-    ax.plot(res['POSx'], res['VALy'], c=c_, lw=2)
+    ax.plot(res['POSx'], res['VALy'], c=c_, lw=arg['LINE_W'])
 
 
 def plot_avg_qtl_SNPidx(d, arg, ax):
@@ -1999,15 +2000,15 @@ def plot_avg_qtl_SNPidx(d, arg, ax):
     #SNPidx1
     d['producty1']=d['SNPidx1'] * d['DP1']
     d['mediamovily1']=(d['producty1'].rolling(arg['--moving-avg']).sum() / d['DP1'].rolling(arg['--moving-avg']).sum())
-    ax[0].plot(d['mediamovilx'], d['mediamovily1'], c=arg['--palette']['SNPidx1'], lw=2)
+    ax[0].plot(d['mediamovilx'], d['mediamovily1'], c=arg['--palette']['SNPidx1'], lw=arg['LINE_W'])
     #SNPidx2
     d['producty2']=d['SNPidx2'] * d['DP2']
     d['mediamovily2']=(d['producty2'].rolling(arg['--moving-avg']).sum() / d['DP2'].rolling(arg['--moving-avg']).sum())
-    ax[1].plot(d['mediamovilx'], d['mediamovily2'], c=arg['--palette']['SNPidx2'], lw=2)
+    ax[1].plot(d['mediamovilx'], d['mediamovily2'], c=arg['--palette']['SNPidx2'], lw=arg['LINE_W'])
     # D-SNPidx
     d['productyD']=d['DELTA'] * d['DP']
     d['mediamovilD']=(d['productyD'].rolling(arg['--moving-avg']).sum() / d['DP'].rolling(arg['--moving-avg']).sum())
-    ax[2].plot(d['mediamovilx'], d['mediamovilD'], c=arg['--palette']['DELTA'], lw=2)
+    ax[2].plot(d['mediamovilx'], d['mediamovilD'], c=arg['--palette']['DELTA'], lw=arg['LINE_W'])
 
 
 def distanceSNPidx(d, arg, ax, chrom):
@@ -2034,9 +2035,9 @@ def distanceSNPidx(d, arg, ax, chrom):
     res['avg2'] = (res['prody2']/res['DP2'])
     res['avgD'] = (res['prodyD']/res['DP'])
     res = res.dropna()
-    ax[0].plot(res['POSx'], res['avg1'], c=arg['--palette']['SNPidx1'], lw=2)
-    ax[1].plot(res['POSx'], res['avg2'], c=arg['--palette']['SNPidx2'], lw=2)
-    ax[2].plot(res['POSx'], res['avgD'], c=arg['--palette']['DELTA'], lw=2)
+    ax[0].plot(res['POSx'], res['avg1'], c=arg['--palette']['SNPidx1'], lw=arg['LINE_W'])
+    ax[1].plot(res['POSx'], res['avg2'], c=arg['--palette']['SNPidx2'], lw=arg['LINE_W'])
+    ax[2].plot(res['POSx'], res['avgD'], c=arg['--palette']['DELTA'], lw=arg['LINE_W'])
 
 def plot_boost(d, arg, ax, max_x):
     # Mediamovil Boost
@@ -2094,7 +2095,7 @@ def plot_ED100_4(d, arg, ax, max_x, max_y):
     ax2.set(xlim=(0, max_x), ylim=(0, max_y))
     ax2.tick_params(axis='y', which='major', labelsize=8)
     ax2.set_ylabel(ylabel='ED $\mathregular{100^4}$  $\mathregular{x10^8}$ ', fontsize=10, rotation=90, labelpad=15)
-    ax2.plot(d['POS'], d['ED100_4'], c=c_, lw=2)
+    ax2.plot(d['POS'], d['ED100_4'], c=c_, lw=arg['LINE_W'])
     ax2.spines['top'].set_visible(False)
 
 def create_caption(arg, res_tit):

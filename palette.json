@@ -1,6 +1,7 @@
 {
     "DPI" : 600,
     "DOT_SIZE":0.5,
+    "LINE_W":2,
     "mbs" : {   "standard": {
                     "dots":["#5770db","dark blue"],
                     "MAX_SNPidx2":["#db57b2","pink"],
