@@ -141,7 +141,9 @@ def check_mbs_args(arg:dict):
 	if arg['--mutant-pool'] not in {'R','D'}:
 		print('Error: Select valid mutant pool -m (\"R\"|\"D\")', file=sys.stderr)
 		sys.exit()
-
+	if arg['--ref-genotype'] not in {'R','D', 'miss'}:
+		print('Error: Select valid reference genotype -r (\"R\"|\"D\"|\"miss\")', file=sys.stderr)
+		sys.exit()
 	if not 'R' in data:
 		print('Error: You should include the recessive pool (--data R,X,X)', file=sys.stderr)
 		sys.exit()
@@ -170,8 +172,9 @@ def check_mbs_args(arg:dict):
 	if arg['--max-ratio'] <= arg['--min-ratio']:
 		print('Error: You should choose a correct interval of frequencies(--min-ratio 15 --max-ratio 85)', file=sys.stderr)
 		sys.exit()
-	if ('Pd' not in arg['--data'] or 'Pr' not in arg['--data']) and arg['--ref-genotype'] == 'miss':
+	if ('Pd' not in arg['--data'] and 'Pr' not in arg['--data']) and arg['--ref-genotype'] == 'miss':
 		arg['--parental-filter'] = False
+		print('Warning: Parental filter deactivated. Parental sample (\"Pd\" | \"Pr\") or --ref-genotype (\"D\" | \"R\") is needed.', file=sys.stderr)
 	return arg
 
 def check_qtl_args(arg:dict):
@@ -852,10 +855,9 @@ def check_annotate_args(arg):
 	if not 'R' in arg['--data']:
 		print('Error: You should include the recessive pool (--data R,X)', file=sys.stderr)
 		sys.exit()
-	if ('Pd' not in arg['--data'] or 'Pr' not in arg['--data']) and arg['--ref-genotype'] == 'miss':
-		arg['--parental-filter'] = False
-		print('Warning: Parental filter deactivated. Parental sample or --ref-genotype (D or R) is needed.', file=sys.stderr)
+
 	return arg
+
 
 def filter_region(line, arg):
 	z = line.split('\t')
