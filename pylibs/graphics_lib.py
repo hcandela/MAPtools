@@ -264,8 +264,10 @@ def check_merge(arg,__doc__):
     return arg
 
 def read_palette(arg):
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    json_file_path = os.path.join(script_dir,'..','palette.json')
     try:
-        with open("palette.json") as json_file:
+        with open(json_file_path) as json_file:
             data = json.load(json_file)
     except FileNotFoundError:
         print('Error: Please put the file \"palette.json\" in the MAPtools folder.', file=sys.stderr)
