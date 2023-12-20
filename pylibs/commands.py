@@ -301,29 +301,34 @@ Output options:
   #print(arg)
   #Allele Frequency plots
   if arg['--allele-freq-1'] == True:
+    arg = create_subfolder(arg, 'AlleleFrequency1/')
     AF_mono_graph(df, arg, 'SNPidx1')
     if arg['--multi-chrom'] != False:
       AF_multi_Vertical_graph(df, arg, 'SNPidx1')
       AF_manhattan_plot(df, arg, 'SNPidx1')
 
   if arg['--allele-freq-2'] == True:
+    arg = create_subfolder(arg, 'AlleleFrequency2/')
     AF_mono_graph(df, arg, 'SNPidx2')
     if arg['--multi-chrom'] != False:
       AF_multi_Vertical_graph(df, arg, 'SNPidx2')
       AF_manhattan_plot(df, arg, 'SNPidx2') 
   if arg['--combine'] == True:
+    arg = create_subfolder(arg, 'AlleleFrequency1&2/')
     AF1_AF2_mono_graph(df, arg)
     if arg['--multi-chrom'] != False:
       AF12_multi_Vertical_graph(df, arg)
       AFCombinedManhattanPlot(df, arg)
   
   if arg['--max-allele-freq2'] == True and arg['type'] == 'mbs':
+    arg = create_subfolder(arg, 'MaxAlleleFrequency2/')
     AF_mono_graph(df, arg, 'MAX_SNPidx2')
     if arg['--multi-chrom'] != False:
       AF_multi_Vertical_graph(df, arg, 'MAX_SNPidx2')
       AF_manhattan_plot(df, arg, 'MAX_SNPidx2')
   #Delta plots
   if arg['--delta'] == True:
+    arg = create_subfolder(arg, 'DELTA/')
     AF_mono_graph(df, arg, 'DELTA')
     if arg['--multi-chrom'] == True:
       AF_multi_Vertical_graph(df, arg, 'DELTA')
@@ -331,6 +336,7 @@ Output options:
   
   #P-value plots
   if arg['--pvalue'] == True:
+      arg = create_subfolder(arg, 'Pvalue/')
       pval_mono_graph(df, arg)
       if arg['--multi-chrom'] == True:
         #pval_multi_graph(df, arg)
@@ -339,18 +345,21 @@ Output options:
   ###REVISAR
   #Euclidean Distance plots
   if arg['--euclidean-distance'] == True:
+    arg = create_subfolder(arg, 'EuclideanDistance/')
     EDmonoPlot(df,arg)
     if arg['--multi-chrom'] == True:
       ED_multi_Vertical_graph(df, arg)
       EDmanhattanPlot(df, arg)
   #G-statistic
   if arg['--g-statistic'] == True:
+    arg = create_subfolder(arg, 'G-statistic/')
     GmonoPlot(df, arg)
     if arg['--multi-chrom'] == True:
       G_multi_Vertical_graph(df, arg)
       GmanhattanPlot(df,arg)
   
   if arg['--comb-statistics'] == True:
+    arg = create_subfolder(arg, 'CombinedStatistics/')
     combinedPlot(df, arg)
        
 

@@ -128,13 +128,6 @@ def test_plot(arg, __doc__):
     except FileExistsError:
         print('Warning: the output directory already exists', file=sys.stderr)
         pass
-    arg['--outdir'] = wd+'/'+arg['--outdir']+'/'
-    if arg['--captions']:
-        arg['captions_dir'] = arg['--outdir']+'captions/'
-        try:
-            os.makedirs(arg['captions_dir'])
-        except FileExistsError:
-            pass
 
     arg['--alpha'] = float(arg['--alpha'])
     arg['lim'] = 1e-90
@@ -692,7 +685,7 @@ def EDmonoPlot(df, arg):
         rtch = rt.format(chrom[ch])
         filename = rtch + typ
         filename = check_save(arg, filename)
-        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'], transparent=True)
+        plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
         plt.close()
 
         cap = list()
@@ -735,7 +728,7 @@ def GmonoPlot(df, arg):
         rtch = rt.format(chrom[ch])
         filename = rtch + typ
         filename = check_save(arg, filename)
-        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'], transparent=True)
+        plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
         plt.close()
         cap = list()
 
@@ -793,7 +786,7 @@ def pval_multi_graph(df, arg):
 
         filename = check_save(arg, filename)
         f_name.append(filename)
-        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'], transparent=True)
+        plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
         plt.close()
     cap = list()
     if arg['--captions']:
@@ -880,7 +873,7 @@ def AF_manhattan_plot(df, arg, g_type):
     filename = rt + typ
     filename = check_save(arg, filename)
     f_name.append(filename)
-    plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'], transparent=True)
+    plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
     plt.close()
     cap = list()
     if arg['--captions']:
@@ -964,7 +957,7 @@ def AFCombinedManhattanPlot(df, arg):
     filename = rt + typ
     filename = check_save(arg, filename)
     f_name.append(filename)
-    plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'], transparent=True)
+    plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
     plt.close()
     cap = list()
     if arg['--captions']:
@@ -1045,7 +1038,7 @@ def pval_manhattan_plot(df, arg):
     filename = rt + typ
     filename = check_save(arg, filename)
     f_name.append(filename)
-    plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'], transparent=True)
+    plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
     plt.close()
     cap = list()
     if arg['--captions']:
@@ -1098,7 +1091,7 @@ def pval_mono_graph(df, arg):
         filename=rtch + typ
         filename=check_save(arg, filename)
 
-        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'], transparent=True)
+        plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
         plt.close()
 
         if arg['--captions']:
@@ -1165,7 +1158,7 @@ def AF1_AF2_mono_graph(df, arg):
         rtch1 = rt1.format(chrom[i])
         filename=rtch1 + typ
         filename=check_save(arg, filename)
-        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'], transparent=True)
+        plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
         plt.close()
         cap = list()
         if arg['--captions']:
@@ -1204,7 +1197,7 @@ def AF1_AF2_mono_graph(df, arg):
         rtch2 = rt2.format(chrom[i])
         filename=rtch2 + typ
         filename=check_save(arg, filename)
-        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'], transparent=True)
+        plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
         plt.close()
         cap = list()
         if arg['--captions']:
@@ -1386,7 +1379,7 @@ def AF_mono_graph(df, arg, g_type):
         rtch = rt.format(chrom[i])
         filename=rtch + typ
         filename=check_save(arg, filename)
-        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'], transparent=True)
+        plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
         plt.close()
         cap = list()
         if arg['--captions']:
@@ -1457,7 +1450,7 @@ def pval_multi_Vertical_graph(df, arg):
         filename= rt + typ
         filename=check_save(arg, filename)
         f_name.append(filename)
-        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'], transparent=True)
+        plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
         plt.close()
     cap = list()
     if arg['--captions']:
@@ -1520,7 +1513,7 @@ def ED_multi_Vertical_graph(df, arg):
         filename= rt + typ
         filename=check_save(arg, filename)
         f_name.append(filename)
-        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'], transparent=True)
+        plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
         plt.close()
     cap = list()
     if arg['--captions']:
@@ -1585,7 +1578,7 @@ def EDmanhattanPlot(df, arg):
     filename= rt + typ
     filename=check_save(arg, filename)
     f_name.append(filename)
-    plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'], transparent=True)
+    plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
     plt.close()
     cap = list()
     if arg['--captions']:
@@ -1642,7 +1635,7 @@ def G_multi_Vertical_graph(df, arg):
         filename= rt + typ
         filename=check_save(arg, filename)
         f_name.append(filename)
-        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'], transparent=True)
+        plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
         plt.close()
     cap = list()
     if arg['--captions']:
@@ -1697,7 +1690,7 @@ def GmanhattanPlot(df, arg):
     filename= rt + typ
     filename=check_save(arg, filename)
     f_name.append(filename)
-    plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'], transparent=True)
+    plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
     plt.close()
     cap = list()
     if arg['--captions']:
@@ -1788,7 +1781,7 @@ def AF_multi_Vertical_graph(df, arg, g_type):
         filename= rt + typ
         filename=check_save(arg, filename)
         f_name.append(filename)
-        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'], transparent=True)
+        plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
         plt.close()
     cap = list()
     if arg['--captions']:
@@ -1876,7 +1869,7 @@ def AF12_multi_Vertical_graph(df, arg):
         filename=rt1+typ
         filename=check_save(arg, filename)
         f1_name.append(filename)
-        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'], transparent=True)
+        plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
         plt.close()
     cap = list()
     if arg['--captions']:
@@ -1934,7 +1927,7 @@ def AF12_multi_Vertical_graph(df, arg):
         filename=rt2+typ
         filename=check_save(arg, filename)
         f2_name.append(filename)
-        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'], transparent=True)
+        plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
         plt.close()
 
     cap = list()
@@ -2044,7 +2037,7 @@ def AF1_AF2_pval_mono(df, arg):
         rtch = rt.format(chrom[i])
         filename=rtch + typ
         filename=check_save(arg, filename)
-        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'], transparent=True)
+        plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
         plt.close()
         cap = list()
 
@@ -2218,7 +2211,7 @@ def combinedPlot(df, arg):
         rtch = rt.format(chrom[i])
         filename=rtch + typ
         filename=check_save(arg, filename)
-        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'], transparent=True)
+        plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
         plt.close()
         cap = list()
 
@@ -2343,7 +2336,7 @@ def qtl_mixed_plot(df, arg):
         rtch = rt.format(chrom[i])
         filename=rtch + typ
         filename=check_save(arg, filename)
-        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'], transparent=True)
+        plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
         plt.close()
         cap = list()
 
@@ -2442,7 +2435,7 @@ def snp_index_graph(df, arg):
         rtch = rt.format(chrom[i])
         filename=rtch + typ
         filename=check_save(arg, filename)
-        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'], transparent=True)
+        plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
         plt.close()
         cap = list()
         if arg['--captions']:
@@ -2765,6 +2758,23 @@ def create_caption(arg, res_tit):
     f=open(arg['captions_dir'] + res_tit + '.txt', 'a')
     return f
 
+def create_subfolder(arg, sf):
+    wd = os.getcwd()
+    arg['sub_folder'] = wd+'/'+arg['--outdir']+'/'+sf
+    try:
+        os.makedirs(arg['sub_folder'])
+    except FileExistsError:
+        pass
+    
+    if arg['--captions']:
+        arg['captions_dir'] = arg['sub_folder']+'captions/'
+        try:
+            os.makedirs(arg['captions_dir'])
+        except FileExistsError:
+            pass
+
+    return arg
+
 def write_caption(f, text, arg):
     for sentence in text:
         f.write(sentence+' ')
@@ -2824,5 +2834,5 @@ def Delta2_Vertical_graph(df, arg):
         filename='delta2multiV'+typ
         filename=check_save(arg, filename)
         f1_name.append(filename)
-        plt.savefig(arg['--outdir']+filename, dpi=arg['DPI'], transparent=True)
+        plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
         plt.close()
