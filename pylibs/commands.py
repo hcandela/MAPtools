@@ -5,6 +5,8 @@ import time
 # sys.path.append(os.getcwd())
 from pylibs.analysis_lib import *
 from pylibs.graphics_lib import *
+from pylibs.constants import *
+
 
 def mbs(argv):
     mbs_doc = """
@@ -18,7 +20,7 @@ Options:
   -i, --input FILE              input file in uncompressed vcf format
 
 Input Options:
-  -d, --data LIST               comma separated list of sequenced samples [default: D,R]
+  -d, --data LIST               comma separated list of sequenced samples
                                 Available options:
                                   D   bulk of phenotypically dominant individuals from a segregating population
                                   R   bulk of phenotypically recessive individuals from a segregating population
@@ -62,6 +64,7 @@ Filter Options:
   --no-filter                   disable all filters              
     """
     arg = docopt(mbs_doc, argv=None, help=True,version=v_mbs)
+    #print(arg)
     arg['pipe'] = sys.stdin.isatty()
     arg = check_args(mbs_doc, arg)
     arg['version'] = v_mbs
@@ -82,20 +85,33 @@ Filter Options:
         if line.startswith('#'):
           read_header(arg,line)
         else:
-            fields, pools, genotype = vcf_line_parser2(line, arg)
-            if (fields, pools, genotype) != (0, 0, 0):
-              DOM = fields[2]
-              al_count,p_al_count,genotype = normalize(pools, DOM, arg, genotype)
-              if (al_count,p_al_count,genotype) != (0,0,0):
+            fields, pools, genotypes = vcf_line_parser3(line, arg) #nueva linea HC
+            if (fields, pools, genotypes) != (0, 0, 0):
+              #ref_allele = fields[2]
+              #REPONER pools, genotypes, normalized = normalize2(pools, arg, genotypes) 
+              normalized, sorted = normalize2(pools, arg, genotypes)
+              ####print("Normalize2", pools, genotypes, normalized)
+              #REPONERif (pools, genotypes, normalized) != (0,0,0):
+              if normalized != False:
+                ####print("Todo",pools,genotypes,normalized) #,al_normalized)
                 if arg['--no-filter'] == False:
-                  flag = filter_mbs(arg,al_count,p_al_count, genotype)
+                   #flag = filter_mbs(arg, pools,genotypes,normalized,al_normalized)
+                   flag = filter_mbs(arg, pools, genotypes, normalized, sorted)
+                   ####print("Flag",flag)
                 else:
                    flag = True
                 if flag == True:
-                  calcs = mbs_calc(al_count[2:], arg)
-                  #print(calcs)
-                  if calcs != None:
-                    first = new_line(fsal, arg, first, fields[:2], al_count, calcs)
+                   #print("Bien!!")
+                   #print(al_normalized)
+                   #print(al_normalized[2:])
+                   calcs = mbs_calc(arg, pools, normalized, sorted) # antes era al_count
+                   #print(calcs)
+                   if calcs != None:
+                      #al_normalized = 0 #pa que no de el error
+                      #print(fields[:2], calcs)
+                      alleles = [ allele for allele in pools['R'].keys()]
+                      bases = [alleles[normalized[0]], alleles[normalized[1]]] 
+                      first = new_line(fsal, arg, first, fields[:2] + bases, calcs)
 
 
 def qtl(argv):
@@ -155,20 +171,33 @@ Output Options:
         if line.startswith('#'):
           read_header(arg,line)
         else:
-            fields, pools, genotype = vcf_line_parser2(line, arg)
-            if (fields, pools, genotype) != (0, 0, 0):
-                DOM = fields[2]
-                al_count,p_al_count,genotype = normalize(pools, DOM, arg, genotype)
-                if (al_count,p_al_count,genotype) != (0,0,0):
-                    if arg['--no-filter'] == False:
-                       flag = filter_qtl(arg, al_count, genotype)
-                    else:
-                       flag = True
-                    if flag:
-                      calcs = qtl_calc(al_count[2:], arg)
-                      if calcs != None:
-                          first = new_line(fsal, arg, first,
-                                          fields[:2], al_count, calcs)
+            fields, pools, genotypes = vcf_line_parser3(line, arg) #nueva linea HC
+            if (fields, pools, genotypes) != (0, 0, 0):
+              #ref_allele = fields[2]
+              #REPONER pools, genotypes, normalized = normalize2(pools, arg, genotypes) 
+              normalized, sorted = normalize2(pools, arg, genotypes)
+              ####print("Normalize2", pools, genotypes, normalized)
+              #REPONERif (pools, genotypes, normalized) != (0,0,0):
+              if normalized != False:
+                ####print("Todo",pools,genotypes,normalized) #,al_normalized)
+                if arg['--no-filter'] == False:
+                   #flag = filter_mbs(arg, pools,genotypes,normalized,al_normalized)
+                   flag = filter_qtl(arg, pools, genotypes, normalized, sorted)
+                   ####print("Flag",flag)
+                else:
+                   flag = True
+                if flag == True:
+                   #print("Bien!!")
+                   #print(al_normalized)
+                   #print(al_normalized[2:])
+                   calcs = qtl_calc(arg, pools, normalized, sorted) # antes era al_count
+                   #print(calcs)
+                   if calcs != None:
+                      #al_normalized = 0 #pa que no de el error
+                      #print(fields[:2], calcs)
+                      alleles = [ allele for allele in pools['R'].keys()]
+                      bases = [alleles[normalized[0]], alleles[normalized[1]]] 
+                      first = new_line(fsal, arg, first, fields[:2] + bases, calcs)
 
 def merge(argv):
   merge_doc="""
@@ -199,7 +228,7 @@ Output Options:
   arg['version'] = v_merge
   header_lines = read_header_merge(arg)
   write_argv(arg, argv)
-  arg, df = load_dataframe(arg)
+  arg, df = load_dataframe_merge(arg)
   #print(arg)
   for line in header_lines:
     write_line(line, fsal)
@@ -207,16 +236,16 @@ Output Options:
   if fsal == True:
     fsal.close()
 
-def mbs_plot(argv):
-    mbsplot_doc = """
+def plot(argv):
+  plot_doc = """
 Usage:
-  maptools.py mbsplot [options]
-  maptools.py mbsplot
+  maptools.py plot [options]
+  maptools.py plot
 
 Options:
   -h, --help                    show this help message and exit
   -v, --version                 print version information and exit
-  -i, --input FILE              input file produced by the mbs command
+  -i, --input FILE              input file produced by the mbs or qtl commands
   -c, --chromosomes LIST        comma-separated list of chromosome names [default: all]
   -C, --captions                automatically generate figure legends
 
@@ -230,156 +259,177 @@ Plot options:
                                 within an INT bp interval
   -t, --alpha FLOAT             marker transparency in plots (0 - 1) [default: 0.4]
   --bonferroni                  add Bonferroni threshold to p-value plots. Requires -p or -a
-  --palette STR                 select a colour palette [default: standard]
-                                Available options: \"standard\", \"color_blind\" or \"custom\" 
-
-Plot types:
-  -p, --pvalue                  generate p-value plots
-  -D, --allele-freq-1           generate allele frequency plots for the D bulk (AF1)
-  -R, --allele-freq-2           generate allele frequency plots for the R bulk (AF2)
-  -M, --max-allele-freq2        plot the frequency of the most abundant allele in R bulk. Use -M when the
-                                alleles cannot be assigned to the parents with certainty
-  -X, --combine                 overlay the moving average of AF2 on the AF1 plot, and vice versa. Requires
-                                --moving-avg or --distance-avg.
-  -m, --multi-chrom             generate multi-chromosome plots for each statistic and the chromosomes 
-                                especified with -c. Manhattan plots require -p or -a
-  -a, --all                     generate all possible plots
-  
-Output options:
-  -o, --outdir DIR              output plot files to DIR [default: graphics]
-  -O, --output-type TYPE        available types: pdf, svg, jpg [default: pdf]
-  """
-    arg = docopt(mbsplot_doc, argv=None, help=True,version=v_mbsplot)
-    arg = test_plot(arg, mbsplot_doc)
-    arg = read_header_plot(arg)
-    arg, df = load_dataframe_plotting(arg)
-    #print(arg)
-    arg['version'] = v_mbsplot
-    if arg['--pvalue'] == True:
-        pval_mono_graph(df, arg)
-        if arg['--multi-chrom'] == True:
-          #pval_multi_graph(df, arg)
-          pval_multi_Vertical_graph(df, arg)
-          pval_manhattan_plot(df, arg)
-    if arg['--allele-freq-1'] == True and arg['--allele-freq-2'] == True:
-        if arg['--combine'] and (arg['--moving-avg'] != False or arg['--distance-avg'] != False):
-            AF1_AF2_mono_graph(df, arg)
-            if arg['--multi-chrom'] != False: 
-              AF12_multi_Vertical_graph(df, arg)
-    if arg['--allele-freq-1'] == True and arg['--allele-freq-2'] == True and arg['--pvalue'] == True:
-        #print('Allele Frequencies & P-value vertical single chromosome')
-        AF1_AF2_pval_mono(df, arg)
-    if arg['--allele-freq-1'] == True:
-        #print('Allele Frequency 1 single chromosome')
-        AF_mono_graph(df, arg, 'SNPidx1')
-        if arg['--multi-chrom'] == True:
-           AF_multi_Vertical_graph(df, arg, 'SNPidx1')
-    if arg['--allele-freq-2'] == True:
-        #print('Allele Frequency 2 single chromosome')
-        AF_mono_graph(df, arg, 'SNPidx2')
-        if arg['--multi-chrom'] == True:
-           AF_multi_Vertical_graph(df, arg, 'SNPidx2')
-
-    if arg['--max-allele-freq2'] == True:
-        AF_mono_graph(df, arg, 'MAX_SNPidx2')
-        if arg['--multi-chrom'] == True:
-           AF_multi_Vertical_graph(df, arg, 'MAX_SNPidx2')
-
-
-def qtl_plot(argv):
-    qtlplot_doc = """
-Usage:
-  maptools.py qtlplot [options]
-  maptools.py qtlplot
-
-Options:
-  -h, --help                    show this help message and exit
-  -v, --version                 print version information and exit
-  -i, --input FILE              input file produced by the qtl command
-  -c, --chromosomes LIST        comma-separated list of chromosome names [default: all]
-  -C, --captions                automatically generate figure legends
-
-Plot options:
-  -A, --moving-avg INT          add moving averages to plots, calculated using INT adjacent markers
-  -W, --distance-avg INT        add weighted averages to plots, calculated for all markers located
-                                within an INT bp interval
-  -t, --alpha FLOAT             marker transparency in plots (0 - 1) [default: 0.4]
-  --bonferroni                  add Bonferroni threshold to p-value plots. Requires -p or -a
   --ci95                        add 95% confidence interval to delta plots. Requires -A or -W
   --palette STR                 select a colour palette [default: standard]
-                                Available options: \"standard\", \"color_blind\" or \"custom\" 
+                                Available options: \"standard\", \"color_blind\" or \"custom\"
+  -D, --dot-size FLOAT          Size of the points plotted [default: 1.0]
+  -L, --line-width FLOAT        Width of trend lines [default: 2.0]
+  --DPI INT                     Dots per inch [default: 600]
 
 Plot types:
   -p, --pvalue                  generate p-value plots
-  -H, --allele-freq-H           generate allele frequency plots for the H bulk (AF1)
-  -L, --allele-freq-L           generate allele frequency plots for the L bulk (AF2)
+  -1, --allele-freq-1           generate allele frequency plots for the D/high bulk (AF1)
+  -2, --allele-freq-2           generate allele frequency plots for the R/low bulk (AF2)
+  -M, --max-allele-freq2        plot the frequency of the most abundant allele in R bulk. Use -M when the
+                                alleles cannot be assigned to the parents with certainty. Only for mbs analysis
   -d, --delta                   generate Delta plots (AF1 - AF2)
   -X, --combine                 overlay the moving average of AF2 on the AF1 plot, and vice versa. Requires
-                                --moving-avg
+                                --moving-avg or --distance-avg.
   -E, --euclidean-distance      plot Euclidean distances, both individually (EDm) and as ED100^4 values
   -G, --g-statistic             generate G-statistic plots for individual markers
-  -Q, --qtl-seq                 generate multipanel figure with ED, G, DELTA and p-value plots
+  -Q, --comb-statistics         generate multipanel figure with allele frequencies, DELTA, ED, G and p-value plots
                                 for individual chromosomes
   -m, --multi-chrom             generate multi-chromosome plots for each statistic and the chromosomes 
-                                especified with -c. Manhattan plots require -p or -a 
+                                especified with -c.
   -a, --all                     generate all possible plots
   
 Output options:
   -o, --outdir DIR              output plot files to DIR [default: graphics]
   -O, --output-type TYPE        available types: pdf, svg, jpg [default: pdf]
   """
-    arg = docopt(qtlplot_doc, argv=None, help=True,version=v_qtlplot)
-    #print(arg)
-    arg = test_plot(arg, qtlplot_doc)
-    arg = read_header_plot(arg)
-    arg, df = load_dataframe_plotting(arg)
-    arg['version'] = v_qtlplot
-    #print(arg)
-    if arg['--euclidean-distance']:
-        df = get_ED100_4(df, arg, RANG)
-        plot_ED(df,arg)
-        if arg['--multi-chrom'] == True:
-            ED_multi_Vertical_graph(df, arg)
-    if arg['--g-statistic'] == True:
-        plot_G(df, arg)
-        if arg['--multi-chrom'] == True:
-            G_multi_Vertical_graph(df, arg)
-    if arg['--pvalue'] == True:
-        pval_mono_graph(df, arg)
-        if arg['--multi-chrom'] == True:    
-            #pval_multi_graph(df, arg)
-            pval_multi_Vertical_graph(df, arg)
-            pval_manhattan_plot(df, arg)
-    if arg['--delta'] == True and arg['--ref-genotype'] == True:
-        snp_index_graph(df, arg)
-    
-    if arg['--delta'] == True:
-        AF_mono_graph(df, arg, 'DELTA')
-        if arg['--multi-chrom'] == True:
-            AF_multi_Vertical_graph(df, arg, 'DELTA')
-    
-    if arg['--qtl-seq'] == True:
-      df = get_ED100_4(df, arg, RANG)
-      qtl_mixed_plot(df, arg)
-    if arg['--allele-freq-H'] == True and arg['--allele-freq-L'] == True:
-        if arg['--combine'] and (arg['--moving-avg'] != False or arg['--distance-avg'] != False):
-            AF1_AF2_mono_graph(df, arg)
-        if arg['--multi-chrom'] == True:
-            AF_multi_Vertical_graph(df, arg, 'SNPidx1')
-            AF_multi_Vertical_graph(df, arg, 'SNPidx2')
-            if arg['--combine'] and (arg['--moving-avg'] != False or arg['--distance-avg'] != False):
-                AF12_multi_Vertical_graph(df, arg)
+  arg = docopt(plot_doc, argv=None, help=True,version=v_plot)
+  #print(arg)
+  arg = test_plot(arg, plot_doc)
+  arg = read_header_plot(arg)
+  arg, df = load_dataframe_plotting(arg)
 
-    if arg['--allele-freq-H'] == True:
-        AF_mono_graph(df, arg, 'SNPidx1')
-    if arg['--allele-freq-L'] == True:
-        AF_mono_graph(df, arg, 'SNPidx2')   
-        
+  #cc = arg['--contigs']
+  #del arg['--contigs']
+  #print(arg)
+  #arg['--contigs'] = cc
+  arg['version'] = v_plot
+  #print(arg)
+  #Allele Frequency plots
+  if arg['--allele-freq-1'] == True:
+    AF_mono_graph(df, arg, 'SNPidx1')
+    if arg['--multi-chrom'] != False:
+      AF_multi_Vertical_graph(df, arg, 'SNPidx1')
+      AF_manhattan_plot(df, arg, 'SNPidx1')
+
+  if arg['--allele-freq-2'] == True:
+    AF_mono_graph(df, arg, 'SNPidx2')
+    if arg['--multi-chrom'] != False:
+      AF_multi_Vertical_graph(df, arg, 'SNPidx2')
+      AF_manhattan_plot(df, arg, 'SNPidx2') 
+  if arg['--combine'] == True:
+    AF1_AF2_mono_graph(df, arg)
+    if arg['--multi-chrom'] != False:
+      AF12_multi_Vertical_graph(df, arg)
+      AFCombinedManhattanPlot(df, arg)
+  
+  if arg['--max-allele-freq2'] == True and arg['type'] == 'mbs':
+    AF_mono_graph(df, arg, 'MAX_SNPidx2')
+    if arg['--multi-chrom'] != False:
+      AF_multi_Vertical_graph(df, arg, 'MAX_SNPidx2')
+      AF_manhattan_plot(df, arg, 'MAX_SNPidx2')
+  #Delta plots
+  if arg['--delta'] == True:
+    AF_mono_graph(df, arg, 'DELTA')
+    if arg['--multi-chrom'] == True:
+      AF_multi_Vertical_graph(df, arg, 'DELTA')
+      AF_manhattan_plot(df, arg, 'DELTA')
+  
+  #P-value plots
+  if arg['--pvalue'] == True:
+      pval_mono_graph(df, arg)
+      if arg['--multi-chrom'] == True:
+        #pval_multi_graph(df, arg)
+        pval_multi_Vertical_graph(df, arg)
+        pval_manhattan_plot(df, arg)
+  ###REVISAR
+  #Euclidean Distance plots
+  if arg['--euclidean-distance'] == True:
+    EDmonoPlot(df,arg)
+    if arg['--multi-chrom'] == True:
+      ED_multi_Vertical_graph(df, arg)
+      EDmanhattanPlot(df, arg)
+  #G-statistic
+  if arg['--g-statistic'] == True:
+    GmonoPlot(df, arg)
+    if arg['--multi-chrom'] == True:
+      G_multi_Vertical_graph(df, arg)
+      GmanhattanPlot(df,arg)
+  
+  if arg['--comb-statistics'] == True:
+    combinedPlot(df, arg)
+       
+
 def annotate(argv):
   annotate_doc="""
 Usage:
   maptools.py annotate [options]
   maptools.py annotate
+
+Options:
+  -h, --help                    show this help message and exit
+  -v, --version                 print version information and exit
+  -i, --input FILE              input file, mbs command output
+  -g, --gff FILE                genome annotation file in gff3 format
+  -f, --fasta-reference FILE    genome sequence file in fasta format
+
+Input Options:
+  -R, --region REGION           region of the genome to explore (-R chrName:Startpos-Endpos)
+  -t, --transl-table INT        translation table [default: 1]
+
+Output Options:
+  -o, --output FILE             write output to FILE [standard output]
+  -O, --output-type TYPE        txt: tab separated, csv: comma separated [default: txt]                     
+  """
+  arg = docopt(annotate_doc, argv=None, help=True, version=v_annotate)
+  arg['pipe'] = sys.stdin.isatty()
+  arg['version'] = v_annotate
+  arg = check_args(annotate_doc, arg)
+  #df = create_df(arg)
+  output = arg['--output']
+  fsal = False
+  arg['fsal'] = False
+  if output != None:
+    fsal = open(arg['--output'], 'w')
+  arg['fsal'] = fsal
+  
+  if arg['--input']:
+    inp = arg['inp']
+  else:
+    inp = sys.stdin
+    arg['spacerin'] = '\t'
+  write_argv(arg, argv)
+  #print(arg)
+
+  for line in inp:
+    if line.startswith('#'):
+      if line.startswith('##maptools_mbsCommand'):
+        arg['mbs'] = True
+        write_line(line,fsal)
+        df = getAnalysisArgs(arg,line)
+      if line.startswith('##maptools_qtlCommand'):
+        arg['qtl'] = True
+        write_line(line,fsal)
+        df = getAnalysisArgs(arg,line) 
+      read_header(arg,line)
+    else:
+      line = filter_region(line,arg)
+      if line != None:
+        fields = analysisParser(line, arg)
+        df = newDFline2(df, arg, fields)
+  if df.empty:
+     print('Warning: There is no variants to analyse. Please reduce filtering.', file=sys.stderr)
+     sys.exit()
+  load_reference(df,arg)
+  df = df.reset_index()
+  load_gff(arg)
+  for idx, row in df.iterrows():
+    if len(row['DOM']) > 1 or len(row['REC']) > 1:
+       is_indel(row, arg)
+       continue
+    arg['variant'] = 'substitution'
+    check_mutation2(row,arg)
+
+
+def annotatevcf(argv):
+  annotate_doc="""
+Usage:
+  maptools.py annotatevcf [options]
+  maptools.py annotatevcf
 
 Options:
   -h, --help                    show this help message and exit
@@ -455,25 +505,34 @@ Filter Options:
     inp = sys.stdin
   write_argv(arg, argv)
   #print(arg)
+
   for line in inp:
     if line.startswith('#'):
       read_header(arg,line)
     else:
-      line = filter_region(line, arg)
+      line = filter_region(line,arg)
       if line != None:
-        fields, pools, genotype = vcf_line_parser2(line, arg)
-        if (fields, pools, genotype) != (0,0,0):
-          DOM = fields[2]
-          al_count,p_al_count,genotype = normalize(pools, DOM, arg, genotype)
-          if (al_count,p_al_count,genotype) != (0,0,0):
-            if arg['--no-filter'] == False:
-              flag = filter_mbs(arg, al_count, p_al_count, genotype)
-            else:
-              flag = True
-            if flag:
-              calcs = mbs_calc(al_count[2:], arg)
-              if calcs != None:
-                df = new_df_line(df,arg,fields[:2], al_count, calcs)
+        #fields, pools, genotype = vcf_line_parser2(line, arg)
+        fields, pools, genotypes = vcf_line_parser3(line, arg) #nueva linea HC
+        if (fields, pools, genotypes) != (0, 0, 0):
+           normalized, sorted = normalize2(pools, arg, genotypes)
+           if normalized != False:
+             if arg['--no-filter'] == False:
+               flag = filter_mbs(arg, pools, genotypes, normalized, sorted)
+             else:
+               flag = True
+             if flag == True:
+               calcs = mbs_calc(arg, pools, genotypes, normalized, sorted) # antes era al_count
+               if calcs != None:
+                 alleles = [ allele for allele in pools['R'].keys()]
+                 bases = [alleles[normalized[0]], alleles[normalized[1]]] 
+#                first = new_line(fsal, arg, first, fields[:2] + bases, calcs)
+                 #df = new_df_line(df,arg,fields[:2], al_count,calcs)
+                 if normalized == {0:0, 1:1}:
+                       reorder = [0]
+                 else:
+                       reorder = [1]
+                 df = new_df_line(df,arg,fields[:2], bases, calcs,reorder)
   if df.empty:
      print('Warning: There is no variants to analyse. Please reduce filtering.', file=sys.stderr)
      sys.exit()
@@ -483,7 +542,6 @@ Filter Options:
   write_annotate_header(arg)
   for idx, row in df.iterrows():
     if len(row['DOM']) > 1 or len(row['REC']) > 1:
-
        is_indel(row, arg)
        continue
     arg['variant'] = 'substitution'

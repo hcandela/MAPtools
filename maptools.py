@@ -11,10 +11,9 @@ Usage:
 
 Available commands:
    mbs
-   mbsplot
    qtl
-   qtlplot
    merge
+   plot
    annotate
    citation
 """
@@ -35,12 +34,12 @@ if __name__ == '__main__':
         mbs(argv)
     elif args['<command>'] == 'qtl':
         qtl(argv)
-    elif args['<command>'] == 'mbsplot':
-        mbs_plot(argv)
-    elif args['<command>'] == 'qtlplot':
-        qtl_plot(argv)
+    elif args['<command>'] == 'plot':
+        plot(argv)
     elif args['<command>'] == 'merge':
         merge(argv)
+    #elif args['<command>'] == 'annotatevcf':
+    #    annotatevcf(argv)
     elif args['<command>'] == 'annotate':
         annotate(argv)
     elif args['<command>'] == 'citation':

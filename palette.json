@@ -1,6 +1,6 @@
 {
     "DPI" : 600,
-    "DOT_SIZE":0.5,
+    "DOT_SIZE":25,
     "LINE_W":2,
     "mbs" : {   "standard": {
                     "dots":["#5770db","dark blue"],
@@ -8,7 +8,10 @@
                     "log10PVALUE":["#db5f57","red"],
                     "SNPidx1":["#57db80","light green"],
                     "SNPidx2":["#db57b2","pink"],
-                    "BOOST":["#dbc257","gold"]
+                    "BOOST":["#dbc257","gold"],
+                    "DELTA":["#db5f57","red"],
+                    "ci":["#ff7f00","orange"],
+                    "mvg":["#db5f57","red"]
                 },
                 "color_blind": {
                     "dots":["#606263","gray"],
@@ -16,7 +19,10 @@
                     "log10PVALUE":["#cc78bc","magenta"],
                     "SNPidx1":["#0173b2","blue"],
                     "SNPidx2":["#d55e00","dark orange"],
-                    "BOOST":["#cc78bc","magenta"]
+                    "BOOST":["#cc78bc","magenta"],
+                    "DELTA":["#db5f57","red"],
+                    "ci":["#ff7f00","orange"],
+                    "mvg":["#db5f57","red"]
 
                 },
                 "custom": {
@@ -25,7 +31,10 @@
                     "log10PVALUE":[],
                     "SNPidx1":[],
                     "SNPidx2":[],
-                    "BOOST":[]
+                    "BOOST":[],
+                    "DELTA":[],
+                    "ci":[],
+                    "mvg":[]
                 },
                 "rainbow": {
                     "dots":["#4b0082","purple"],

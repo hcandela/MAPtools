@@ -24,18 +24,24 @@ def check_args(__doc__,arg:dict):
 			·Split data
 			·Check output
 	'''
-	arg['--data'] = arg['--data'].split(',')
+
+	if 'mbs' in arg.keys() or 'qtl' in arg.keys():
+		if arg['--data'] == None:
+			print(__doc__, file=sys.stderr)
+			sys.exit()
 	if 'mbs' in arg.keys():
-		valid_pools = {'D','R','Pr','Pd','Wr','Wd'}
+		arg['--data'] = arg['--data'].split(',')
+		valid_pools = {'D','R','Pr','Pd','Wr','Wd','X'}
 		for d in arg['--data']:
 			if d not in valid_pools:
-				print(f'Error: \"{d}\" is not a valid sample name.', file=sys.sterr)
+				print(f'Error: \"{d}\" is not a valid sample name.', file=sys.stderr)
 				sys.exit()
 	if 'qtl' in arg.keys():
-		translate = {'H':'D','L':'R','P':'Pd'}
+		arg['--data'] = arg['--data'].split(',')
+		translate = {'H':'D','L':'R','P':'Pd','X':'X'}
 		for d in arg['--data']:
 			if d not in translate.keys():
-				print(f'Error: \"{d}\" is not a valid sample name.', file=sys.sterr)
+				print(f'Error: \"{d}\" is not a valid sample name.', file=sys.stderr)
 				sys.exit()
 		arg['--data'] = [translate[i] for i in arg['--data']]
 		if arg['--ref-genotype'] not in {'P','miss'}:
@@ -46,10 +52,10 @@ def check_args(__doc__,arg:dict):
 	if arg['--input'] == None and arg['pipe'] == True:
 		print(__doc__, end='\n', file=sys.stderr)
 		sys.exit()
-	if arg['--input'] != None:
+	if arg['--input'] != None and 'mbs' in arg.keys() or 'qtl' in arg.keys():
 		inp_f = arg['--input']
 		if arg['--input'].split('.')[-1] == 'gz':
-			try:
+			try:			
 				f = gzip.open(inp_f, 'rt')
 			except FileNotFoundError:
 				print('Error: The input file {} does not exist'.format(inp_f), file=sys.stderr)
@@ -68,7 +74,7 @@ def check_args(__doc__,arg:dict):
 			arg['spacer'] = '\t'
 		arg['--output-type'] = '.'+arg['--output-type']
 	else:
-		print('Error: select a valid format.', file=sys.stderr)
+		print('Error: select a valid output format.', file=sys.stderr)
 		sys.exit()
 	if arg['--output'] != None:
 		wd = os.getcwd()
@@ -81,24 +87,18 @@ def check_args(__doc__,arg:dict):
 			pass
 		arg['filename'] = arg['--output'].split('/')[-1]
 		arg['outdir']=wd+'/'+outdir
-	
+
 		arg['--output'] = arg['outdir'] + arg['filename']
 		arg['--output'] = check_save_an(arg, arg['filename'])
 	#Data split, when Wr or Wd is present
-	data = arg['--data']
-	data_w = data.copy()
-	wt_idx = -1
-	wt = False
-	if 'Wr' in data_w or 'Wd' in data_w:
-		if 'Wr' in data_w:
-			wt_idx = data_w.index('Wr')
-			wt = 'Wr'
-		elif 'Wd' in data_w:
-			wt_idx = data_w.index('Wd')
-			wt = 'Wd'
-		data_w.pop(wt_idx)
-	arg['data_w'] = data_w
-	arg['wt'] = wt
+	if 'mbs' in arg.keys():
+		data = arg['--data']
+		data_w = data.copy()
+		wt = False
+		if 'Wr' in data_w or 'Wd' in data_w:
+			wt = True
+	#arg['data_w'] = data_w    #HC Qué necesidad hay de duplicar la información
+		arg['wt'] = wt
 	arg['--contigs'] = dict()
 	arg['lim'] = 1e-90
 	arg['discards'] = True
@@ -147,12 +147,6 @@ def check_mbs_args(arg:dict):
 	if not 'R' in data:
 		print('Error: You should include the recessive pool (--data R,X,X)', file=sys.stderr)
 		sys.exit()
-	if 'Pr' in data and 'Pd' in data:
-		print('Error: You should include only one re-sequenced parental in data (--data D,R,Px or --data R,Px)', file=sys.stderr)
-		sys.exit()
-	if 'Wr' in data and 'Wd' in data:
-		print('Error: You should include only one re-sequenced wilt-type in data (--data D,R,Wx or --data R,Wx)', file=sys.stderr)
-		sys.exit()
 	if arg['--max-depth'] == 'inf':
 		arg['--max-depth'] = np.inf
 	else:
@@ -161,7 +155,6 @@ def check_mbs_args(arg:dict):
 	arg['dp_filter'] = False if arg['--max-depth'] == np.inf and arg['--min-depth'] == 0 else True
 	arg['--min-ratio'] = float(arg['--min-ratio'])/100
 	arg['--max-ratio'] = float(arg['--max-ratio'])/100
-	#arg['--min-error'] = int(arg['--min-error'])
 	if arg['--min-depth'] <= 0:
 		arg['--min-depth'] = 1
 	if arg['--max-depth'] <= arg['--min-depth']:
@@ -250,7 +243,7 @@ def pvalor(a,b,c,d):
 	oddsr, pvalue = fisher_exact(table, alternative='two-sided')
 	return pvalue
 
-def mbs_calc(inp, arg):
+def mbs_calc(arg, pools, normalized, sorted):
 	'''
 	Takes the allele count and filter thresholds for:
 		max and min coverage (max_dp, min_dp)
@@ -267,43 +260,57 @@ def mbs_calc(inp, arg):
 		log10 of p-value
 		]
 	'''
+
 	#TODO - Change boost to calculate always 
 	data = arg['--data']
 	inf_s = set(data)
-	if len(inf_s) == 1 and arg['--ref-genotype'] == 'miss':
-		a, b = inp[0], inp[1]
-		if a != 0 or b != 0:
-			ratio3 = max(a,b)/(a+b)
-			boost = 1/(arg['lim'] + abs(1 - 1/ratio3))
-			return [ratio3, boost]
-	elif (len(inf_s) == 1 and arg['--ref-genotype'] != 'miss') or (len(inf_s) == 2 and 'D' not in inf_s):
-		a, b = inp[0], inp[1]
-		if a != 0 or b != 0:
+	alleles = [allele for allele in pools['R'].keys()]
+	if 'D' in inf_s and 'R' in inf_s:
+		a = pools['D'][alleles[normalized[0]]]
+		b = pools['D'][alleles[normalized[1]]]
+		c = pools['R'][alleles[normalized[0]]]
+		d = pools['R'][alleles[normalized[1]]]
+		dom = a + b
+		rec = c + d
+		if a + b > 0 and c + d > 0 :
 			ratio1 = b/(a+b)
-			boost = 1/(arg['lim'] + abs(1 - 1/max(ratio1, 1-ratio1)))
-			return [ratio1, boost]
-	elif 'D' in inf_s and 'R' in inf_s:
-		a, b, c, d = inp[0], inp[1], inp[2], inp[3]
-		if (a+b) > 0 and (c+d) > 0:
+			ratio2 = d/(c+d)
 			ratio3 = max(c,d)/(c+d)
-			resultado = LogFisher(a,b,c,d)
+			boost = 1/(arg['lim'] + abs(1 - 1/ratio3))
+			stat = LogFisher(a,b,c,d)
 			pva = pvalor(a,b,c,d)
 			pva10 = (log(pva)/log(10))
-			if arg['--ref-genotype'] == 'miss' and ('Pr' not in inf_s and 'Pd' not in inf_s):
-				boost = 1/(arg['lim'] + abs(1 - 1/ratio3))
-				return [ratio3,resultado,boost,pva,pva10]
-			elif arg['--ref-genotype'] != 'miss' or 'Pr' in inf_s or 'Pd' in inf_s:
-				#if (a+b) > 0 and (c+d) > 0:
-				ratio1 = b/(a+b)
-				ratio2 = d/(c+d)
-				boost = 1/(arg['lim'] + abs(1 - 1/ratio3))
-				return [ratio1,ratio2,ratio3,resultado,boost,pva,pva10]
+			v1 = (c/rec, d/rec)
+			v2 = (a/dom, b/dom)
+			ed = distance.euclidean(v1,v2)
+			g = Gstatic(a,b,c,d)
+			delta = ratio1 - ratio2
+			if sorted == True:
+				return [a, b, c, d, ratio1, ratio2, ratio3, stat, boost, pva, pva10, delta, ed, g]
+			else:
+				return [a, b, c, d, ratio1, ratio2, ratio3, stat, boost, pva, pva10, abs(delta), ed, g]
 
-def qtl_calc(inp, arg):
+	elif 'R' in inf_s:
+		a = pools['R'][alleles[normalized[0]]]
+		b = pools['R'][alleles[normalized[1]]]
+		if a + b > 0 :
+			if sorted == True:
+				ratio1 = b/(a+b)
+				boost = 1/(arg['lim'] + abs(1 - 1/max(ratio1, 1-ratio1)))
+				return [a, b, ratio1, boost]
+			else:
+				ratio3 = max(a,b)/(a+b)
+				boost = 1/(arg['lim'] + abs(1 - 1/ratio3))
+				return [a, b, ratio3, boost]
+
+def qtl_calc(arg, pools, normalized, sorted):
 	data = arg['--data']
 	inf_s = set(data)
-	no_ref = arg['--ref-genotype']
-	a,b,c,d = inp[0], inp[1], inp[2], inp[3]
+	alleles = [allele for allele in pools['R'].keys()]
+	a = pools['D'][alleles[normalized[0]]]
+	b = pools['D'][alleles[normalized[1]]]
+	c = pools['R'][alleles[normalized[0]]]
+	d = pools['R'][alleles[normalized[1]]]
 	dom = a + b
 	rec = c + d
 	if rec > 0 and dom > 0:
@@ -311,15 +318,16 @@ def qtl_calc(inp, arg):
 		v2 = (a/dom, b/dom)
 		ed = distance.euclidean(v1,v2)
 		g = Gstatic(a,b,c,d)
+		stat = LogFisher(a,b,c,d)
 		pva = pvalor(a,b,c,d)
 		pva10 = (log(pva)/log(10))
 		ratio1 = b/(a+b)
 		ratio2 = d/(c+d)
 		delta = ratio1 - ratio2
-		if no_ref == 'miss' and 'Pd' not in data:
-			return [ratio1, ratio2,abs(delta),ed,g,pva,pva10]
+		if sorted == False:
+			return [a,b,c,d,ratio1,ratio2,stat,pva,pva10,abs(delta),ed,g]
 		else:
-			return [ratio1,ratio2,delta,ed,g,pva,pva10]
+			return [a,b,c,d,ratio1,ratio2,stat,pva,pva10,delta,ed,g]
 
 def choose_header(arg):
 	data = arg['--data']
@@ -331,19 +339,19 @@ def choose_header(arg):
 			else:
 				header = ['#CHROM','POS','DOM','REC','DPdom_1','DPrec_1','SNPidx1','BOOST']
 		elif ('D' in inf_s and 'R' in inf_s) and arg['--ref-genotype'] != 'miss' or 'Pr' in inf_s or 'Pd' in inf_s:
-			header = ['#CHROM','POS','DOM','REC','DPdom_1','DPrec_1','DPdom_2','DPrec_2','SNPidx1','SNPidx2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE']
+			header = ['#CHROM','POS','DOM','REC','DPdom_1','DPrec_1','DPdom_2','DPrec_2','SNPidx1','SNPidx2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE','DELTA','ED','G']
 		elif 'D' in inf_s and 'R' in inf_s and arg['--ref-genotype'] == 'miss' and 'Pd' not in inf_s and 'Pr' not in inf_s:
-			header = ['#CHROM','POS','DOM','REC','DPdom_1','DPrec_1','DPdom_2','DPrec_2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE']
+			header = ['#CHROM','POS','DOM','REC','DPdom_1','DPrec_1','DPdom_2','DPrec_2','SNPidx1','SNPidx2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE','DELTA','ED','G']
 	elif 'qtl' in arg.keys():
 		#if arg['--ref-genotype'] == 'miss' and 'Pr' not in inf_s and 'Pd' not in inf_s:
 		#	header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','ED','G','PVALUE','log10PVALUE']
 		#if arg['--ref-genotype'] != 'miss' or 'Pr' in inf_s or 'Pd' in inf_s:
-		header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','SNPidx1','SNPidx2','DELTA','ED','G','PVALUE','log10PVALUE']
+		header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','SNPidx1','SNPidx2','FISHER','PVALUE','log10PVALUE','DELTA','ED','G']
 	arg['header'] = header
 
 
-def new_line(fsal, arg, first, fields, al_count, calcs):
-	res = fields + al_count + calcs
+def new_line(fsal, arg, first, fields, calcs):
+	res = fields + calcs
 	spacer = arg['spacer']
 	header = arg['header']
 	if first:	
@@ -362,157 +370,145 @@ def write_line(n_line, fsal):
 	else:
 		fsal.write(n_line)
 
-def vcf_line_parser2(line, arg):
-	'''
-	This script reads the output from the bcftools call line by line and processes it
-	The line is splitted into list z[]. Values of the matrix are:
-		z[0] = chromosome
-		z[1] = positionarguments
-		z[2] = ID
-		z[3] = Reference allele
-		z[4] = Variant allele
-		z[5] = Quality
-		z[6] = Filter
-		z[7] = Info line. Read Bcftools documentation for more information
-		z[8] = Format. Contains the description of the format for the nexts fields
-		z[9] to z[x] = Genotype and allele count for bam 1, 2, 3...x
-	'''
+
+# Nueva funcion creada por HC para remplazar vc_line_parser2
+def vcf_line_parser3(line, arg):
+	line = line.rstrip()  # Faltaría en la función normal
 	z = line.split('\t')
-	alt = z[4] #alternative allele
+	ref = z[3]
+	alt = z[4] #alternative alleleS
 	genotype = dict()
 	if alt == '.':
-		#if the alternative allele is '.' indicates that there is no variation in the aligned sequences, so that position is discarded
+		# if the ALT allele is '.', then there is no variation and the position is skipped
 		return 0,0,0
-	else:
+	else:	# variation found relative to reference sequence
 		form = z[8].split(':')
 		GT_index = form.index('GT')
 		AD_index = form.index('AD')
 		data = arg['--data']
-		res = dict()
-		inf = dict()
+		counts = dict()
+		genotypes = dict()
 		c = 9
-		for i in range(len(data)):		#dict inf contain the name of the pool and the column where is it in input 
-			inf[data[i]] = c			#{'R': 9, 'D':10, 'Pr':11}
-			c += 1
-		inf_s = set(data)
-		if len(inf_s) == 1:
-			data1 = z[9].split(':')			#split data from R pool
-			pool = dict()
-			AD = data1[AD_index].split(',') #obtain AD data from R pool
-			GTrec = data1[GT_index].split('/')
-			genotype['R'] = GTrec
-			if '.' in set(GTrec):
+		alt = z[4].split(',')
+		for i in range(len(data)):
+			if z[c+1] == './.':	#Fixed for GATK input
 				return 0,0,0
-			ref = z[3]
-			alt = z[4].split(',')			#alt could be more than one nt
-			pool[ref] = int(AD[0])			#generete a dict for the pool {'nt':AD1, 'nt':AD2 }
-			for i in range(len(alt)):
-				pool[alt[i]] = int(AD[i+1])
-			res[data[0]] = pool				#Save the pool dict naming the pool {'R':{'nt1':AD1, 'nt2':AD2 }}
-		elif len(inf_s) >= 2:
-			if 'D' in inf_s and 'R' in inf_s:
-				data1 = z[inf['D']].split(':')	#save info from each pool
-				data2 = z[inf['R']].split(':')
-				GT1 = data1[GT_index].split('/')
-				GT2 = data2[GT_index].split('/')
-				gt = set(GT1+GT2)				#compare the genotypes
-				if '.' in gt:#if len(gt) == 1 or '.' in gt: #if all the genotypes are identical the line is discarded
+			current_col = z[c + i].split(':')
+			AD = current_col[AD_index].split(',')
+			GT = current_col[GT_index].split('/')
+			pool = dict()
+			for n in AD:
+				try:
+					int(n)
+				except ValueError:
 					return 0,0,0
-				for p,c in inf.items():		#for each pool and column
-					ref = z[3]
-					alt = z[4].split(',')
-					AD = z[c].split(':')[AD_index].split(',')
-					GT = z[c].split(':')[GT_index].split('/')
-					pool = {ref:int(AD[0])}
-					for i in range(len(alt)):
-						pool[alt[i]] = int(AD[i+1])
-					res[p] = pool	#{'R':{'nt1':AD1, 'nt2':AD2 }, 'D':{'nt1':AD1, 'nt2':AD2}...}
-					genotype[p] = GT
-			elif 'D' not in inf_s:
-				ref = z[3]
-				alt = z[4].split(',')
-				data1 = z[inf['R']].split(':')
-				GT1 = data1[GT_index].split('/')
-				gt = set(GT1)
-				if '.' in gt:
-					return 0,0,0
-				for p,c in inf.items():
-					AD = z[c].split(':')[AD_index].split(',')
-					GT = z[c].split(':')[GT_index].split('/')
-					pool = {ref:int(AD[0])}
-					for i in range(len(alt)):
-						pool[alt[i]] = int(AD[i+1])
-					res[p] = pool
-					genotype[p] = GT
-			for p,gen in genotype.items():
-				if '.' in gen:
-					return 0,0,0
-		if len(res['R']) > 2:
-			fields, pools, genotype = triAllelicSites([z[0], z[1], z[3]],res,genotype,arg)
-			return fields, pools, genotype
-		return [z[0], z[1], z[3]],res,genotype #returns chromosome, position, reference allele, and the data for each bam)
+			pool[ref] = int(AD[0])
+			for j in range(len(alt)):
+				pool[alt[j]] = int(AD[j+1])
+			counts[data[i]] = pool
+			genotypes[data[i]] = GT
+		return [z[0], z[1], ref], counts, genotypes #returns chromosome, position, reference allele, and the data for each bam)
 
-def filter_mbs(arg, al_count, p_al_count, genotype):
+def filter_mbs(arg, pools, genotypes, normalized, sorted): #al_count, p_al_count, genotype):
 	flag = [True]
 	inf_s = set(arg['--data'])
 	min_dp = arg['--min-depth']
 	max_dp = arg['--max-depth']
-	if 'R' in inf_s and 'D' in inf_s:
-		REF,ALT,a,b,c,d = al_count[0], al_count[1], al_count[2], al_count[3], al_count[4], al_count[5]
-		dom = a + b
-		rec = c + d
-		flag.append(genotype_filter(arg, genotype))
-		if arg['dp_filter']:
-			if dom <= min_dp or dom >= max_dp or rec <= min_dp or rec >= max_dp: #TODO
-				flag.append(False)
-		if arg['--het-filter']:
-			#flag.append(het_filter(arg,a,b))
-			flag.append(het_filter2(arg,genotype,a,b))
-		if arg['--EMS']:
-			flag.append(filter_EMS(arg, REF, ALT))
-		if arg['--skip-indels']:
-			flag.append(indels_filter(REF,ALT))
-		if arg['--parental-filter'] and ('Pr' in inf_s or 'Pd' in inf_s or 'Wr' in inf_s or 'Wd' in inf_s):
-			#e,f = p_al_count[0], p_al_count[1]
-			#flag.append(isogenic_filter(arg,c,d,e,f))
-			flag.append(parental_filter(arg,genotype))
+	alleles = [allele for allele in pools['R'].keys() ]
 
-	elif 'D' not in inf_s:
-		REF,ALT,c,d = al_count[0], al_count[1], al_count[2], al_count[3]
-		flag.append(genotype_filter(arg, genotype))
-		if arg['dp_filter']:
-			if c+d <= min_dp or c+d >= max_dp:
+	# Sequencing depth filter
+	if arg['dp_filter']:     # Cuestiones: esto es un parametro de entrada?
+		if 'R' in inf_s:
+			count = pools['R'][alleles[normalized[0]]] +  pools['R'][alleles[normalized[1]]]
+			if count < min_dp or count > max_dp:
 				flag.append(False)
-		if arg['--EMS'] and (arg['--ref-genotype'] != 'miss' or 'Pr' in inf_s or 'Pd' in inf_s):
-			flag.append(filter_EMS(arg, REF, ALT))
-		if arg['--parental-filter'] and ('Pr' in inf_s or 'Pd' in inf_s or 'Wr' in inf_s or 'Wd' in inf_s):
-			#e,f = p_al_count[0], p_al_count[1]
-			#flag.append(isogenic_filter(arg,c,d,e,f))
-			flag.append(parental_filter(arg,genotype))
-		if arg['--skip-indels']:
-			flag.append(indels_filter(REF,ALT))
+		if 'D' in inf_s:
+			count = pools['D'][alleles[normalized[0]]] +  pools['D'][alleles[normalized[1]]]
+			if count < min_dp or count > max_dp:
+				flag.append(False)
+
+	# EMS filter
+	if arg['--EMS'] and (len(alleles[normalized[0]]) == 1 and len(alleles[normalized[1]]) == 1) and sorted == True:  # if point mutation
+		if arg['--mutant-pool'] == 'R':
+			if (alleles[normalized[0]] == 'G' and alleles[normalized[1]] == 'A') or (alleles[normalized[0]] == 'C' and  alleles[normalized[1]] == 'T'):
+				flag.append(True)
+			else:
+				flag.append(False)
+		elif arg['--mutant-pool'] == 'D':
+			if ( alleles[normalized[0]] == 'A' and  alleles[normalized[1]] == 'G') or ( alleles[normalized[0]] == 'T' and  alleles[normalized[1]] == 'C'):
+				flag.append(True)
+			else:
+				flag.append(False)
+
+        # INDELs filter
+	if arg['--skip-indels'] and len(alleles[normalized[0]]) != len(alleles[normalized[1]]):  # if INDEL mutation
+		flag.append(False)
+
+	# Het filter
+	if arg['--het-filter'] and 'D' in inf_s:
+		min = arg['--min-ratio']
+		max = arg['--max-ratio']
+		if (pools['D'][alleles[normalized[0]]]+pools['D'][alleles[normalized[1]]]) > 0 : # repensar
+			if genotypes['D'][0] == genotypes['D'][1]:
+				flag.append(False)
+			elif pools['D'][alleles[normalized[0]]]/(pools['D'][alleles[normalized[0]]]+pools['D'][alleles[normalized[1]]]) > max or pools['D'][alleles[normalized[0]]]/(pools['D'][alleles[normalized[0]]]+pools['D'][alleles[normalized[1]]]) < min:
+				flag.append(False)
+
+	#parental filter
+	mapping_datasets = inf_s & {'D', 'R'}
+	other_datasets = inf_s & {'Pd', 'Pr', 'Wr', 'Wd'}
+	if arg['--parental-filter'] and other_datasets != {}:
+		if 'R' in mapping_datasets and 'Wr' in other_datasets:
+			if genotypes['R'] == genotypes['Wr'] and arg['--mutant-pool'] == 'R':
+				# Los alelos de R ya estaban en Wr antes de la mutagénesis: descartar
+				flag.append(False)
+			if (genotypes['Wr'] == ['1','1'] or genotypes['Wr'] == ['0','1']) and arg['--mutant-pool'] == 'R':
+				flag.append(False) 
+		if 'R' in mapping_datasets and 'Wd' in other_datasets:
+			if genotypes['R'] == genotypes['Wd'] and arg['--mutant-pool'] == 'R':
+				# Los alelos de R ya estaban en el otro parental antes de la mutagénesis: descartar
+				flag.append(False)
+		if 'R' in mapping_datasets and 'Pd' in other_datasets:
+			if genotypes['R'] == genotypes['Pd'] and arg['--mutant-pool'] == 'R':
+				# Los alelos de R ya estaban en el otro parental antes de la mutagénesis: descartar
+				flag.append(False)
+		if 'D' in mapping_datasets and 'Wd' in other_datasets:
+			if genotypes['D'] == genotypes['Wd'] and arg['--mutant-pool'] == 'D':
+				# Los alelos de D ya estaban en Wd antes de la mutagénesis: descartar
+				flag.append(False)
+		if 'D' in mapping_datasets and 'Pr' in other_datasets:
+			if genotypes['D'] == genotypes['Pr'] and arg['--mutant-pool'] == 'D':
+				# Los alelos de D ya estaban en el otro parental antes de la mutagénesis: descartar
+				flag.append(False)
+		if 'D' in mapping_datasets and 'Wr' in other_datasets:
+			if genotypes['D'] == genotypes['Wr'] and arg['--mutant-pool'] == 'D':
+				# Los alelos de D ya estaban en el otro silvestre antes de la mutagénesis: descartar
+				flag.append(False)
+
 	if False in flag:
 		return False
 	else:
 		return True
 
-def filter_qtl(arg, al_count, genotype):
+
+def filter_qtl(arg, pools, genotype, normalized, sorted):
 	flag = [True]
 	inf_s = set(arg['--data'])
 	min_dp = arg['--min-depth']
 	max_dp = arg['--max-depth']
-	a,b,c,d = int(al_count[2]), int(al_count[3]), int(al_count[4]), int(al_count[5])
+	alleles = [allele for allele in pools['R'].keys() ]
+	a = pools['D'][alleles[normalized[0]]]
+	b = pools['D'][alleles[normalized[1]]]
+	c = pools['R'][alleles[normalized[0]]]
+	d = pools['R'][alleles[normalized[1]]]
 	high = a + b
 	low = c + d
 	dp = high + low
-	GT_H = set(genotype['D'])
-	GT_L = set(genotype['R'])
-	flag.append(False if GT_H == GT_L == {'1'} else True)
 	if arg['dp_filter']:
 		flag.append(True if dp <= max_dp and dp >= min_dp else False)
 	#flag.append(False if b/(a+b) == d/(c+d) else True)
-	if arg['--skip-indels']:
-		flag.append(indels_filter(al_count[0],al_count[1]))
+	if arg['--skip-indels'] and len(alleles[normalized[0]]) != len(alleles[normalized[1]]):
+		flag.append(False)
 	if False in flag:
 		return False
 	else:
@@ -525,6 +521,9 @@ def indels_filter(ref, alt):
 		return True
 
 	
+	
+	
+
 	
 def genotype_filter(arg, genotype):
 	inf_s = set(arg['--data'])
@@ -581,7 +580,7 @@ def isogenic_filter(arg,c,d,e,f):
 	#	return False
 	#else: 
 	#	return True
-	
+
 def parental_filter(arg,genotype):
 	inf_s = set(arg['--data'])
 	GT_rec = set(genotype['R'])
@@ -673,136 +672,119 @@ def triAllelicSites(fields, pools, genotype, arg):
 			g = [translate[i] for i in g]
 			new_genotype[p] = g
 		return fields, pools, new_genotype
-	
-def normalize(pools, REF, arg, genotype, r_min=0.03):
-	data = arg['data_w']
+
+def normalize2(pools, arg, genotypes, r_min=0.03):
+	data = arg['--data']
 	inf_s = set(data)
-	if 'qtl' in arg.keys():
-		data = arg['--data']
-		inf_s = set(data)
-	wt = arg['wt']
-	ref = arg['--ref-genotype']
-	rec = pools['R']
-	alle = [a for a,v in rec.items()]
-	#REF_idx = alle.index(REF)
-	arg['reorder'] = 0
-	al_count = 0
-	wt_l = 0
-	if len(alle) > 2:
-		return 0,0,0
-	if len(inf_s) == 1:
-		if ref == 'D' or ref == 'miss':
-			a = rec[alle[0]]
-			b = rec[alle[1]]
-			al_count = [REF, alle[1], a, b]
-		elif ref == 'R':
-			b = rec[alle[0]]
-			a = rec[alle[1]]
-			al_count = [alle[1],REF,a, b]
-			arg['reorder'] = 1
-	elif len(inf_s) == 2:
-		if 'R' in inf_s and 'D' in inf_s and ref == 'miss':
-			dom = pools['D']
-			a = dom[alle[0]]
-			c = rec[alle[0]]
-			b = dom[alle[1]]
-			d =	rec[alle[1]]
-			al_count = [alle[0], alle[1], a, b, c, d]
-		elif inf_s == {'R','D'} and ref == 'D':
-			dom = pools['D']
-			a = dom[alle[0]]
-			c = rec[alle[0]]
-			b = dom[alle[1]]
-			d = rec[alle[1]]
-			al_count = [REF, alle[1], a, b, c, d]
-		elif inf_s == {'R','D'} and ref == 'R':
-			dom = pools['D']
-			b = dom[alle[0]]
-			d = rec[alle[0]]
-			a = dom[alle[1]]
-			c = rec[alle[1]]
-			al_count = [alle[1],REF, a, b, c, d]
-			arg['reorder'] = 1
-		elif inf_s == {'R', 'Pd'}:
-			p_dom = pools['Pd']
-			p_al = sorted(p_dom, key=lambda key: p_dom[key], reverse=True) #ordered from higher to lower-allele count
-			p_al2 = [key for key,arg in p_dom.items()]					   #original order in vcf file
-			arg['reorder'] = 1 if p_al != p_al2 else 0					   #if distict we are re-ordering the alleles
-			if p_dom[p_al[0]] > 0 and p_dom[p_al[1]]/(p_dom[p_al[0]] + p_dom[p_al[1]]) < 0.03:# or len(p_al) > 2:
-				a = rec[p_al[0]]
-				b = rec[p_al[1]]
-				e = p_dom[p_al[0]]
-				f = p_dom[p_al[1]]
-				al_count = [p_al[0], p_al[1], a, b]
-				wt_l = [e,f]
+	alleles = [i for i in pools['R'].keys()]
+	al_counts = 0
+	al_normalized = []
+	if genotypes['R'][0] =='.':
+		return(False, False)
+	# si ambos pooles son homocigóticos para el mismo alelo
+	elif 'D' in inf_s and 'R' in inf_s and genotypes['R'][0] == genotypes['R'][1] and genotypes['R'] == genotypes['D']:
+		return(False, False)
+	else:
+		ref = arg['--ref-genotype']
+		if ref == 'D' or ref == 'R':
+			normalized = {}
+			if ref == 'D':
+				normalized = {0:0,1:1}
+			elif ref == 'R':
+				normalized = {0:1,1:0}
+			#if 'R' in inf_s and 'D' in inf_s:
+			#	al_normalized = [alleles[normalized[0]], alleles[normalized[1]], pools['D'][alleles[normalized[0]]], pools['D'][alleles[normalized[1]]], pools['R'][alleles[normalized[0]]], pools['R'][alleles[normalized[1]]] ]
+			#elif 'R' in inf_s:
+			#	al_normalized = [alleles[normalized[0]], alleles[normalized[1]], pools['R'][alleles[normalized[0]]], pools['R'][alleles[normalized[1]]] ] 
+			return(normalized, True)
+		elif 'Pd' in inf_s and 'Pr' in inf_s:
+			# Ambos parentales idénticos, no polimórfico
+			if genotypes['Pd'] == genotypes['Pr']:
+				return(False, False)
+			#Sin datos para uno de los parentales
+			elif genotypes['Pd'][0]=='.' or genotypes['Pr'][0]=='.':
+				return(False, False)
+			#Uno u otro parental es heterocigoto en la posición considerada
+			elif genotypes['Pd'][0] != genotypes['Pd'][1] or genotypes['Pr'][0] != genotypes['Pr'][1]:
+				return(False, False)
 			else:
-				return 0,0,0
-		elif inf_s == {'R', 'Pr'}:	#TODO Possibly delete this case
-			p_rec = pools['Pr']
-			p_al = sorted(p_rec, key=lambda key: p_rec[key], reverse=True)	#ordered from higher to lower-allele count
-			p_al2 = [key for key,arg in p_rec.items()]						#orginal order in vcf file
-			arg['reorder'] = 0 if p_al != p_al2 else 1						#if distinct we are NOT re-ordering the alleles
-			if p_rec[p_al[0]] > 0 and p_rec[p_al[1]]/(p_rec[p_al[0]] + p_rec[p_al[1]]) < r_min:# or len(p_al) > 2:
-				a = rec[p_al[1]]
-				b = rec[p_al[0]]
-				e = p_rec[p_al[1]]
-				f = p_rec[p_al[0]]
-				al_count = [p_al[1], p_al[0], a, b]
-				wt_l = [e, f]
-			else:
-				return 0,0,0
-	elif len(inf_s) == 3:
-		if 'Pr' in inf_s:
-			parental = pools['Pr']
+				allele_Pd = int(genotypes['Pd'][0])
+				allele_Pr = int(genotypes['Pr'][0])
+				normalized ={0:allele_Pd, 1:allele_Pr}
+				#if 'D' in inf_s and 'R' in inf_s:
+				#	al_normalized = [alleles[normalized[0]], alleles[normalized[1]], pools['D'][alleles[normalized[0]]],pools['D'][alleles[normalized[1]]], pools['R'][alleles[normalized[0]]], pools['R'][alleles[normalized[1]]], pools['Pd'][alleles[normalized[0]]], pools['Pd'][alleles[normalized[1]]], pools['Pr'][alleles[normalized[0]]], pools['Pr'][alleles[normalized[1]]]]
+				#else:
+				#	al_normalized = [alleles[normalized[0]], alleles[normalized[1]], pools['R'][alleles[normalized[0]]],pools['R'][alleles[normalized[1]]], pools['Pd'][alleles[normalized[0]]],pools['Pd'][alleles[normalized[1]]],pools['Pr'][alleles[normalized[0]]], pools['Pr'][alleles[normalized[1]]]]
+				return(normalized, True)
 		elif 'Pd' in inf_s:
-			parental = pools['Pd']
-		p_al = sorted(parental, key=lambda key: parental[key], reverse=True)
-		dom = pools['D']
-		r_min = 0.03
-		if parental[p_al[0]] > 0 and parental[p_al[1]]/(parental[p_al[0]] + parental[p_al[1]]) < r_min:	# Asegurar que el parental esta en homocigosis
-			p_al2 = [key for key,arg in parental.items()]
-			if 'Pd' in inf_s:
-				arg['reorder'] = 1 if p_al != p_al2 else 0
-				a = dom[p_al[0]]
-				b = dom[p_al[1]]
-				c = rec[p_al[0]]
-				d = rec[p_al[1]]
-				e = parental[p_al[0]]
-				f = parental[p_al[1]]
-				al_count = [p_al[0], p_al[1], a, b, c, d]
-				wt_l = [e, f] 
-			elif 'Pr' in inf_s:
-				arg['reorder'] = 0 if p_al != p_al2 else 1
-				a = dom[p_al[1]]
-				b = dom[p_al[0]]
-				c = rec[p_al[1]]
-				d = rec[p_al[0]]
-				e = parental[p_al[1]]
-				f = parental[p_al[0]]
-				al_count = [p_al[1], p_al[0], a, b, c, d]
-				wt_l = [e, f]
+			if genotypes['Pd'][0] != genotypes['Pd'][1] or genotypes['Pd'][0] == '.':
+				return(False, False)
+			else:
+				# Se procede a ordenar los alelos según la información del parental dominante
+				allele_Pd = int(genotypes['Pd'][0])
+				allele_alt = int()
+				if len(alleles) == 2:
+					for i in range(len(alleles)):
+						if i != int(genotypes['Pd'][0]):
+							allele_alt = i 
+					normalized ={0:allele_Pd, 1:allele_alt}
+					#if 'D' in inf_s:
+					#	al_normalized = [alleles[normalized[0]], alleles[normalized[1]], pools['D'][alleles[normalized[0]]], pools['D'][alleles[normalized[1]]], pools['R'][alleles[normalized[0]]], pools['R'][alleles[normalized[1]]], pools['Pd'][alleles[normalized[0]]], pools['Pd'][alleles[normalized[1]]]] 
+					#else:
+					#	al_normalized = [alleles[normalized[0]], alleles[normalized[1]], pools['R'][alleles[normalized[0]]], pools['R'][alleles[normalized[1]]], pools['Pd'][alleles[normalized[0]]], pools['Pd'][alleles[normalized[1]]]]
+					return(normalized, True)
+				else:
+					return(False, False)
+		elif 'Pr' in inf_s:
+			# Se procede a ordenar los alelos según la información del parental recesivo
+			if genotypes['Pr'][0] != genotypes['Pr'][1] or genotypes['Pr'][0] == '.':
+				return(False, False)
+			else:
+				allele_Pr = int(genotypes['Pr'][0])
+				allele_alt = int()
+				if len(alleles) == 2:
+					for i in range(len(alleles)):
+						if i != int(genotypes['Pr'][0]):
+							allele_alt = i
+					normalized ={0:allele_alt, 1:allele_Pr}
+					#if 'D' in inf_s and 'R' in inf_s:
+					#	al_normalized = [alleles[normalized[0]], alleles[normalized[1]], pools['D'][alleles[normalized[0]]], pools['D'][alleles[normalized[1]]], pools['R'][alleles[normalized[0]]], pools['R'][alleles[normalized[1]]], pools['Pr'][alleles[normalized[0]]], pools['Pr'][alleles[normalized[1]]]]
+					#else:
+					#	al_normalized = [alleles[normalized[0]], alleles[normalized[1]], pools['R'][alleles[normalized[0]]], pools['R'][alleles[normalized[1]]], pools['Pr'][alleles[normalized[0]]], pools['Pr'][alleles[normalized[1]]]]
+					return(normalized, True)
+				else:
+					return(False, False)
 		else:
-			return 0, 0, 0
-	if wt:
-		if arg['reorder'] == 1:
-			wt_l = [pools[wt][alle[1]], pools[wt][alle[0]]]
-		elif arg['reorder'] == 0:
-			wt_l = [pools[wt][alle[0]], pools[wt][alle[1]]]
-	if arg['reorder'] == 1:
-		new_genotype = dict()
-		translate = {'1':'0', '0':'1'}
-		for p, gen in genotype.items():
-			gen = [translate[i] for i in gen]
-			new_genotype[p] = gen
-		return al_count, wt_l, new_genotype
-	new_genotype = genotype
-	return al_count, wt_l, new_genotype
-	
+			normalized = {0:0,1:1}
+			return(normalized, False)
 
 def check_annotate_args(arg):
 	arg['--transl-table'] = int(arg['--transl-table'])
 	arg['--version'] = True
 	wd = os.getcwd()
+
+	if arg['--input'] != None:
+		inp_f = arg['--input']
+		if arg['--input'].split('.')[-1] == 'gz':
+			informat = arg['--input'].split('.')[-2]
+			try:			
+				f = gzip.open(inp_f, 'rt')
+			except FileNotFoundError:
+				print('Error: The input file {} does not exist'.format(inp_f), file=sys.stderr)
+				sys.exit()
+		else:
+			informat = arg['--input'].split('.')[-1]
+			try:
+				f = open(inp_f, 'r')
+			except FileNotFoundError:
+				print('Error: The input file {} does not exist'.format(inp_f), file=sys.stderr)
+				sys.exit()
+		arg['inp'] = f
+		if informat not in {'txt','csv'}:
+			print('Error: the input file has no valid format.', file=sys.stderr)
+			sys.exit()
+		else:
+			arg['spacerin'] = '\t' if informat == 'txt' else ','
 	if arg['--gff'] == None:
 		print('Error: Select a gff file (--gff FILE)', file=sys.stderr)
 		sys.exit()
@@ -845,22 +827,21 @@ def check_annotate_args(arg):
 		else:
 			print('Error: Enter region correctly (-R chromName:startPos-endPos)', file=sys.stderr)
 			sys.exit()
-	if 'R' in arg['--data'] and 'D' in arg['--data']:
-		header=['#CHROM','POS','DOM','REC', 'DPdom_1','DPrec_1','DPdom_2','DPrec_2','TYPE','ID','PARENT','STRAND',\
-			'CODON_change','AA_change','INFO']
-	else:
-		header=['#CHROM','POS','DOM','REC', 'DPdom_1','DPrec_1','TYPE','ID','PARENT','STRAND',\
-			'CODON_change','AA_change','INFO']
-	arg['header'] = header
-	if not 'R' in arg['--data']:
-		print('Error: You should include the recessive pool (--data R,X)', file=sys.stderr)
-		sys.exit()
 
 	return arg
 
 
+def analysisParser(line,arg):
+	s = arg['spacerin']
+	l = line.split(s)
+	if arg['2pools']:
+		fields = l[:8]
+	else:
+		fields = l[:6]
+	return fields
+
 def filter_region(line, arg):
-	z = line.split('\t')
+	z = line.split(arg['spacerin'])
 	chrom = z[0]
 	pos = int(z[1])
 	if chrom == arg['--region'][0] and pos >= arg['--region'][1] and pos <= arg['--region'][2]:
@@ -976,7 +957,7 @@ def load_reference(df,arg):
 					flag = False
 					break
 			if flag == True:
-				print('Error: Chromosome not found in FASTA file.', file=sys.stderr)
+				print('Error: Chromosome name not found in FASTA file.', file=sys.stderr)
 				sys.exit()
 	else:
 		with open(arg['--fasta-reference'], 'r') as handle:
@@ -986,7 +967,7 @@ def load_reference(df,arg):
 					flag = False
 					break
 			if flag == True:
-				print('Chromosome not found in FASTA file.', file=sys.stderr)
+				print('Chromosome name not found in FASTA file.', file=sys.stderr)
 				sys.exit()
 
 
@@ -1060,14 +1041,18 @@ def create_df(arg):
 	df = pd.DataFrame(columns=header)
 	return df
 
-def new_df_line(df, arg, fields, al_count, calcs):
-	data = arg['--data']
-	inf_s = set(data)
-	reorder = [arg['reorder']]
+#Editado por hector
+def new_df_line(df, arg, fields, al_count, calcs, reorder):
 	res = fields + al_count + calcs + reorder
 	n_line = {arg['header2'][i]:res[i] for i in range(len(res))}
 	df_nline = pd.DataFrame.from_records([n_line])
 	df = pd.concat([df, df_nline])
+	return df
+
+def newDFline2(df,arg,fields):
+	n_line = {arg['header2'][i]:fields[i] for i in range(len(fields))}
+	df_line = pd.DataFrame.from_records([n_line])
+	df = pd.concat([df, df_line])
 	return df
 
 def find_new_ATG(arg, pos, five, row):
@@ -1127,18 +1112,18 @@ def check_nc_gene(arg,gff,type_, b, e, pos,result, row):
 			if gff['exon'][b2:e2+1]:
 				result['ID'],result['PARENT'],result['TYPE'],result['STRAND'] = ncRNA_id,ncRNA[7],type_,ncRNA[4]
 				result['INFO']['effect'] = 'non_coding:exonic'
-				write_annotate_line(arg, result, row)
+				write_annotate_line2(arg, result, row)
 				result['INFO'] = dict()
 			else:
 				result['ID'],result['PARENT'],result['TYPE'],result['STRAND'] = ncRNA_id,ncRNA[7],type_,ncRNA[4]
 				result['INFO']['effect'] = 'non_coding:intronic'
-				write_annotate_line(arg, result, row)
+				write_annotate_line2(arg, result, row)
 				result['INFO'] = dict()
 
 def is_indel(row,arg):
-	reorder = row['reorder']
-	ref = row['DOM'] if reorder == 0 else row['REC']
-	alt = row['REC'] if reorder == 0 else row['DOM']
+	#reorder = row['reorder']
+	ref = row['DOM']
+	alt = row['REC']
 	if len(alt) > len(ref):
 		ref,alt=NWSellers(ref, alt, 0, -1)
 		row['DOM'] = ref
@@ -1156,10 +1141,16 @@ def is_indel(row,arg):
 
 
 def check_deletion(row, arg, ref, alt):
-	result = {h:row[h] for h in arg['header2'] if h in arg['header2'] and h in arg['header']}
-	result2 = {h:'.' for h in arg['header'] if h not in arg['header2']}
-	result2['INFO'] = dict()
-	result.update(result2)
+	if 'annotate' in arg.keys():
+		result = {h:row[h] for h in arg['header2']}
+		result2 = {h:'.' for h in arg['header'] if h not in arg['header2']}
+		result2['INFO'] = dict()
+		result.update(result2)
+	else:
+		result = {h:row[h] for h in arg['header2'] if h in arg['header2'] and h in arg['header']}
+		result2 = {h:'.' for h in arg['header'] if h not in arg['header2']}
+		result2['INFO'] = dict()
+		result.update(result2)
 	pos = int(row['POS'])
 	coor_i = int(pos)
 	coor_f = int(pos) + len(ref) - 1
@@ -1178,14 +1169,14 @@ def check_deletion(row, arg, ref, alt):
 		dis2 = coor_i - gff['gene'][ei][3]
 		result['TYPE'] = 'intergenic'
 		result['INFO']['left'] = gff['gene'][ei][6] +':'+ str(dis2)
-		write_annotate_line(arg, result, row)
+		write_annotate_line2(arg, result, row)
 		result['INFO'] = dict()
 	
 	elif ei < bi and ef < bf and ei != ef and bi != bf:	#INTERGENIC, COMPLETE GENES DELETION
 		genes_deleted = [gene[6] for gene in gff['gene'][bi:ef+1]]
 		result['TYPE'] = 'multi_gene'
 		result['INFO']['effect'] = 'genes_deleted:' + ','.join(genes_deleted)
-		write_annotate_line(arg, result, row)
+		write_annotate_line2(arg, result, row)
 		result['INFO'] = dict()
 
 	elif bi > ei and bf == ef:	#LEFT INTERGENIC, RIGHT GENIC
@@ -1201,7 +1192,7 @@ def check_deletion(row, arg, ref, alt):
 				result['INFO']['3_prime_deletion'] = gene[6]+':'+str(size_deleted)
 			
 			result['INFO']['effect'] = 'genes_deleted:' + ','.join(c_deleted)
-			write_annotate_line(arg, result, row)
+			write_annotate_line2(arg, result, row)
 			result['INFO'] = dict()
 		else:
 			gene = gff['gene'][bi:ef+1][0]
@@ -1211,10 +1202,10 @@ def check_deletion(row, arg, ref, alt):
 			size_deleted = coor_f - gene[2]
 			if result['STRAND'] == '+':
 				result['INFO']['5_prime_deletion'] = gene[6] + ':' + str(size_deleted)
-				write_annotate_line(arg, result, row)
+				write_annotate_line2(arg, result, row)
 			else:
 				result['INFO']['3_prime_deletion'] = gene[6] + ':' + str(size_deleted)
-				write_annotate_line(arg, result, row)
+				write_annotate_line2(arg, result, row)
 			result['INFO'] = dict()
 
 	elif bf > ef and bi == ei: #INTERGENIC RIGHT, GENIC LEFT
@@ -1230,7 +1221,7 @@ def check_deletion(row, arg, ref, alt):
 				result['INFO']['5_prime_deletion'] = gene[6]+':'+str(size_deleted)
 
 			result['INFO']['effect'] = 'genes_deleted:' + ','.join(c_deleted)
-			write_annotate_line(arg, result, row)
+			write_annotate_line2(arg, result, row)
 			result['INFO'] = dict()
 		else:
 			gene = gff['gene'][bi:ef+1][0]
@@ -1240,10 +1231,10 @@ def check_deletion(row, arg, ref, alt):
 			size_deleted = gene[3] - coor_i
 			if result['STRAND'] == '+':
 				result['INFO']['3_prime_deletion'] = gene[6]+':'+ str(size_deleted)
-				write_annotate_line(arg, result, row)
+				write_annotate_line2(arg, result, row)
 			else:
 				result['INFO']['5_prime_deletion'] = gene[6]+':'+ str(size_deleted)
-				write_annotate_line(arg, result, row)
+				write_annotate_line2(arg, result, row)
 			result['INFO'] = dict()
 
 	elif bf == ef and bi == ei:
@@ -1267,7 +1258,7 @@ def check_deletion(row, arg, ref, alt):
 			
 			if genes_deleted:
 				result['INFO']['effect'] = 'genes_deleted:'+','.join(genes_deleted)
-			write_annotate_line(arg, result, row)
+			write_annotate_line2(arg, result, row)
 			result['INFO'] = dict()
 
 		else:
@@ -1326,13 +1317,13 @@ def genic_deletion(arg, result, row, coor_i, coor_f, mRNA):
 					result['INFO']['3_splice_site'] = 'intron-boundary:'+gff['exon'][bi][8]
 				else:
 					result['INFO']['5_splice_site'] = 'intron-boundary:'+gff['exon'][bi][8]
-			write_annotate_line(arg, result, row)
+			write_annotate_line2(arg, result, row)
 			result['INFO'] = dict()
 	elif ei < bi and ef < bf and ei != ef and bi != bf:	#complete exon deletion
 		exons_deleted = [exon[8] for exon in gff['exon'][bi:ef+1]]
 		result['TYPE'] = 'multi_exon'
 		result['INFO']['effect'] = 'exons_deleted:' + ','.join(exons_deleted)
-		write_annotate_line(arg, result, row)
+		write_annotate_line2(arg, result, row)
 		result['INFO'] = dict()
 
 	elif bi > ei and bf == ef:	#LEFT INTRON, RIGHT EXON
@@ -1349,7 +1340,7 @@ def genic_deletion(arg, result, row, coor_i, coor_f, mRNA):
 					result['INFO']['5_splice_site_deletion'] = 'exon/intron-boundary:'+exon[8]
 
 			result['INFO']['effect'] = 'exons_deleted:' + ','.join(c_deleted)
-			write_annotate_line(arg, result, row)
+			write_annotate_line2(arg, result, row)
 			result['INFO'] = dict()
 		elif len(gff['exon'][bi:ef+1]) == 1:
 			exon = gff['exon'][bi:ef+1][0]
@@ -1361,7 +1352,7 @@ def genic_deletion(arg, result, row, coor_i, coor_f, mRNA):
 				else:
 					result['INFO']['5_splice_site_deletion'] = 'exon/intron-boundary:'+exon[8]
 
-				write_annotate_line(arg, result, row)
+				write_annotate_line2(arg, result, row)
 				result['INFO'] = dict()
 
 	elif bf > ef and bi == ei:	#LEFT EXON, RIGHT INTRON
@@ -1378,7 +1369,7 @@ def genic_deletion(arg, result, row, coor_i, coor_f, mRNA):
 					result['INFO']['3_splice_site_deletion'] = 'intron/exon-boundary:'+exon[8]
 
 			result['INFO']['effect'] = 'exons_deleted:' + ','.join(c_deleted)
-			write_annotate_line(arg, result, row)
+			write_annotate_line2(arg, result, row)
 			result['INFO'] = dict()
 		elif len(gff['exon'][bi:ef+1]) == 1:
 			exon = gff['exon'][bi:ef+1][0]
@@ -1390,7 +1381,7 @@ def genic_deletion(arg, result, row, coor_i, coor_f, mRNA):
 				else:
 					result['INFO']['3_splice_site_deletion'] = 'intron/exon-boundary:'+exon[8]
 
-				write_annotate_line(arg, result, row)
+				write_annotate_line2(arg, result, row)
 				result['INFO'] = dict()
 	elif bf == ef and bi == ei:
 		if bi != bf:
@@ -1414,7 +1405,7 @@ def genic_deletion(arg, result, row, coor_i, coor_f, mRNA):
 
 			if exons_deleted:
 				result['INFO']['effect'] = 'exons_deleted:'+','.join(exons_deleted)
-			write_annotate_line(arg, result, row)
+			write_annotate_line2(arg, result, row)
 			result['INFO'] = dict()
 		elif bi == bf:
 			b2, e2 = find_row_name(gff['gene_structures'], mRNA_id, 7)
@@ -1426,13 +1417,13 @@ def genic_deletion(arg, result, row, coor_i, coor_f, mRNA):
 				if left == right and left[1] == 'three_prime_UTR':
 					result['TYPE'] = 'three_prime_UTR'
 					result['PARENT'] = mRNA_id
-					write_annotate_line(arg, result, row)
+					write_annotate_line2(arg, result, row)
 					result['INFO'] = dict()
 				elif left == right and left[1] == 'five_prime_UTR':
 					result['TYPE'] = 'five_prime_UTR'		
 					result['INFO']['effect'] = '.:.:.'
 					result['PARENT'] = mRNA_id
-					write_annotate_line(arg, result, row)
+					write_annotate_line2(arg, result, row)
 					result['INFO'] = dict()
 				elif left == right and left[1] == 'CDS':
 					result['TYPE'] = 'CDS'
@@ -1441,7 +1432,7 @@ def genic_deletion(arg, result, row, coor_i, coor_f, mRNA):
 						result['INFO']['effect'] ='Deletion:in-frame'
 					else:
 						result['INFO']['effect'] ='Deletion:frameshift'
-					write_annotate_line(arg, result, row)
+					write_annotate_line2(arg, result, row)
 					result['INFO'] = dict()
 				elif left[1] == 'CDS' and right[1] == 'three_prime_UTR':
 					result['TYPE'] = 'gene'
@@ -1453,7 +1444,7 @@ def genic_deletion(arg, result, row, coor_i, coor_f, mRNA):
 						result['INFO']['effect'] ='Deletion:frameshift'
 					result['INFO']['left'] = 'CDS'
 					result['INFO']['right'] = 'three_prime_UTR'
-					write_annotate_line(arg, result, row)
+					write_annotate_line2(arg, result, row)
 					result['INFO'] = dict()
 				elif right[1] == 'CDS' and left[1] == 'three_prime_UTR':
 					result['TYPE'] = 'gene'
@@ -1465,7 +1456,7 @@ def genic_deletion(arg, result, row, coor_i, coor_f, mRNA):
 						result['INFO']['effect'] ='Deletion:frameshift'
 					result['INFO']['left'] = 'three_prime_UTR'
 					result['INFO']['right'] = 'CDS'
-					write_annotate_line(arg, result, row)
+					write_annotate_line2(arg, result, row)
 					result['INFO'] = dict()
 				elif right[1] == 'CDS' and left[1] == 'five_prime_UTR':
 					result['TYPE'] = 'gene'
@@ -1477,7 +1468,7 @@ def genic_deletion(arg, result, row, coor_i, coor_f, mRNA):
 						result['INFO']['effect'] ='Deletion:frameshift'
 					result['INFO']['left'] = 'five_prime_UTR'
 					result['INFO']['right'] = 'CDS'
-					write_annotate_line(arg, result, row)
+					write_annotate_line2(arg, result, row)
 					result['INFO'] = dict()
 				elif left[1] == 'CDS' and right[1] == 'five_prime_UTR':
 					result['TYPE'] = 'gene'
@@ -1489,7 +1480,7 @@ def genic_deletion(arg, result, row, coor_i, coor_f, mRNA):
 						result['INFO']['effect'] ='Deletion:frameshift'
 					result['INFO']['left'] = 'CDS'
 					result['INFO']['right'] = 'five_prime_UTR'
-					write_annotate_line(arg, result, row)
+					write_annotate_line2(arg, result, row)
 					result['INFO'] = dict()
 
 def find_nc_gene(arg, gff, gene_id, pos, result, row):
@@ -1502,10 +1493,16 @@ def find_nc_gene(arg, gff, gene_id, pos, result, row):
 
 
 def check_mutation2(row, arg):
-	result = {h:row[h] for h in arg['header2'] if h in arg['header2'] and h in arg['header']}
-	result2 = {h:'.' for h in arg['header'] if h not in arg['header2']}
-	result2['INFO'] = dict()
-	result.update(result2)
+	if 'annotate' in arg.keys():
+		result = {h:row[h] for h in arg['header2']}
+		result2 = {h:'.' for h in arg['header'] if h not in arg['header2']}
+		result2['INFO'] = dict()
+		result.update(result2)
+	else:
+		result = {h:row[h] for h in arg['header2'] if h in arg['header2'] and h in arg['header']}
+		result2 = {h:'.' for h in arg['header'] if h not in arg['header2']}
+		result2['INFO'] = dict()
+		result.update(result2)
 	result['CODON_ref'], result['CODON_alt'], result['AA_ref'], result['AA_alt'] = '.','.','.','.'
 	gff = arg['gff']
 	pos = int(row['POS'])
@@ -1566,7 +1563,7 @@ def check_mutation2(row, arg):
 										result['CODON_ref'],result['CODON_alt'],result['AA_ref'],result['AA_alt'] = codon_bef, codon_aft, aa_before, aa_after
 										result['INFO']['effect'] = change
 										result['PARENT'] = mRNA_id
-										write_annotate_line(arg, result, row)
+										write_annotate_line2(arg, result, row)
 										result['INFO'] = dict()
 										result['CODON_ref'], result['CODON_alt'], result['AA_ref'],result['AA_alt']= '.','.','.','.'
 									elif end > cds[3]:
@@ -1583,7 +1580,7 @@ def check_mutation2(row, arg):
 										result['CODON_ref'],result['CODON_alt'],result['AA_ref'],result['AA_alt'] = codon_bef, codon_aft, aa_before, aa_after
 										result['PARENT'] = mRNA_id
 										result['INFO']['effect'] = change
-										write_annotate_line(arg, result, row)
+										write_annotate_line2(arg, result, row)
 										result['INFO'] = dict()
 										result['CODON_ref'], result['CODON_alt'], result['AA_ref'],result['AA_alt']= '.','.','.','.'
 									else:
@@ -1595,7 +1592,7 @@ def check_mutation2(row, arg):
 										result['PARENT'] = mRNA_id
 										result['CODON_ref'],result['CODON_alt'],result['AA_ref'],result['AA_alt'] = codon_bef, codon_aft, aa_before, aa_after
 										result['INFO']['effect'] = change
-										write_annotate_line(arg, result, row)
+										write_annotate_line2(arg, result, row)
 										result['INFO'] = dict()
 										result['CODON_ref'], result['CODON_alt'], result['AA_ref'],result['AA_alt']= '.','.','.','.'
 							elif gff['five_prime_UTR'][b8:e8+1]:
@@ -1607,13 +1604,13 @@ def check_mutation2(row, arg):
 									elif arg['variant'] == 'substitution':
 										result['INFO']['effect'] = find_new_ATG(arg, pos, five, row)
 									result['PARENT'] = mRNA_id
-									write_annotate_line(arg, result, row)
+									write_annotate_line2(arg, result, row)
 									result['INFO'] = dict()
 							elif gff['three_prime_UTR'][b10:e10+1]:
 								three =  gff['three_prime_UTR'][b10:e10+1][0]
 								result['TYPE'] = 'three_prime_UTR'
 								result['PARENT'] = mRNA_id
-								write_annotate_line(arg, result, row)
+								write_annotate_line2(arg, result, row)
 								result['INFO'] = dict()
 						else:
 							result['TYPE'] = 'intron'
@@ -1633,7 +1630,7 @@ def check_mutation2(row, arg):
 										result['INFO']['3_splice_site'] = 'intron-boundary:'+gff['exon'][b4][8]
 									else:
 										result['INFO']['5_splice_site'] = 'intron-boundary:'+gff['exon'][b4][8]
-								write_annotate_line(arg, result, row)
+								write_annotate_line2(arg, result, row)
 								result['INFO'] = dict()
 			
 			find_nc_gene(arg, gff, gene_id, pos, result, row)
@@ -1648,7 +1645,7 @@ def check_mutation2(row, arg):
 		dis2 = pos - gff['gene'][e][3]
 		result['TYPE'] = 'intergenic'
 		result['INFO']['left'] = gff['gene'][e][6] +':'+ str(dis2) if e != -1 else '.'
-		write_annotate_line(arg, result, row)
+		write_annotate_line2(arg, result, row)
 		result['INFO'] = dict()
 
 def write_annotate_header(arg):
@@ -1680,14 +1677,77 @@ def write_annotate_line(arg, result, row):
 	n_line = arg['spacer'].join(line)+'\n'
 	write_line(n_line,arg['fsal'])
 
+def write_annotate_line2(arg, result, row):
+	codonREF,codonALT,AAREF,AAALT =  result['CODON_ref'], result['CODON_alt'], result['AA_ref'], result['AA_alt']
+	di = ' > ' if arg['--mutant-pool'] == 'R' else ' < '
+	if codonREF == '.' and codonALT == '.' and AAREF == '.' and AAALT == '.':
+		result['CODON_change'] = '.'
+		result['AA_change'] = '.'
+	else:
+		result['CODON_change'] = codonREF+di+codonALT
+		result['AA_change'] = AAREF +di+AAALT
+	result['INFO']['variant_type'] = arg['variant']
+	att_l = [k+'='+v for k,v in result['INFO'].items()]
+	att = ';'.join(att_l)
+	result['INFO'] = att
+	result2 = {field:result[field] for field in arg['header']}
+	line = [str(v) for k,v in result2.items()]
+	n_line = arg['spacer'].join(line)+'\n'
+	write_line(n_line,arg['fsal'])
 
+def getAnalysisArgs(arg:dict,line:str):
+	argvs = line.split('=')[1].split(' ')
+	arg['2pools'] = True
+	for i in range(len(argvs)):
+		arg_i = argvs[i]
+		if arg_i == '-d' or arg_i == '--data':
+			arg_idx = argvs.index(arg_i)
+			arg['--data'] = argvs[arg_idx + 1].split(',')
+		if 'mbs' in arg.keys():
+			if arg_i == '-m' or arg_i == '--mutant-pool':
+				arg_idx =argvs.index(arg_i)
+				arg['--mutant-pool'] = argvs[arg_idx + 1]
+			else:
+				arg['--mutant-pool'] = 'R'
+		else:
+			arg['--mutant-pool'] = 'D'
+	if 'mbs' in arg.keys():
+		if 'R' in arg['--data'] and 'D' in arg['--data']:
+			arg['header'] = ['#CHROM','POS','DOM','REC', 'DPdom_1','DPrec_1','DPdom_2','DPrec_2','TYPE','ID','PARENT','STRAND',\
+				'CODON_change','AA_change','INFO']
+			arg['header2'] = ['#CHROM','POS','DOM','REC', 'DPdom_1','DPrec_1','DPdom_2','DPrec_2']
+		else:
+			arg['2pools'] = False
+			arg['header']=['#CHROM','POS','DOM','REC', 'DPdom_1','DPrec_1','TYPE','ID','PARENT','STRAND',\
+				'CODON_change','AA_change','INFO']
+			arg['header2'] = ['#CHROM','POS','DOM','REC', 'DPdom_1','DPrec_1']
+	else:
+		arg['header'] = ['#CHROM','POS','HIGH','LOW', 'DPhigh_1','DPlow_1','DPhigh_2','DPlow_2','TYPE','ID','PARENT','STRAND',\
+				'CODON_change','AA_change','INFO']
+		arg['header2'] = ['#CHROM','POS','HIGH','LOW','DPhigh_1','DPlow_1','DPhigh_2','DPlow_2']
+	
+	for field in arg['header']:
+		if field in variable_descriptions.keys():
+			write_line(variable_descriptions[field], arg['fsal'])
+	write_annotate_header(arg)
 
+	if 'qtl' in arg.keys():
+		translate = {'HIGH':'DOM','LOW':'REC','DPhigh_1':'DPdom_1','DPlow_1':'DPrec_1','DPhigh_2':'DPdom_2','DPlow_2':'DPrec_2'}
+		header = [i if i not in translate.keys() else translate[i] for i in arg['header']]
+		header2 = [i if i not in translate.keys() else translate[i] for i in arg['header2']]
+		arg['header'] = header
+		arg['header2'] = header2
+
+	df = pd.DataFrame(columns=arg['header2'])
+	return df
 #CHROM	POS		REF		ALT		DPr		DPalt		cRef	cAlt	type	      strand		ID		LEFT	RIGHT	Ldist   Rdist 
 # 1    1456654   C		T		1         18	ATG(Met)   CTG(Ser) Nonsynonymous   +          ATG10809 ATG..    ATG..  1500    156
 
 def read_header(arg:dict,line:str):
 	fsal = arg['fsal']
 	arg['chromosomes'] = list()
+	#if line.startswith('##fileformat=VCF'):
+	#	arg['vcf'] = True
 	if line.startswith('##bcftoolsVersion='):
 		write_line(line,fsal)
 	if line.startswith('##bcftoolsCommand='):
@@ -1697,7 +1757,10 @@ def read_header(arg:dict,line:str):
 	if line.startswith('##source=HaplotypeCaller'):
 		write_line(line,fsal)
 	if line.startswith('##bcftools_callCommand='):
-		write_line(line.split(';')[0]+'\n',fsal)
+		if not 'annotate' in arg.keys():
+			write_line(line.split(';')[0]+'\n',fsal)
+		else:
+			write_line(line.split(';')[0],fsal)
 	if line.startswith('##reference='):
 		if 'mbs' in arg.keys() or 'qtl' in arg.keys():
 			write_line(line,fsal)       
@@ -1709,14 +1772,14 @@ def read_header(arg:dict,line:str):
 		arg['--contigs'][id] = int(length)
 		arg['chromosomes'].append(c)
 		write_line(line,fsal)
-	if line.startswith('#CHROM'):
+	if line.startswith('#CHROM') and 'annotate' not in arg.keys():
 		bam_list = line.rstrip().split('\t')[9:]
 		if len(arg['--data']) > len(bam_list):
 			print('Error: The \"--data\" list does not match with the number of pools used.', file=sys.stderr)
 			sys.exit()
 		elif len(arg['--data']) <= len(bam_list):
 			if 'qtl' in arg.keys():
-				translate = {'D':'H','R':'L','Pd':'P'}
+				translate = {'D':'H','R':'L','Pd':'P','X':'X'}
 				d = [translate[i] for i in arg['--data']]
 				arg['pools'] = {d[i]:bam_list[i] for i in range(len(d))}
 				pools = '##bamFiles:genotypes='+','.join(':'.join((key,val)) for (key, val) in arg['pools'].items()) + '\n'
@@ -1725,7 +1788,10 @@ def read_header(arg:dict,line:str):
 				arg['pools'] = {arg['--data'][i]:bam_list[i] for i in range(len(arg['--data']))}
 				pools = '##bamFiles:genotypes='+','.join(':'.join((key,val)) for (key, val) in arg['pools'].items()) + '\n'
 				write_line(pools, fsal)
-		if 'annotate' in arg.keys():
+	if line.startswith('##bamFiles:genotypes=') and 'annotate' in arg.keys():
+		write_line(line,fsal)
+	
+	if line.startswith('#CHROM') and 'annotate' in arg.keys():
 			chrom, pos_i, pos_f = arg['--region'][0], arg['--region'][1], arg['--region'][2]
 			if chrom not in arg['--contigs'].keys():
 				print('Error: Enter a valid chromosome name (-R chromName:startPos-endPos)', file=sys.stderr)
@@ -1748,12 +1814,13 @@ def write_argv(arg:dict,argv:str):
 		gff_idx = argv.index('--gff') if '--gff' in argv else argv.index('-g')
 		write_line('##reference=file://'+argv[ref_idx+1].split('/')[-1]+'\n',fsal)
 		write_line('##gff3=file://'+argv[gff_idx+1].split('/')[-1]+'\n',fsal)
-	for field in arg['header']:
-		if 'merge' in arg.keys():
-			if field == 'DOM' or field == 'REC' or field == 'ALT' or field == 'REF':
-				continue
-		if field in variable_descriptions.keys():
-			write_line(variable_descriptions[field], fsal)
+	if argv[0] != 'annotate':
+		for field in arg['header']:
+			if 'merge' in arg.keys():
+				if field == 'DOM' or field == 'REC' or field == 'ALT' or field == 'REF':
+					continue
+			if field in variable_descriptions.keys():
+				write_line(variable_descriptions[field], fsal)
 	if argv[0] == 'merge':
 		line ='##maptools_mergeCommandINFO=\"All columns now represent the grouped values for the provided window size.\"\n'
 		write_line(line, fsal)
@@ -1831,10 +1898,16 @@ def read_header_merge(arg:dict):
 
 def check_chroms(arg):
 	chromosomes = arg['--chromosomes']
-	for chrom in chromosomes:
-		if chrom not in arg['--contigs'].keys():
-			print('Error: {} is not in the contig ID list.'.format(chrom), file=sys.stderr)
-			sys.exit()
+	for i in range(len(chromosomes)):
+		if chromosomes[i] not in arg['--contigs'].keys():
+			print('Warning: {} is not in the contig ID list.'.format(chromosomes[i]), file=sys.stderr)
+			arg['--chromosomes'].pop(i)
+	if len(arg['--chromosomes']) == 0:
+		print('Error: No chromosome name provided is found in the list of contig IDs', file=sys.stderr)
+		sys.exit()
+	else:
+		return arg
+			
 
 
 #NW-Sellers
