@@ -97,8 +97,8 @@ def read_header_plot(arg):
 
             if line.startswith('#CHROM'):
                 arg['header'] = line.rstrip().split('\t')
-                if 'qtl' in arg.keys():
-                    translate = {'REF':'DOM','ALT':'REC','DPref_1':'DPdom_1','DPalt_1':'DPrec_1','DPref_2':'DPdom_2','DPalt_2':'DPrec_2'}
+                if arg['type'] == 'qtl':
+                    translate = {'HIGH':'DOM','LOW':'REC','DPhigh_1':'DPdom_1','DPlow_1':'DPrec_1','DPhigh_2':'DPdom_2','DPlow_2':'DPrec_2'}
                     header2 = [i if i not in translate.keys() else translate[i] for i in arg['header']]
                     arg['header'] = header2
                 break
@@ -163,7 +163,6 @@ def load_dataframe_plotting(arg):
         sep_ = ','
     else:
         sep_ = '\t'
-    print(arg['header'])
     df = pd.read_csv(inp_f, sep=sep_, dtype=fields, names=arg['header'], comment='#')
     chroms = df['#CHROM'].unique()
     if arg['--chromosomes'] == 'all':
@@ -485,13 +484,13 @@ def read_palette(arg):
 
 def check_save(arg, file_name):
     typ = arg['--output-type']
-    if os.path.isfile(arg['--outdir']+file_name):
+    if os.path.isfile(arg['sub_folder']+file_name):
 
         expand = 0
         while True:
             expand += 1
             nw_file_name = file_name.split(typ)[0] + '_' + str(expand) + typ
-            if os.path.isfile(arg['--outdir']+nw_file_name):
+            if os.path.isfile(arg['sub_folder']+nw_file_name):
                 continue
             else:
                 file_name = nw_file_name
@@ -2069,6 +2068,10 @@ def combinedPlot(df, arg):
         fig, ax=plt.subplots(3, 2, figsize=(8.5, 8.5))#(7,9)paper
         d=df[df['#CHROM'] == chrom[i]]
         max_x = arg['contigs'][chrom[i]]
+        if max_x > 60000000:
+            paso = 10e6
+        else:
+            paso = 5e6
         x = d[['POS']]
         y1 = d['SNPidx1']
         y2 = d['SNPidx2']
@@ -2080,7 +2083,7 @@ def combinedPlot(df, arg):
         #SNPidx1
         ax[0,0].scatter(x, y1, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'], clip_on=False)
         ax[0,0].set(xlim=(0, max_x), ylim=(0, 1))
-        ax[0,0].set_xticks(ticks=np.arange(0, max_x, 5e6))
+        ax[0,0].set_xticks(ticks=np.arange(0, max_x, paso))
         ax[0,0].tick_params(labelbottom=False)
         ax[0,0].set_yticks(ticks=[0, 0.5, 1])
         ax[0,0].set_yticklabels(labels=[0, 0.5, 1], fontsize=10)
@@ -2098,7 +2101,7 @@ def combinedPlot(df, arg):
         # SNPidx2
         ax[1,0].scatter(x, y2, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'], clip_on=False)
         ax[1,0].set(xlim=(0, max_x), ylim=(0, 1))
-        ax[1,0].set_xticks(ticks=np.arange(0, max_x, 5e6))
+        ax[1,0].set_xticks(ticks=np.arange(0, max_x, paso))
         ax[1,0].tick_params(labelbottom=False)
         ax[1,0].set_yticks(ticks=[0, 0.5, 1])
         ax[1,0].set_yticklabels(labels=[0, 0.5, 1], fontsize=10)
@@ -2124,8 +2127,8 @@ def combinedPlot(df, arg):
             lim_y=(0, 1.2)
         ax[2,0].scatter(x, y3, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'], clip_on=False)
         ax[2,0].set(xlim=(0, max_x), ylim=lim_y)
-        ax[2,0].set_xticks(ticks=np.arange(0, max_x, 5e6))
-        ax[2,0].set_xticklabels(labels=np.arange(0, max_x, 5e6),fontsize=10)
+        ax[2,0].set_xticks(ticks=np.arange(0, max_x, paso))
+        ax[2,0].set_xticklabels(labels=np.arange(0, max_x, paso),fontsize=10)
         ax[2,0].set_ylabel(ylabel= ylab ,fontsize=12, labelpad=10)
         ax[2,0].yaxis.set_label_coords(-0.2,0.5)
         ax[2,0].set_title('(c)', fontsize=16, rotation=0, x = -0.25, y=0.90)
@@ -2153,7 +2156,7 @@ def combinedPlot(df, arg):
             max_y = max(ed100['ED100_4'])
         ax[0,1].scatter(x, y4, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'], clip_on=False)
         ax[0,1].set(xlim=(0, max_x), ylim=(0, 1.5))
-        ax[0,1].set_xticks(ticks=np.arange(0, max_x, 5e6))
+        ax[0,1].set_xticks(ticks=np.arange(0, max_x, paso))
         ax[0,1].tick_params(labelbottom=False)
         ax[0,1].set_ylabel(ylabel='Euclidean distance', fontsize=12, rotation=90)
         ax[0,1].yaxis.set_label_coords(-0.2,0.5)
@@ -2168,7 +2171,7 @@ def combinedPlot(df, arg):
         # G-statistic
         ax[1,1].scatter(x, y5, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'], clip_on=False)
         ax[1,1].set(xlim=(0, max_x), ylim=(min(df['G']), max(df['G'])))
-        ax[1,1].set_xticks(ticks=np.arange(0, max_x, 5e6))
+        ax[1,1].set_xticks(ticks=np.arange(0, max_x, paso))
         ax[1,1].tick_params(labelbottom=False)
         ax[1,1].set_ylabel(ylabel='G-statistic', fontsize=12, rotation=90)
         ax[1,1].yaxis.set_label_coords(-0.2,0.5)

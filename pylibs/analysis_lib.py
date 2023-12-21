@@ -52,7 +52,7 @@ def check_args(__doc__,arg:dict):
 	if arg['--input'] == None and arg['pipe'] == True:
 		print(__doc__, end='\n', file=sys.stderr)
 		sys.exit()
-	if arg['--input'] != None and 'mbs' in arg.keys() or 'qtl' in arg.keys():
+	if arg['--input'] != None:# and 'mbs' in arg.keys() or 'qtl' in arg.keys():
 		inp_f = arg['--input']
 		if arg['--input'].split('.')[-1] == 'gz':
 			try:			
@@ -346,7 +346,7 @@ def choose_header(arg):
 		#if arg['--ref-genotype'] == 'miss' and 'Pr' not in inf_s and 'Pd' not in inf_s:
 		#	header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','ED','G','PVALUE','log10PVALUE']
 		#if arg['--ref-genotype'] != 'miss' or 'Pr' in inf_s or 'Pd' in inf_s:
-		header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','SNPidx1','SNPidx2','FISHER','PVALUE','log10PVALUE','DELTA','ED','G']
+		header = ['#CHROM','POS','HIGH','LOW','DPhigh_1','DPlow_1','DPhigh_2','DPlow_2','SNPidx1','SNPidx2','FISHER','PVALUE','log10PVALUE','DELTA','ED','G']
 	arg['header'] = header
 
 
