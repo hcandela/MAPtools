@@ -2064,6 +2064,22 @@ def combinedPlot(df, arg):
     t,rt = arg['titles'][17]
     threshold=log(0.05/len(df.axes[0]))/log(10)
     min_yp=min(df['log10PVALUE'])*1.05
+    if arg['type'] == 'mbs':
+        key = 30
+        if arg['--moving-avg'] != False:
+            k1 = 3
+            k2 = 5
+        if arg['--distance-avg'] != False:
+            k1 = 2
+            k2 = 4
+    else:
+        key = 31
+        if arg['--moving-avg'] != False:
+            k1 = 9
+            k2 = 11
+        if arg['--distance-avg'] != False:
+            k1 = 8
+            k2 = 10
     for i in range(len(chrom)):
         fig, ax=plt.subplots(3, 2, figsize=(8.5, 8.5))#(7,9)paper
         d=df[df['#CHROM'] == chrom[i]]
@@ -2218,21 +2234,41 @@ def combinedPlot(df, arg):
         plt.close()
         cap = list()
 
-        #if arg['--captions']:
-        #    f = create_caption(arg, rtch)
-        #    cap.append(filename)
-        #    cap.append(t.format(chrom[i]))
-        #    if arg['--ref-genotype'] == True:
-        #        cap.append(arg['lines'][13])
-        #    else:
-        #       cap.append(arg['lines'][14])
-        #    if arg['--moving-avg'] != False:
-        #        cap.append(arg['lines'][8].format(arg['color_names']['mvg'], str(arg['--moving-avg'])))
-        #    if arg['--distance-avg'] != False:
-        #        cap.append(arg['lines'][-12].format(arg['color_names']['mvg'], str(arg['--distance-avg'])))
-        #    if arg['--bonferroni']:
-        #        cap.append(arg['lines'][2].format(str(arg['n_markers'])))
-        #    write_caption(f,cap, arg)
+        if arg['--captions']:
+            f = create_caption(arg, rtch)
+            cap.append(filename)
+            cap.append(t.format(chrom[i]))
+            if arg['--moving-avg'] != False:
+                cap.append(arg['lines'][key].format(
+                                        arg['lines'][k1].format(arg['color_names']['SNPidx1'], str(arg['--moving-avg'])),\
+                                        arg['lines'][k2].format(arg['color_names']['SNPidx2'], str(arg['--moving-avg'])),\
+                                        '' if arg['--ref-genotype'] == True else ', in absolute value',\
+                                        arg['lines'][22].format(arg['color_names']['ci'], str(arg['n_markers'])) if arg['--ci95'] else '',\
+                                        arg['lines'][24].format(arg['color_names']['mvg']) if isinstance(ed100,pd.DataFrame) else '',\
+                                        arg['lines'][15].format(str(arg['n_markers'])) if arg['--bonferroni'] else ''
+                                        ))
+            
+                cap.append(arg['lines'][29].format(arg['color_names']['mvg'], str(arg['--moving-avg'])))
+            elif arg['--distance-avg'] != False:
+                cap.append(arg['lines'][key].format(
+                                        arg['lines'][k1].format(arg['color_names']['SNPidx1'], str(arg['--distance-avg'])),\
+                                        arg['lines'][k2].format(arg['color_names']['SNPidx2'], str(arg['--distance-avg'])),\
+                                        '' if arg['--ref-genotype'] == True else ', in absolute value',\
+                                        arg['lines'][22].format(arg['color_names']['ci'], str(arg['n_markers'])) if arg['--ci95'] else '',\
+                                        arg['lines'][24].format(arg['color_names']['mvg']) if isinstance(ed100,pd.DataFrame) else '',\
+                                        arg['lines'][15].format(str(arg['n_markers'])) if arg['--bonferroni'] else ''
+                                        ))
+                cap.append(arg['lines'][28].format(arg['color_names']['mvg'], str(arg['--distance-avg'])))
+            else:
+                cap.append(arg['lines'][key].format(
+                                        '',\
+                                        '',\
+                                        '' if arg['--ref-genotype'] == True else ', in absolute value',\
+                                        arg['lines'][22].format(arg['color_names']['ci']) if arg['--ci95'] else '',\
+                                        arg['lines'][24].format(arg['color_names']['mvg']) if isinstance(ed100,pd.DataFrame) else '',\
+                                        arg['lines'][15].format(str(arg['n_markers'])) if arg['--bonferroni'] else ''
+                                        ))
+            write_caption(f,cap, arg)
 
 def qtl_mixed_plot(df, arg):
     global fields

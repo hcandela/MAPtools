@@ -76,20 +76,20 @@ LINES = {#AF MBS
          26:'The {} line represents the weighted average of the G-statistic of markers within a {}-bp range.',
          27:'The {} line indicates the weighted moving average of the G-statistic at {} adjacent SNPs.',
          #Combined
-         28:'The {} line represents the weighted average for each of the plotted variables of markers within a {}-bp range.',
-         29:'The {} line indicates the moving average for each of the plotted variables, at {} adjacent SNPs.',
+         28:'The {} line represents the weighted average for the rest of the plotted variables of markers within a {}-bp range.',
+         29:'The {} line indicates the moving average for the rest of the plotted variables, at {} adjacent SNPs.',
             #MBS
-         30:'(a) SNP-index plot of the pool of dominant phenotype individuals. (b) SNP-index plot of the pool of recessive phenotype individuals'\
-            ' (c) $\Delta$ SNP-index plot, substracting the SNP-index value of the recessive pool from the dominant pool.'\
-            ' (d) Euclidean distance for each individual SNP.{}'\
+         30:'(a) SNP-index plot of the pool of dominant phenotype individuals.{} (b) SNP-index plot of the pool of recessive phenotype individuals.{}'\
+            ' (c) $\Delta$ SNP-index plot, substracting the SNP-index value of the recessive pool from the dominant pool{}. {}'\
+            ' (d) Euclidean distance for each individual SNP. {}'\
             ' (e) G-statistic for each individual SNP.'\
-            ' (f) p-values of two-tailed Fisher\'s exact tests.{}',
+            ' (f) p-values of two-tailed Fisher\'s exact tests. {}',
             #QTL
-         31:'(a) SNP-index plot of the pool of high phenotype individuals. (b) SNP-index plot of the pool of low phenotype individuals'\
-            ' (c) $\Delta$ SNP-index plot, substracting the SNP-index value of the low pool from the high pool.'\
-            ' (d) Euclidean distance for each individual SNP.{}'\
+         31:'(a) SNP-index plot of the pool of high phenotype individuals. {} (b) SNP-index plot of the pool of low phenotype individuals. {}'\
+            ' (c) $\Delta$ SNP-index plot, substracting the SNP-index value of the low pool from the high pool{}. {}'\
+            ' (d) Euclidean distance for each individual SNP. {}'\
             ' (e) G-statistic for each individual SNP.'\
-            ' (f) p-values of two-tailed Fisher\'s exact tests.{}',         
+            ' (f) p-values of two-tailed Fisher\'s exact tests. {}',         
          #MAX
          32: 'Each {} dot indicates the  maximum allele frequency of a biallelic SNP segregating in the population, as determined for the pool with the recessive phenotype.',
          33: 'The {} line indicates the moving average of the maximum allele frequencies at {} adjacent SNPs, in a pool of individuals exhibiting the recessive phenotype.',
