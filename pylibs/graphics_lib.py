@@ -467,18 +467,17 @@ def read_palette(arg):
     #arg['DPI'] = data['DPI']
     #arg['DOT_SIZE'] = data['DOT_SIZE']
     #arg['LINE_W'] = data['LINE_W']
-    type = arg['type']
     palette = arg['--palette']
-    if palette not in data[type].keys():
-        print('Error: Select a correct palette\'s name', file=sys.stderr)
-        sys.exit()
+    if palette not in data.keys():
+        print(f'Warning: {palette} is not one of the available palette names.\nSwitching to standard', file=sys.stderr)
+        palette = 'standard'
     
-    for key,val in data[type][palette].items():
+    for key,val in data[palette].items():
         if val == list():
             palette = 'standard'
             break
-    arg['--palette'] = {k: v[0] for k, v in data[type][palette].items()}
-    arg['color_names'] = {k: v[1] for k, v in data[type][palette].items()}
+    arg['--palette'] = {k: v[0] for k, v in data[palette].items()}
+    arg['color_names'] = {k: v[1] for k, v in data[palette].items()}
     
 
 

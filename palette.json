@@ -1,91 +1,47 @@
 {
-    "DPI" : 600,
-    "DOT_SIZE":25,
-    "LINE_W":2,
-    "mbs" : {   "standard": {
-                    "dots":["#5770db","dark blue"],
-                    "MAX_SNPidx2":["#db57b2","pink"],
-                    "log10PVALUE":["#db5f57","red"],
-                    "SNPidx1":["#57db80","light green"],
-                    "SNPidx2":["#db57b2","pink"],
-                    "BOOST":["#dbc257","gold"],
-                    "DELTA":["#db5f57","red"],
-                    "ci":["#ff7f00","orange"],
-                    "mvg":["#db5f57","red"]
-                },
-                "color_blind": {
-                    "dots":["#606263","gray"],
-                    "MAX_SNPidx2":["#d55e00","dark orange"],
-                    "log10PVALUE":["#cc78bc","magenta"],
-                    "SNPidx1":["#0173b2","blue"],
-                    "SNPidx2":["#d55e00","dark orange"],
-                    "BOOST":["#cc78bc","magenta"],
-                    "DELTA":["#db5f57","red"],
-                    "ci":["#ff7f00","orange"],
-                    "mvg":["#db5f57","red"]
 
+"standard": {
+    "dots":["#5770db","dark blue"],
+    "MAX_SNPidx2":["#db57b2","pink"],
+    "log10PVALUE":["#db5f57","red"],
+    "SNPidx1":["#57db80","light green"],
+    "SNPidx2":["#db57b2","pink"],
+    "BOOST":["#dbc257","gold"],
+    "DELTA":["#db5f57","red"],
+    "ci":["#ff7f00","orange"],
+    "mvg":["#db5f57","red"]
+            },
+"color_blind": {
+    "dots":["#606263","gray"],
+    "MAX_SNPidx2":["#d55e00","dark orange"],
+    "log10PVALUE":["#cc78bc","magenta"],
+    "SNPidx1":["#0173b2","blue"],
+    "SNPidx2":["#d55e00","dark orange"],
+    "BOOST":["#cc78bc","magenta"],
+    "DELTA":["#db5f57","red"],
+    "ci":["#ff7f00","orange"],
+    "mvg":["#db5f57","red"]
                 },
-                "custom": {
-                    "dots":[],
-                    "MAX_SNPidx2":[],
-                    "log10PVALUE":[],
-                    "SNPidx1":[],
-                    "SNPidx2":[],
-                    "BOOST":[],
-                    "DELTA":[],
-                    "ci":[],
-                    "mvg":[]
-                },
-                "rainbow": {
-                    "dots":["#4b0082","purple"],
-                    "MAX_SNPidx2":["#ff0000","red"],
-                    "log10PVALUE":["#ffff00","yellow"],
-                    "SNPidx1":["#ee82ee","violet"],
-                    "SNPidx2":["#ffa500","orange"],
-                    "BOOST":["#008000","green"]
-                } 
+"custom": {
+    "dots":[],
+    "MAX_SNPidx2":[],
+    "log10PVALUE":[],
+    "SNPidx1":[],
+    "SNPidx2":[],
+    "BOOST":[],
+    "DELTA":[],
+    "ci":[],
+    "mvg":[]
         },
-    "qtl" : {   "standard" : {
-                    "dots":["#5770db","dark blue"],
-                    "MAX_SNPidx2":["#db57b2","pink"],
-                    "log10PVALUE":["#db5f57","red"],
-                    "SNPidx1":["#57db80","light green"],
-                    "DELTA":["#db5f57","red"],
-                    "SNPidx2":["#db57b2","pink"],
-                    "mvg":["#db5f57","red"],
-                    "ci":["#ff7f00","orange"]
-                },
-                "color_blind" : {
-                    "dots":["#606263","gray"],
-                    "MAX_SNPidx2":["#d55e00","dark orange"],
-                    "log10PVALUE":["#cc78bc","magenta"],
-                    "SNPidx1":["#57db80","light green"],
-                    "DELTA":["#0173b2","blue"],
-                    "SNPidx2":["#d55e00","dark orange"],
-                    "mvg":["#cc78bc","magenta"],
-                    "ci":["#0173b2","blue"]
-
-                },
-                "custom" : {
-                    "dots":[],
-                    "MAX_SNPidx2":[],
-                    "log10PVALUE":[],
-                    "SNPidx1":[],
-                    "DELTA":[],
-                    "SNPidx2":[],
-                    "mvg":[],
-                    "ci":[]
-                },
-                "rainbow" : {
-                    "dots":["#4b0082","purple"],
-                    "MAX_SNPidx2":["#ff0000","red"],
-                    "log10PVALUE":["#ffff00","yellow"],
-                    "SNPidx1":["#ee82ee","violet"],
-                    "DELTA":["#008000","green"],
-                    "SNPidx2":["#ffa500","orange"],
-                    "mvg":["#ee82ee","violet"],
-                    "ci":["#ffff00","yellow"]
-                }
-    }
-}
-
+"rainbow" : {
+    "dots":["#4b0082","purple"],
+    "MAX_SNPidx2":["#ff0000","red"],
+    "log10PVALUE":["#ee82ee","violet"],
+    "SNPidx1":["#ffff00","yellow"],
+    "DELTA":["#ee82ee","violet"],
+    "SNPidx2":["#ffa500","orange"],
+    "BOOST":["#008000","green"],
+    "mvg":["#ee82ee","violet"],
+    "ci":["#008000","green"]
+            }
+} 
