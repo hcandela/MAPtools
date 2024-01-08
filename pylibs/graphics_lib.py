@@ -7,6 +7,7 @@ import pandas as pd
 import scipy.stats as st
 import sys
 import os
+import io
 from math import log
 import json
 from docopt import docopt
@@ -802,7 +803,7 @@ def pval_multi_graph(df, arg):
 
 def AF_manhattan_plot(df, arg, g_type):
     typ = arg['--output-type']
-    labs_list = list()
+    #labs_list = list()
     f_name = list()
     am = 2.5
     ylab = 'Allele Frequency'
@@ -827,7 +828,7 @@ def AF_manhattan_plot(df, arg, g_type):
         ax[i].set(xlim=(0, max_x), ylim=lim_y)
         ax[i].set_xticks([])
         ax[i].set_xlabel(xlabel=f'{chrom[i]}', fontsize=12)
-        labs_list.append('Chromosome {}'.format(chrom[i]))
+        #labs_list.append('Chromosome {}'.format(chrom[i]))
         ax[i].set_ylabel(ylabel=ylab,fontsize=12,labelpad=15)
         ax[i].tick_params(axis='y', which='major', labelsize=8)
         if arg['--moving-avg'] != False:
@@ -877,7 +878,7 @@ def AF_manhattan_plot(df, arg, g_type):
     if arg['--captions']:
         f = create_caption(arg,rt)
         cap.append(', '.join(f_name))
-        cap.append(t.format(', '.join(labs_list)))
+        cap.append(t)
         cap.append(arg['lines'][key2].format(arg['color_names']['dots']))
         if arg['--moving-avg'] != False:
             cap.append(arg['lines'][key].format(arg['color_names'][g_type], str(arg['--moving-avg'])))
@@ -890,13 +891,13 @@ def AF_manhattan_plot(df, arg, g_type):
                 if arg['--distance-boost'] != False:
                     cap.append(arg['lines'][keyB].format(arg['color_names']['BOOST'], str(arg['--distance-boost'])))
         if arg['--ci95'] and g_type == 'DELTA':
-                cap.append(arg['lines'][22].format(arg['color_names']['ci'], str(arg['n_markers'])))
+                cap.append(arg['lines'][22].format(str(arg['n_markers'])))
         write_caption(f, cap,arg)
 
 
 def AFCombinedManhattanPlot(df, arg):
     typ = arg['--output-type']
-    labs_list = list()
+    #labs_list = list()
     f_name = list()
     am = 2.5
     ylab = 'Allele Frequency'
@@ -920,7 +921,7 @@ def AFCombinedManhattanPlot(df, arg):
         ax[i].set(xlim=(0, max_x), ylim=lim_y)
         ax[i].set_xticks([])
         ax[i].set_xlabel(xlabel=f'{chrom[i]}', fontsize=12)
-        labs_list.append('Chromosome {}'.format(chrom[i]))
+        #labs_list.append('Chromosome {}'.format(chrom[i]))
         ax[i].set_ylabel(ylabel=ylab,fontsize=12,labelpad=15)
         ax[i].tick_params(axis='y', which='major', labelsize=8)
         #SNPidx1
@@ -961,7 +962,7 @@ def AFCombinedManhattanPlot(df, arg):
     if arg['--captions']:
         f = create_caption(arg,rt)
         cap.append(', '.join(f_name))
-        cap.append(t.format(', '.join(labs_list)))
+        #cap.append(t.format(', '.join(labs_list)))
         if arg['--moving-avg'] != False:
             cap.append(arg['lines'][l2].format(arg['color_names']['SNPidx2'], str(arg['--moving-avg'])))
             cap.append(arg['lines'][l1].format(arg['color_names']['SNPidx1'], str(arg['--moving-avg'])))
@@ -975,7 +976,7 @@ def pval_manhattan_plot(df, arg):
     t,_,rt = arg['titles'][12]
     typ = arg['--output-type']
     max_y = max(-df['log10PVALUE'])*1.05
-    labs_list = list()
+    #labs_list = list()
     f_name = list()
     am = 2.5
     chrom = arg['--chromosomes']
@@ -994,7 +995,7 @@ def pval_manhattan_plot(df, arg):
         ax[i].set(xlim=(0, max_x), ylim=(0, (max(max_y, threshold)+1)//1))
         ax[i].set_xticks([])
         ax[i].set_xlabel(xlabel=f'{chrom[i]}', fontsize=12)
-        labs_list.append('Chromosome {}'.format(chrom[i]))
+        #labs_list.append('Chromosome {}'.format(chrom[i]))
         ax[i].set_ylabel(ylabel='-log'+r'$_{10}$'+'(p-value)',fontsize=12,labelpad=15)
         ax[i].tick_params(axis='y', which='major', labelsize=8)
         if arg['--moving-avg'] != False:
@@ -1042,7 +1043,7 @@ def pval_manhattan_plot(df, arg):
     if arg['--captions']:
         f = create_caption(arg,rt)
         cap.append(', '.join(f_name))
-        cap.append(t.format(', '.join(labs_list)))
+        cap.append(t.format(''))
         cap.append(arg['lines'][12].format(arg['color_names']['dots'],'-'))
         if arg['--moving-avg'] != False:
             cap.append(arg['lines'][14].format(arg['color_names']['log10PVALUE'],'-', str(arg['--moving-avg'])))
@@ -1311,6 +1312,10 @@ def chooseOptionsAFPlots(arg, multi, g_type, ticks_y, lim_y, ylab):
                 key2 = 17
             else:
                 key2 = 19
+        if arg['--moving-avg'] != False:
+            key = 20
+        if arg['--distance-avg'] != False:
+            key = 21
 
     return arg, ticks_y, lim_y, ylab, t, rt, key2, key
 
@@ -1396,7 +1401,7 @@ def AF_mono_graph(df, arg, g_type):
                     if arg['--distance-boost'] != False:
                         cap.append(arg['lines'][keyB].format(arg['color_names']['BOOST'], str(arg['--distance-boost'])))
             if arg['--ci95'] and g_type == 'DELTA':
-                cap.append(arg['lines'][22].format(arg['color_names']['ci'], str(arg['n_markers'])))
+                cap.append(arg['lines'][22].format(str(arg['n_markers'])))
             write_caption(f, cap, arg)
 
 def pval_multi_Vertical_graph(df, arg):
@@ -1531,7 +1536,7 @@ def EDmanhattanPlot(df, arg):
     if isinstance(ed100,pd.DataFrame):    
         max_y = max(ed100['ED100_4'])
     t,_,rt = arg['titles'][14]
-    labs_list = list()
+    #labs_list = list()
     f_name = list()
     chrom = arg['--chromosomes']
     if len(arg['--chromosomes'])*am <= 18:
@@ -1549,7 +1554,7 @@ def EDmanhattanPlot(df, arg):
         ax[i].set_xticks([])
         ax[i].set_xlabel(xlabel=f'{chrom[i]}', fontsize=12)
         ax[i].set_ylabel(ylabel='Euclidean distance', fontsize=12, rotation=90, labelpad=15)
-        labs_list.append('({}) Chromosome {}.'.format(arg['labs'][chrom[i]],chrom[i]))
+        #labs_list.append('({}) Chromosome {}.'.format(arg['labs'][chrom[i]],chrom[i]))
         ax[i].tick_params(axis='y', which='major', labelsize=8)
         if isinstance(ed100,pd.DataFrame):
             flag = chrom[i] in ed100['#CHROM'].values
@@ -1583,7 +1588,7 @@ def EDmanhattanPlot(df, arg):
         f = create_caption(arg,rt)
         cap.append(', '.join(f_name))
         cap.append(t)
-        cap = cap + labs_list
+        #cap = cap + labs_list
         cap.append(arg['lines'][23].format(arg['color_names']['dots']))
         if isinstance(ed100,pd.DataFrame):
             cap.append(arg['lines'][24].format(arg['color_names']['mvg']))
@@ -1653,7 +1658,7 @@ def GmanhattanPlot(df, arg):
     am = 2.5
     min_y, max_y = min(df['G']), max(df['G'])
     t,_,rt = arg['titles'][16]
-    labs_list = list()
+    #labs_list = list()
     f_name = list()
     chrom = arg['--chromosomes']
     if len(arg['--chromosomes'])*am <= 18:
@@ -1671,7 +1676,7 @@ def GmanhattanPlot(df, arg):
         ax[i].set_xticks([])
         ax[i].set_xlabel(xlabel=f'{chrom[i]}', fontsize=12)
         ax[i].set_ylabel(ylabel='G-statistic', fontsize=12, rotation=90, labelpad=15)
-        labs_list.append('({}) Chromosome {}.'.format(arg['labs'][chrom[i]],chrom[i]))
+        #labs_list.append('({}) Chromosome {}.'.format(arg['labs'][chrom[i]],chrom[i]))
         ax[i].tick_params(axis='y', which='major', labelsize=8)
         if arg['--moving-avg'] != False:
             plot_avg(d, arg, ax[i], 'G')
@@ -1695,7 +1700,7 @@ def GmanhattanPlot(df, arg):
         f = create_caption(arg,rt)
         cap.append(', '.join(f_name))
         cap.append(t)
-        cap = cap + labs_list
+        #cap = cap + labs_list
         cap.append(arg['lines'][25].format(arg['color_names']['dots']))
         if arg['--moving-avg'] != False:
             cap.append(arg['lines'][27].format(arg['color_names']['mvg'], str(arg['--moving-avg'])))
@@ -1799,7 +1804,7 @@ def AF_multi_Vertical_graph(df, arg, g_type):
                 if arg['--distance-boost'] != False:
                     cap.append(arg['lines'][keyB].format(arg['color_names']['BOOST'], str(arg['--distance-boost'])))
         if arg['--ci95'] and g_type == 'DELTA':
-            cap.append(arg['lines'][22].format(arg['color_names']['ci'], str(arg['n_markers'])))
+            cap.append(arg['lines'][22].format(str(arg['n_markers'])))
         write_caption(f, cap,arg)
 
 def AF12_multi_Vertical_graph(df, arg):
@@ -2793,7 +2798,7 @@ def plot_ED100_4(arg, ax, max_x, max_y, ed100, ch):
     ax2.spines['top'].set_visible(False)
 
 def create_caption(arg, res_tit):
-    f=open(arg['captions_dir'] + res_tit + '.txt', 'a')
+    f= io.open(arg['captions_dir'] + res_tit + '.txt', 'a', encoding='utf8')
     return f
 
 def create_subfolder(arg, sf):

@@ -156,12 +156,12 @@ Use the ``qtl`` command to process the ``variants.vcf`` file produced in the pre
 ./maptools.py qtl --data L,H -i variants.vcf -o qtl.txt -I
 ```
 
-4.2 Generate plots with the ``qtlplot`` command:
+4.2 Generate plots with the ``plot`` command:
 
-Use the ``qtlplot`` command to automatically generate plots using the output of the previous command, which was saved to the ``qtl.txt`` file:
+Use the ``plot`` command to automatically generate plots using the output of the previous command, which in this case was saved to the ``qtl.txt`` file:
 
 ```
-./maptools.py qtlplot -i qtl.txt --captions -m -c Fvb1,Fvb2,Fvb3,Fvb4,Fvb5,Fvb6,Fvb7 -A 800 -a --bonferroni --ci95 -o graphics_qtl/
+./maptools.py plot -i qtl.txt --captions -m -c Fvb1,Fvb2,Fvb3,Fvb4,Fvb5,Fvb6,Fvb7 -A 800 -a --bonferroni --ci95 -O jpg -o graphics_qtl/
 ```
 
 In the above example, we used the following options:
@@ -173,6 +173,7 @@ In the above example, we used the following options:
 ``-a`` generates all possible plots
 ``--bonferroni`` adds Bonferroni threshold to p-value plots
 ``--ci95`` marks the 95% confidence interval in delta plots
+``-o`` specifies the output file format (default is pdf)
 ``-o`` specifies the output folder
 
 ### Analysis of MBS data
@@ -282,39 +283,37 @@ In the above example, we used the following options:
 ``--parental-filter`` excludes variants also present in the Pd sample
 ``-o`` specifies the output file
 
-4.2 Generate plots with the ``mbsplot`` command:
+4.2 Generate plots with the ``plot`` command:
 
-Use the ``mbsplot`` command to automatically generate plots using the output of the previous command, which was saved to the ``mbs.txt`` file:
+Use the ``plot`` command to automatically generate plots using the output of the previous command, which in this case was saved to the ``mbs.txt`` file:
 
 ```
-./maptools.py mbsplot -i mbs.txt --captions -m -c chr1,chr2,chr3,chr4,chr5,chr6,chr6,chr7,chr8 -A 10 -b 20 -a -o graphics_mbs/
+./maptools.py plot -i mbs.txt --captions -a -m -c chr1,chr2,chr3,chr4,chr5,chr6,chr6,chr7,chr8 -A 10 --bonferroni -O jpg -o graphics_mbs/
 ```
 
 In the above example, we used the following options:
 
 ``--captions`` generates figure legends
+``-a`` generates all possible plots
 ``-m`` produces multi-panel plots
 ``-c`` selects specific chromosomes to plot
 ``-A`` specifies how many markers to include in the moving average
-``-b`` adds the boost to the allele-frequency plots as a moving average of 20 markers
-``-a`` generates all possible plots
+``--bonferroni`` adds Bonferroni threshold to p-value plots
+``--ci95`` marks the 95% confidence interval in delta plots
+``-O`` specifies the output file format (default is pdf)
 ``-o`` specifies the output directory
 
 4.3 Annotate the variants with the ``annotate`` command:
 
-Use the ``annotate`` command to predict the effect of the variants detected. In the example, we have used the ``-R`` option to focus on an interval located on chromosome 8.
+Use the ``annotate`` command to predict the effect of the variants detected. It takes the options specified in the previous analysis (mbs or qtl). In the mbs example, we have used the ``-R`` option to focus on an interval located on chromosome 8.
 
 ```
-./maptools.py annotate --data R,Pd -m R --EMS --parental-filter -i variants.vcf -g gff_arabis.gff3 -f Arabis_alpina.MPIPZ.version_5.1.chr.all.fasta.gz -R chr8:14250000-16700000 -o annotate_mbs.txt
+./maptools.py annotate -i mbs.txt -g gff_arabis.gff3 -f Arabis_alpina.MPIPZ.version_5.1.chr.all.fasta.gz -R chr8:14250000-16700000 -o annotate_mbs.txt
 ```
 
 In the above example, we used the following options:
 
-``--data R,Pd``indicates the available samples
-``-m R`` indicates that the mutation is recessive
-``--EMS`` focuses on G/C-to-A/T transition mutations
-``--parental-filter`` excludes variants also present in the Pd sample
-``-i`` input VCF file produced by the variant caller
+``-i`` input file produced by the maptools mbs or qtl analysis
 ``-g`` GFF annotation file
 ``-f`` reference genome file
 ``-R`` chromosome and interval to analyze
