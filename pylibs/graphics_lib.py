@@ -1459,7 +1459,7 @@ def pval_multi_Vertical_graph(df, arg):
     if arg['--captions']:
         f = create_caption(arg,rt)
         cap.append(', '.join(f_name))
-        cap.append(t.format(', '.join(labs_list)))
+        cap.append(t.format(' '.join(labs_list)))
         cap = cap + labs_list
         cap.append(arg['lines'][12].format(arg['color_names']['dots'],''))
         if arg['--moving-avg'] != False:
