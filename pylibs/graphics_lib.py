@@ -2822,9 +2822,9 @@ def write_caption(f, text, arg):
     for sentence in text:
         f.write(sentence+' ')
     if '--window' in arg.keys():
-        f.write('The dots correspond to genomic regions defined by non-overlapping bins of {} consecutive markers'.format(str(arg['--window'])))
+        f.write('The dots correspond to genomic regions defined by non-overlapping bins of {} consecutive markers. '.format(str(arg['--window'])))
     if '--distance' in arg.keys():
-        f.write('The dots correspond to bins of all markers within a range of {} pb'.format(str(arg['--distance'])))
+        f.write('The dots correspond to bins of all markers within a range of {} pb. '.format(str(arg['--distance'])))
     f.write('\n'*2)
     f.close()
 
