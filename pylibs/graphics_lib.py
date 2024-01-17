@@ -204,16 +204,16 @@ def load_dataframe_plotting(arg):
     
 
     try:
-        float(arg['--line-width'])
+        float(arg['--line-thickness'])
     except ValueError:
-        print('Warning: The --line-width argument cannot be a literal.', file=sys.stderr)
-        arg['--line-width'] = 2
+        print('Warning: The --line-thickness argument cannot be a literal.', file=sys.stderr)
+        arg['--line-thickness'] = 2
 
-    if float(arg['--line-width']) < 0:
+    if float(arg['--line-thickness']) < 0:
         print('Warning: the line width cannot be less than zero.', file=sys.stderr)   
         arg['LINE_W'] = 1
     else:
-        arg['LINE_W'] = float(arg['--line-width'])
+        arg['LINE_W'] = float(arg['--line-thickness'])
 
     try:
         int(arg['--DPI'])
@@ -380,12 +380,6 @@ def load_dataframe_merge(arg):
         sep_ = '\t'
     df = pd.read_csv(inp_f, sep=sep_, dtype=fields, names=arg['header2'], comment='#')
     arg['--fields'] = list(df.columns)
-    if 'DOM' in arg['--fields'] and 'REC' in arg['--fields']:
-        arg['--fields'].remove('DOM')
-        arg['--fields'].remove('REC')
-    #elif 'REF' in arg['--fields'] and 'ALT' in arg['--fields']:
-    #    arg['--fields'].remove('REF')
-    #    arg['--fields'].remove('ALT')
     arg['header']=arg['--fields']
     if arg['--chromosomes'] == 'all':
         arg['--chromosomes'] = list(df['#CHROM'].unique())
@@ -395,6 +389,9 @@ def load_dataframe_merge(arg):
     return arg, df
     
 def check_merge(arg,__doc__):
+    arg['head'] = dict()
+    arg['head'][8] = list()
+    arg['head'][9] = list()
     global fields
     inp_f = arg['--input']
     if not inp_f:
@@ -534,8 +531,6 @@ def grouped_by(df, arg):
     chrom = arg['--chromosomes']
     spacer = arg['spacer']
     fsal = arg['fsal']
-    n_head = spacer.join(arg['--fields'])+'\n'
-    write_line(n_head, arg['fsal'])
     for ch in range(len(chrom)):
         d = df[df['#CHROM'] == chrom[ch]]
         if arg['--window'] != False:

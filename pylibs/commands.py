@@ -79,11 +79,11 @@ Filter Options:
     else:
         inp = sys.stdin
     choose_header(arg)
-    write_argv(arg, argv)
+    #write_argv2(arg, argv)
     #print(arg)
     for line in inp:
         if line.startswith('#'):
-          read_header(arg,line)
+          read_header2(arg,line,argv)
         else:
             fields, pools, genotypes = vcf_line_parser3(line, arg) #nueva linea HC
             if (fields, pools, genotypes) != (0, 0, 0):
@@ -111,7 +111,7 @@ Filter Options:
                       #print(fields[:2], calcs)
                       alleles = [ allele for allele in pools['R'].keys()]
                       bases = [alleles[normalized[0]], alleles[normalized[1]]] 
-                      first = new_line(fsal, arg, first, fields[:2] + bases, calcs)
+                      new_line(fsal, arg, fields[:2] + bases, calcs)
 
 
 def qtl(argv):
@@ -165,11 +165,11 @@ Output Options:
     else:
         inp = sys.stdin
     choose_header(arg)
-    write_argv(arg, argv)
+    #write_argv2(arg, argv)
     #print(arg)
     for line in inp:
         if line.startswith('#'):
-          read_header(arg,line)
+          read_header2(arg,line,argv)
         else:
             fields, pools, genotypes = vcf_line_parser3(line, arg) #nueva linea HC
             if (fields, pools, genotypes) != (0, 0, 0):
@@ -197,7 +197,7 @@ Output Options:
                       #print(fields[:2], calcs)
                       alleles = [ allele for allele in pools['R'].keys()]
                       bases = [alleles[normalized[0]], alleles[normalized[1]]] 
-                      first = new_line(fsal, arg, first, fields[:2] + bases, calcs)
+                      new_line(fsal, arg, fields[:2] + bases, calcs)
 
 def merge(argv):
   merge_doc="""
@@ -226,12 +226,9 @@ Output Options:
     fsal = open(arg['--output'], 'w')
   arg['fsal'] = fsal
   arg['version'] = v_merge
-  header_lines = read_header_merge(arg)
-  write_argv(arg, argv)
+  #write_argv2(arg, argv)
+  read_header_merge2(arg,argv)
   arg, df = load_dataframe_merge(arg)
-  #print(arg)
-  for line in header_lines:
-    write_line(line, fsal)
   grouped_by(df, arg)
   if fsal == True:
     fsal.close()
@@ -257,13 +254,13 @@ Plot options:
                                 values of INT adjacent markers
   -B, --distance-boost INT      add boost to allele frequency plots, calculated for all markers located
                                 within an INT bp interval
-  -t, --alpha FLOAT             marker transparency in plots (0 - 1) [default: 0.4]
   --bonferroni                  add Bonferroni threshold to p-value plots. Requires -p or -a
   --ci95                        add 95% confidence interval to delta plots. Requires -A or -W
   --palette STR                 select a colour palette [default: standard]
                                 Available options: \"standard\", \"color_blind\" or \"custom\"
+  -t, --alpha FLOAT             Marker transparency in plots (0 - 1) [default: 0.4]
   -D, --dot-size FLOAT          Size of the points plotted [default: 1.0]
-  -L, --line-width FLOAT        Width of trend lines [default: 2.0]
+  -L, --line-thickness FLOAT    Thickness of trend lines [default: 2.0]
   --DPI INT                     Dots per inch [default: 600]
 
 Plot types:
@@ -285,7 +282,7 @@ Plot types:
   
 Output options:
   -o, --outdir DIR              output plot files to DIR [default: graphics]
-  -O, --output-type TYPE        available types: pdf, svg, jpg [default: pdf]
+  -O, --output-type TYPE        available types: pdf, svg, jpg, png [default: pdf]
   """
   arg = docopt(plot_doc, argv=None, help=True,version=v_plot)
   #print(arg)
@@ -401,20 +398,18 @@ Output Options:
   else:
     inp = sys.stdin
     arg['spacerin'] = '\t'
-  write_argv(arg, argv)
+  #write_argv2(arg, argv)
   #print(arg)
 
   for line in inp:
     if line.startswith('#'):
       if line.startswith('##maptools_mbsCommand'):
         arg['mbs'] = True
-        write_line(line,fsal)
         df = getAnalysisArgs(arg,line)
       if line.startswith('##maptools_qtlCommand'):
         arg['qtl'] = True
-        write_line(line,fsal)
         df = getAnalysisArgs(arg,line) 
-      read_header(arg,line)
+      read_header2(arg,line,argv)
     else:
       line = filter_region(line,arg)
       if line != None:
@@ -512,12 +507,10 @@ Filter Options:
     inp = arg['inp']
   else:
     inp = sys.stdin
-  write_argv(arg, argv)
-  #print(arg)
 
   for line in inp:
     if line.startswith('#'):
-      read_header(arg,line)
+      read_header2(arg,line)
     else:
       line = filter_region(line,arg)
       if line != None:

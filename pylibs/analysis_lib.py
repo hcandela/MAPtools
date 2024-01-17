@@ -24,7 +24,9 @@ def check_args(__doc__,arg:dict):
 			·Split data
 			·Check output
 	'''
-
+	arg['head'] = dict()
+	arg['head'][8] = list()
+	arg['head'][9] = list()
 	if 'mbs' in arg.keys() or 'qtl' in arg.keys():
 		if arg['--data'] == None:
 			print(__doc__, file=sys.stderr)
@@ -350,18 +352,13 @@ def choose_header(arg):
 	arg['header'] = header
 
 
-def new_line(fsal, arg, first, fields, calcs):
+def new_line(fsal, arg, fields, calcs):
 	res = fields + calcs
 	spacer = arg['spacer']
 	header = arg['header']
-	if first:	
-		first = False
-		n_head = spacer.join(header)+'\n'
-		write_line(n_head, fsal)
 
 	n_line = spacer.join(str(field) for field in res) + '\n'
 	write_line(n_line, fsal)
-	return first
 
 
 def write_line(n_line, fsal):
@@ -1725,11 +1722,11 @@ def getAnalysisArgs(arg:dict,line:str):
 		arg['header'] = ['#CHROM','POS','HIGH','LOW', 'DPhigh_1','DPlow_1','DPhigh_2','DPlow_2','TYPE','ID','PARENT','STRAND',\
 				'CODON_change','AA_change','INFO']
 		arg['header2'] = ['#CHROM','POS','HIGH','LOW','DPhigh_1','DPlow_1','DPhigh_2','DPlow_2']
-	
+	arg['head'][9] = list()
 	for field in arg['header']:
 		if field in variable_descriptions.keys():
-			write_line(variable_descriptions[field], arg['fsal'])
-	write_annotate_header(arg)
+			arg['head'][9].append(variable_descriptions[field])
+	#write_annotate_header(arg)
 
 	if 'qtl' in arg.keys():
 		translate = {'HIGH':'DOM','LOW':'REC','DPhigh_1':'DPdom_1','DPlow_1':'DPrec_1','DPhigh_2':'DPdom_2','DPlow_2':'DPrec_2'}
@@ -1743,27 +1740,23 @@ def getAnalysisArgs(arg:dict,line:str):
 #CHROM	POS		REF		ALT		DPr		DPalt		cRef	cAlt	type	      strand		ID		LEFT	RIGHT	Ldist   Rdist 
 # 1    1456654   C		T		1         18	ATG(Met)   CTG(Ser) Nonsynonymous   +          ATG10809 ATG..    ATG..  1500    156
 
-def read_header(arg:dict,line:str):
+def read_header2(arg:dict,line:str, argv:str):
 	fsal = arg['fsal']
 	arg['chromosomes'] = list()
-	#if line.startswith('##fileformat=VCF'):
-	#	arg['vcf'] = True
-	if line.startswith('##bcftoolsVersion='):
-		write_line(line,fsal)
-	if line.startswith('##bcftoolsCommand='):
-		write_line(line,fsal)
-	if line.startswith('##GATKCommandLine='):
-		write_line(line,fsal)
-	if line.startswith('##source=HaplotypeCaller'):
-		write_line(line,fsal)
+	if line.startswith('##maptools_mbsVersion') or line.startswith('##maptools_qtlVersion'):
+		arg['head'][1]  = line
+	if line.startswith('##maptools_mbsCommand') or line.startswith('##maptools_qtlCommand'):
+		arg['head'][2]  = line.split(';')[0]+'\n'
+	if line.startswith('##bcftoolsVersion=') or line.startswith('##GATKCommandLine='):
+		arg['head'][3] = line
+	if line.startswith('##bcftoolsCommand=') or line.startswith('##source=HaplotypeCaller'):
+		arg['head'][4] = line
 	if line.startswith('##bcftools_callCommand='):
-		if not 'annotate' in arg.keys():
-			write_line(line.split(';')[0]+'\n',fsal)
-		else:
-			write_line(line.split(';')[0],fsal)
+		nl = line.split(';')[0] if 'annotate' in arg.keys() else line.split(';')[0] +'\n'
+		arg['head'][5] = nl
 	if line.startswith('##reference='):
 		if 'mbs' in arg.keys() or 'qtl' in arg.keys():
-			write_line(line,fsal)       
+			arg['head'][6] = line       
 	if line.startswith('##contig=<ID='):
 		c = line.split('##contig=<ID=')[1].split(',')[0]
 		s = line[line.find('<')+1:line.rfind('>')].split(',')
@@ -1771,27 +1764,36 @@ def read_header(arg:dict,line:str):
 		length = s[1].split('=')[1]
 		arg['--contigs'][id] = int(length)
 		arg['chromosomes'].append(c)
-		write_line(line,fsal)
-	if line.startswith('#CHROM') and 'annotate' not in arg.keys():
-		bam_list = line.rstrip().split('\t')[9:]
-		if len(arg['--data']) > len(bam_list):
-			print('Error: The \"--data\" list does not match with the number of pools used.', file=sys.stderr)
-			sys.exit()
-		elif len(arg['--data']) <= len(bam_list):
-			if 'qtl' in arg.keys():
-				translate = {'D':'H','R':'L','Pd':'P','X':'X'}
-				d = [translate[i] for i in arg['--data']]
-				arg['pools'] = {d[i]:bam_list[i] for i in range(len(d))}
-				pools = '##bamFiles:genotypes='+','.join(':'.join((key,val)) for (key, val) in arg['pools'].items()) + '\n'
-				write_line(pools, fsal)
-			else:
-				arg['pools'] = {arg['--data'][i]:bam_list[i] for i in range(len(arg['--data']))}
-				pools = '##bamFiles:genotypes='+','.join(':'.join((key,val)) for (key, val) in arg['pools'].items()) + '\n'
-				write_line(pools, fsal)
+		arg['head'][8].append(line)
 	if line.startswith('##bamFiles:genotypes=') and 'annotate' in arg.keys():
-		write_line(line,fsal)
-	
-	if line.startswith('#CHROM') and 'annotate' in arg.keys():
+		arg['head'][12] = line
+	if line.startswith('#CHROM'):
+		version_maptools = '##maptoolsVersion='+v_maptools+'\n'
+		arg['head'][0] = version_maptools
+		version = '##maptools_{}Version='.format(argv[0])+arg['version']+'\n'
+		arg['head'][10] = version
+		command = '##maptools_{}Command='.format(argv[0])+' '.join(argv) +';'+'Date='+datetime.now().ctime()+'\n'
+		arg['head'][11] = command
+		if 'annotate' not in arg.keys():
+			bam_list = line.rstrip().split('\t')[9:]
+			if len(arg['--data']) > len(bam_list):
+				print('Error: The \"--data\" list does not match with the number of pools used.', file=sys.stderr)
+				sys.exit()
+			elif len(arg['--data']) <= len(bam_list):
+				if 'qtl' in arg.keys():
+					translate = {'D':'H','R':'L','Pd':'P','X':'X'}
+					d = [translate[i] for i in arg['--data']]
+					arg['pools'] = {d[i]:bam_list[i] for i in range(len(d))}
+					pools = '##bamFiles:genotypes='+','.join(':'.join((key,val)) for (key, val) in arg['pools'].items()) + '\n'
+					arg['head'][12] = pools
+				else:
+					arg['pools'] = {arg['--data'][i]:bam_list[i] for i in range(len(arg['--data']))}
+					pools = '##bamFiles:genotypes='+','.join(':'.join((key,val)) for (key, val) in arg['pools'].items()) + '\n'
+					arg['head'][12] = pools
+			for field in arg['header']:
+				if field in variable_descriptions.keys():
+					arg['head'][9].append(variable_descriptions[field])
+		else:
 			chrom, pos_i, pos_f = arg['--region'][0], arg['--region'][1], arg['--region'][2]
 			if chrom not in arg['--contigs'].keys():
 				print('Error: Enter a valid chromosome name (-R chromName:startPos-endPos)', file=sys.stderr)
@@ -1799,103 +1801,99 @@ def read_header(arg:dict,line:str):
 			maxim = min(pos_f, arg['--contigs'][chrom])
 			minim = max(1, pos_i)
 			arg['--region'] = [chrom, minim, maxim]
+			ref_idx = argv.index('--fasta-reference') if '--fasta-reference' in argv else argv.index('-f')
+			ref = '##reference=file://'+argv[ref_idx+1].split('/')[-1]+'\n'
+			arg['head'][6] = ref
+			gff_idx = argv.index('--gff') if '--gff' in argv else argv.index('-g')
+			gff = '##annotation=file://'+argv[gff_idx+1].split('/')[-1]+'\n'
+			arg['head'][7] = gff
+		n_head = arg['spacer'].join(arg['header'])+'\n'
+		arg['head'][13] = n_head
+		head = {k : arg['head'][k] for k in sorted(arg['head'])}
+		#print(head)
+		for key,val in head.items():
+			if key == 8:
+				for contig in val:
+					write_line(contig,fsal)
+			elif key == 9:
+				for field in val:
+					write_line(field,fsal)
+			else:
+				write_line(val,fsal)
 
 
-def write_argv(arg:dict,argv:str):
-	fsal = arg['fsal']
-	version_maptools = '##maptoolsVersion='+v_maptools+'\n'
-	version = '##maptools_{}Version='.format(argv[0])+arg['version']+'\n'
-	line = '##maptools_{}Command='.format(argv[0])+' '.join(argv) +';'+'Date='+datetime.now().ctime()+'\n'
-	write_line(version_maptools,fsal)
-	write_line(version,fsal)
-	write_line(line, fsal)
-	if argv[0] == 'annotate':
-		ref_idx = argv.index('--fasta-reference') if '--fasta-reference' in argv else argv.index('-f')
-		gff_idx = argv.index('--gff') if '--gff' in argv else argv.index('-g')
-		write_line('##reference=file://'+argv[ref_idx+1].split('/')[-1]+'\n',fsal)
-		write_line('##gff3=file://'+argv[gff_idx+1].split('/')[-1]+'\n',fsal)
-	if argv[0] != 'annotate':
-		for field in arg['header']:
-			if 'merge' in arg.keys():
-				if field == 'DOM' or field == 'REC' or field == 'ALT' or field == 'REF':
-					continue
-			if field in variable_descriptions.keys():
-				write_line(variable_descriptions[field], fsal)
-	if argv[0] == 'merge':
-		line ='##maptools_mergeCommandINFO=\"All columns now represent the grouped values for the provided window size.\"\n'
-		write_line(line, fsal)
-
-def read_header_merge(arg:dict):
+def read_header_merge2(arg:dict,argv:str):
 	lines = list()
 	arg['--contigs'] = dict()
+	fsal = arg['fsal'] 
 	with open(arg['--input'], 'r') as handle:
 		for line in handle:
-			if line.startswith('##maptools_'):
-				lines.append(line)
-			if line.startswith('##maptools_qtlCommand='):
-				qtl_argv = line.split('=')[1].split(' ')
+			if line.startswith('##maptools_mbsVersion') or line.startswith('##maptools_qtlVersion'):
+				arg['head'][1]  = line
+				arg['type'] = 'mbs' if 'mbs' in line else 'qtl'
+			if line.startswith('##maptools_qtlCommand=') or line.startswith('##maptools_mbsCommand'):
+				any_argv = line.split('=')[1].split(' ')
 				result = list()
-				for i in range(len(qtl_argv)):
-					ar = qtl_argv[i]
+				for i in range(len(any_argv)):
+					ar = any_argv[i]
 					if ar == '-r' or ar == '--ref-genotype':
-						ar_index = qtl_argv.index(ar)
-						ref = qtl_argv[ar_index+1]
+						ar_index = any_argv.index(ar)
+						ref = any_argv[ar_index+1]
 						result.append(True if ref != 'miss' else False)
 					elif ar == '-d' or ar == '--data':
-						ar_index = qtl_argv.index(ar)
-						data = qtl_argv[ar_index+1].split(',')
-						result.append(True if 'P' in data else False)
-				#arg['--ref-genotype'] = True if True in result else False
+						ar_index = any_argv.index(ar)
+						data = any_argv[ar_index+1].split(',')
+						result.append(True if 'P' in data or 'Pr' in data or 'Pd' in data else False)
 				if not True in result:
 					print('Error: A reference or a parental resequencing is needed in order to execute the \"merge\" command.', file=sys.stderr)
 					sys.exit()
-			if line.startswith('##maptools_mbsCommand='):
-				mbs_argv = line.split('=')[1].split(' ')
-				result = list()
-				for i in range(len(mbs_argv)):
-					ar = mbs_argv[i]
-					if ar == '-r' or ar == '--ref-genotype':
-						ar_index = mbs_argv.index(ar)
-						ref = mbs_argv[ar_index+1]
-						result.append(True if ref != 'miss' else False)
-					elif ar == '-d' or ar == '--data':
-						ar_index = mbs_argv.index(ar)
-						data = mbs_argv[ar_index+1].split(',')
-						result.append(True if 'Pd' in data or 'Pr' in data else False)
-				#arg['--ref-genotype'] = True if True in result else False
-				if not True in result:
-					print('Error: A reference or a parental resequencing is needed in order to execute the \"merge\" command.', file=sys.stderr)
-					sys.exit()
-			if line.startswith('##bcftoolsVersion='):
-				lines.append(line)
-			if line.startswith('##bcftoolsCommand='):
-				lines.append(line)
+				arg['head'][2] = line.split(';')[0]+'\n'
+			if line.startswith('##bcftoolsVersion=') or line.startswith('##GATKCommandLine='):
+				arg['head'][3] = line
+			if line.startswith('##bcftoolsCommand=') or line.startswith('##source=HaplotypeCaller'):
+				arg['head'][4] = line
 			if line.startswith('##bcftools_callCommand='):
-				line = line.split(';')[0]
-				lines.append(line)
+				arg['head'][5] = line.split(';')[0]
 			if line.startswith('##reference='):
-				if 'mbs' in arg.keys() or 'qtl' in arg.keys() or 'merge' in arg.keys():
-					lines.append(line)
+				arg['head'][6] = line 
 			if line.startswith('##contig=<ID='):
 				s = line[line.find('<')+1:line.rfind('>')].split(',')
 				id = s[0].split('=')[1]
 				length = s[1].split('=')[1]
 				arg['--contigs'][id] = int(length)
-				lines.append(line)
+				arg['head'][8].append(line)
 			if line.startswith('##bamFiles'):
-				lines.append(line)
+				arg['head'][12] = line
 			if line.startswith('#CHROM'):
+				version_maptools = '##maptoolsVersion='+v_maptools+'\n'
+				arg['head'][0] = version_maptools
+				version = '##maptools_{}Version='.format(argv[0])+arg['version']+'\n'
+				arg['head'][10] = version
+				command = '##maptools_{}Command='.format(argv[0])+' '.join(argv) +';'+'Date='+datetime.now().ctime()+'\n'
+				arg['head'][11] = command
 				header = line.split('\t')
 				header = [field.rstrip() for field in header]
+				h = [field.rstrip() for field in header if field not in {'DOM','REC','HIGH','LOW'}]
 				arg['header'] = header
 				arg['header2'] = header
-				if 'REF' in header and 'ALT' in header:
-					translate = {'REF':'DOM','ALT':'REC','DPref_1':'DPdom_1','DPalt_1':'DPrec_1','DPref_2':'DPdom_2','DPalt_2':'DPrec_2'}
+				n_head = arg['spacer'].join(h)+'\n'
+				arg['head'][13] = n_head
+				for field in h:
+						arg['head'][9].append(variable_descriptions[field])
+				if arg['type'] == 'qtl':
+					translate = {'DPhigh_1':'DPdom_1','DPlow_1':'DPrec_1','DPhigh_2':'DPdom_2','DPlow_2':'DPrec_2'}
 					header2 = [i if i not in translate.keys() else translate[i] for i in arg['header']]
 					arg['header2'] = header2
-				break
-	return lines
-
+				head = {k : arg['head'][k] for k in sorted(arg['head'])}
+				for key,val in head.items():
+					if key == 8:
+						for contig in val:
+							write_line(contig,fsal)
+					elif key == 9:
+						for field in val:
+							write_line(field,fsal)
+					else:
+						write_line(val,fsal)
 def check_chroms(arg):
 	chromosomes = arg['--chromosomes']
 	for i in range(len(chromosomes)):
