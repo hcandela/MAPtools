@@ -9,8 +9,7 @@ MAPtools v1.00 includes the following commands:
 * ``mbs``  performs the analysis of MBS data
 * ``qtl``  performs the analysis of QTL-seq data
 * ``merge`` re-analyzes the output of `mbs` or `qtl` by binning the allele counts of multiple markers, focusing on haplotypes rather than individual markers
-* ``mbsplot``  creates plots using the output of ``mbs`` and `merge`
-* ``qtlplot``  creates plots using the output of ``qtl`` and `merge`
+* ``plot``  creates plots using the output of ``mbs``, ``qtl`` or `merge`
 * ``annotate`` evaluates the effect of SNPs and indels within a user-specified interval
 * ``citation`` gives citation information for MAPtools
 
