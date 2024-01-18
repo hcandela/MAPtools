@@ -148,3 +148,17 @@ variable_descriptions={
           '##INFO=<ID=3_splice_site_deletion, Number=0, Type=Flag, Description=\"Deletion of the 3 prime intron splice site (intron_boundary:prevExonName).\">\n'\
    
 }
+#ManhattanPlotsOptions
+man_xlabS = 15
+man_ylabS = 18
+man_ylabD = 20
+man_yticksS = 15
+
+#MonoPlotsOptions
+mon_xlabS = 18
+mon_xlabD = 15
+mon_xticksS = 15
+mon_scioffset = 12
+mon_ylabD = 15
+mon_ylabS = 18
+mon_yticksS = 15

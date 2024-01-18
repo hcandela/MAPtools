@@ -171,7 +171,11 @@ def load_dataframe_plotting(arg):
     else:
         chroms_ = arg['--chromosomes'].split(',')
         arg['--chromosomes'] = chroms_
-    
+        df1 = df.copy()
+        df1['#CHROM'] = pd.Categorical(df1['#CHROM'], categories=chroms_, ordered=True)
+        df = df1.sort_values(by=['#CHROM','POS'])
+        df = df.reset_index()
+
     if len(arg['--chromosomes']) > 1 and arg['--multi-chrom']:
         arg['--multi-chrom'] = True
     else:
@@ -312,8 +316,11 @@ def checkPlottingOptions(arg,df):
         if arg['--allele-freq-2'] == True and 'SNPidx2' not in arg['--fields']:
             print('Warning: is not possible make Allele Frequency graphics for this pool. Please use -R, -M or -a option', file=sys.stderr)
             arg['--allele-freq-2'] = False
-        if arg['--max-allele-freq2'] == True and 'MAX_SNPidx2' not in arg['--fields'] or arg['type'] != 'mbs':
-            print('Warning: is not possible make phased MAX Allele Frequency graphics with your input data. Please use -D or -R or -a option', file=sys.stderr)
+        if arg['--max-allele-freq2'] == True and arg['type'] == 'mbs' and 'MAX_SNPidx2' not in arg['--fields']:
+            print('Warning: is not possible make phased MAX Allele Frequency graphics with your input data.', file=sys.stderr)
+            arg['--max-allele-freq2'] = False
+        if arg['--max-allele-freq2'] == True and arg['type'] == 'qtl':
+            print('Warning: is not possible make MAX Allele Frequency graphics with your QTL-Seq input data.', file=sys.stderr)
             arg['--max-allele-freq2'] = False
         if arg['--delta'] == True and 'DELTA' not in arg['--fields']:
             print('Warning: is not possible make phased SNP-idx graphics with your input data. Please use -a.', file=sys.stderr)
@@ -624,7 +631,8 @@ def grouped_by(df, arg):
 
 
 def get_ED100_4(df, arg, rang):
-    chrom = [ch for ch in arg['contigs'].keys()]
+    #chrom = [ch for ch in arg['contigs'].keys()]
+    chrom = arg['--chromosomes']
     #chrom = df['#CHROM'].unique()
     ED100 = np.array([])
     for ch in range(len(chrom)):
@@ -662,19 +670,22 @@ def EDmonoPlot(df, arg):
         x = d[['POS']]
         y = d[['ED']]
         fig, ax = plt.subplots(figsize=(10, 4.2))
+        plt.subplots_adjust(bottom=0.2)
         ax.scatter(x, y, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'], clip_on=False)
         ax.set(xlim=(0, max_x), ylim=(0, 1.5))
         ax.set_xticks(ticks=np.arange(0, max_x, 5e6))
-        ax.set_xticklabels(labels=np.arange(0, max_x, 5e6),fontsize=8)
+        ax.set_xticklabels(labels=np.arange(0, max_x, 5e6),fontsize=mon_xticksS)
         ax.xaxis.set_major_formatter(ScalarFormatter())
         ax.ticklabel_format(axis='x', style='scientific',scilimits=(6, 6), useMathText=True)
-        ax.set_xlabel(xlabel='Chromosomal position (pb)', fontsize=15)
-        ax.set_ylabel(ylabel='Euclidean distance', fontsize=12, rotation=90, labelpad=15)
+        ax.xaxis.get_offset_text().set_fontsize(mon_scioffset)
+        ax.set_xlabel(xlabel='Chromosomal position (pb)', fontsize=mon_xlabS)
+        ax.set_ylabel(ylabel='Euclidean distance', fontsize=mon_ylabS, rotation=90, labelpad=mon_ylabD)
         ax.set_yticks(ticks=[0, 0.5, 1, 1.5])
-        ax.set_yticklabels(labels=[0, 0.5, 1, 1.5], fontsize=8)
+        ax.set_yticklabels(labels=[0, 0.5, 1, 1.5], fontsize=mon_yticksS)
         ax.spines['top'].set_visible(False)
         if isinstance(ed100,pd.DataFrame):
             plot_ED100_4(arg, ax, max_x, max_y, ed100, chrom[ch])
+            
 
         rtch = rt.format(chrom[ch])
         filename = rtch + typ
@@ -822,10 +833,10 @@ def AF_manhattan_plot(df, arg, g_type):
         ax[i].scatter(x, y, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'], clip_on=False)
         ax[i].set(xlim=(0, max_x), ylim=lim_y)
         ax[i].set_xticks([])
-        ax[i].set_xlabel(xlabel=f'{chrom[i]}', fontsize=12)
+        ax[i].set_xlabel(xlabel=f'{chrom[i]}', fontsize=man_xlabS)
         #labs_list.append('Chromosome {}'.format(chrom[i]))
-        ax[i].set_ylabel(ylabel=ylab,fontsize=12,labelpad=15)
-        ax[i].tick_params(axis='y', which='major', labelsize=8)
+        ax[i].set_ylabel(ylabel=ylab,fontsize=man_ylabS,labelpad=man_ylabD)
+        ax[i].tick_params(axis='y', which='major', labelsize=man_yticksS)
         if arg['--moving-avg'] != False:
             plot_avg(d, arg, ax[i], g_type)
         if arg['--distance-avg'] != False:
@@ -856,7 +867,7 @@ def AF_manhattan_plot(df, arg, g_type):
             ax[i].axhline(y=0, color='black', linestyle='dashed', linewidth=0.75)
 
         ax[0].set_yticks(ticks=ticks_y)
-        ax[0].set_yticklabels(labels=ticks_y, fontsize=8)
+        ax[0].set_yticklabels(labels=ticks_y, fontsize=man_yticksS)
         ax[i].spines['top'].set_visible(False)
         ax[i].spines['right'].set_visible(False)
         if len(chrom) == 1:
@@ -915,10 +926,10 @@ def AFCombinedManhattanPlot(df, arg):
         #ax[i].scatter(x, y, s=arg['DOT_SIZE'], c=arg['--palette']['dots'],  clip_on=False clip_on=False)
         ax[i].set(xlim=(0, max_x), ylim=lim_y)
         ax[i].set_xticks([])
-        ax[i].set_xlabel(xlabel=f'{chrom[i]}', fontsize=12)
+        ax[i].set_xlabel(xlabel=f'{chrom[i]}', fontsize=man_xlabS)
         #labs_list.append('Chromosome {}'.format(chrom[i]))
-        ax[i].set_ylabel(ylabel=ylab,fontsize=12,labelpad=15)
-        ax[i].tick_params(axis='y', which='major', labelsize=8)
+        ax[i].set_ylabel(ylabel=ylab,fontsize=man_ylabS,labelpad=man_ylabD)
+        ax[i].tick_params(axis='y', which='major', labelsize=man_yticksS)
         #SNPidx1
         if arg['--moving-avg'] != False:
             plot_avg(d, arg, ax[i], 'SNPidx1')
@@ -940,7 +951,7 @@ def AFCombinedManhattanPlot(df, arg):
         ax[i].axhline(y=0.5, color='black', linestyle='dashed', linewidth=0.75)
 
         ax[0].set_yticks(ticks=ticks_y)
-        ax[0].set_yticklabels(labels=ticks_y, fontsize=8)
+        ax[0].set_yticklabels(labels=ticks_y, fontsize=man_yticksS)
         ax[i].spines['top'].set_visible(False)
         ax[i].spines['right'].set_visible(False)
         if len(chrom) == 1:
@@ -989,10 +1000,10 @@ def pval_manhattan_plot(df, arg):
         ax[i].scatter(x, y, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'], clip_on=False)
         ax[i].set(xlim=(0, max_x), ylim=(0, (max(max_y, threshold)+1)//1))
         ax[i].set_xticks([])
-        ax[i].set_xlabel(xlabel=f'{chrom[i]}', fontsize=12)
+        ax[i].set_xlabel(xlabel=f'{chrom[i]}', fontsize=man_xlabS)
         #labs_list.append('Chromosome {}'.format(chrom[i]))
-        ax[i].set_ylabel(ylabel='-log'+r'$_{10}$'+'(p-value)',fontsize=12,labelpad=15)
-        ax[i].tick_params(axis='y', which='major', labelsize=8)
+        ax[i].set_ylabel(ylabel='-log'+r'$_{10}$'+'(p-value)',fontsize=man_ylabS,labelpad=man_ylabD)
+        ax[i].tick_params(axis='y', which='major', labelsize=man_yticksS)
         if arg['--moving-avg'] != False:
             d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
             c_=arg['--palette']['log10PVALUE']
@@ -1547,24 +1558,26 @@ def EDmanhattanPlot(df, arg):
         ax[i].scatter(x, y, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'], clip_on=False)
         ax[i].set(xlim=(0, max_x), ylim=(0, 1.5))
         ax[i].set_xticks([])
-        ax[i].set_xlabel(xlabel=f'{chrom[i]}', fontsize=12)
-        ax[i].set_ylabel(ylabel='Euclidean distance', fontsize=12, rotation=90, labelpad=15)
+        ax[i].set_xlabel(xlabel=f'{chrom[i]}', fontsize=man_xlabS)
+        ax[i].set_ylabel(ylabel='Euclidean distance', fontsize=man_ylabS, rotation=90, labelpad=man_ylabD)
         #labs_list.append('({}) Chromosome {}.'.format(arg['labs'][chrom[i]],chrom[i]))
-        ax[i].tick_params(axis='y', which='major', labelsize=8)
+        ax[i].tick_params(axis='y', which='major', labelsize=man_yticksS)
         if isinstance(ed100,pd.DataFrame):
             flag = chrom[i] in ed100['#CHROM'].values
             ax2 = ax[i].twinx()
             c_ = arg['--palette']['mvg']
-            ax2.set(xlim=(0, max_x), ylim=(0, max_y))
-            ax2.tick_params(axis='y', which='major', labelsize=8)
+            ax2.set(xlim=(0, max_x), ylim=(0, 1.5))
+            ax2.tick_params(axis='y', which='major', labelsize=man_yticksS)
             ax2.spines['top'].set_visible(False)
             ax2.axes.get_yaxis().set_visible(False)
             if flag:
                 ed100ch = ed100[ed100['#CHROM'] == chrom[i]]
                 ax2.plot(ed100ch['POS'], ed100ch['ED100_4'], c=c_, lw=arg['LINE_W'])
             if chrom[i] == chrom[-1]:
+                ax2.set_yticks(ticks=[0, 0.5, 1, 1.5])
+                ax2.set_yticklabels(labels=[0, 0.5, 1, 1.5], fontsize=man_yticksS)
                 ax2.axes.get_yaxis().set_visible(True)
-                ax2.set_ylabel(ylabel='ED $\mathregular{100^4}$  $\mathregular{x10^8}$ ', fontsize=10, rotation=90, labelpad=15)
+                ax2.set_ylabel(ylabel='ED $\mathregular{100^4}$  $\mathregular{x10^8}$ ', fontsize=man_ylabS, rotation=90, labelpad=man_ylabD)
 
         ax[i].spines['top'].set_visible(False)
         ax[i].spines['right'].set_visible(False)
@@ -1572,6 +1585,9 @@ def EDmanhattanPlot(df, arg):
             ax[1].remove()
         if i > 0:
             ax[i].axes.get_yaxis().set_visible(False)
+        ax[0].set_yticks(ticks=[0, 0.5, 1, 1.5])
+        ax[0].set_yticklabels(labels=[0, 0.5, 1, 1.5], fontsize=man_yticksS)
+
     fig.subplots_adjust(wspace=0)
     filename= rt + typ
     filename=check_save(arg, filename)
@@ -1669,10 +1685,10 @@ def GmanhattanPlot(df, arg):
         ax[i].scatter(x, y, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'], clip_on=False)
         ax[i].set(xlim=(0, max_x), ylim=(min_y, max_y))
         ax[i].set_xticks([])
-        ax[i].set_xlabel(xlabel=f'{chrom[i]}', fontsize=12)
-        ax[i].set_ylabel(ylabel='G-statistic', fontsize=12, rotation=90, labelpad=15)
+        ax[i].set_xlabel(xlabel=f'{chrom[i]}', fontsize=man_xlabS)
+        ax[i].set_ylabel(ylabel='G-statistic', fontsize=man_ylabS, rotation=90, labelpad=man_ylabD)
         #labs_list.append('({}) Chromosome {}.'.format(arg['labs'][chrom[i]],chrom[i]))
-        ax[i].tick_params(axis='y', which='major', labelsize=8)
+        ax[i].tick_params(axis='y', which='major', labelsize=man_yticksS)
         if arg['--moving-avg'] != False:
             plot_avg(d, arg, ax[i], 'G')
         if arg['--distance-avg'] != False:
@@ -2684,17 +2700,19 @@ def plot_boostManhattan(d, arg, ax, max_x, chrom, i):
     d['prodboostx']=d['POS'] * d['DP']
     d['medboostx']=(d['prodboostx'].rolling(
         arg['--boost']).sum() / d['DP'].rolling(arg['--boost']).sum())
+    c_=arg['--palette']['BOOST']
     ax2=ax.twinx()
     ax2.spines['top'].set_visible(False)
-    c_=arg['--palette']['BOOST']
-    ax2.plot(d['medboostx'], d['medboost'], c=c_, lw=1.25, linestyle='dashed')
     ax2.set(xlim=(0, max_x), ylim=(0, 1))
+    ax2.set_yticks([])
+    ax2.plot(d['medboostx'], d['medboost'], c=c_, lw=1.25, linestyle='dashed')
+    
 
     if chrom[i] == chrom[-1]:
         ax2.axes.get_yaxis().set_visible(True)
         ax2.set_yticks(ticks=[0, 0.25, 0.5, 0.75, 1])
-        ax2.set_yticklabels(labels=[0, 0.25, 0.5, 0.75, 1], fontsize=8)
-        ax2.set_ylabel(ylabel='Boost', fontsize=12, rotation=90, labelpad=15)
+        ax2.set_yticklabels(labels=[0, 0.25, 0.5, 0.75, 1], fontsize=man_yticksS)
+        ax2.set_ylabel(ylabel='Boost', fontsize=man_ylabS, rotation=90, labelpad=man_ylabD)
 
 def plot_boost(d, arg, ax, max_x):
     # Mediamovil Boost
@@ -2727,7 +2745,7 @@ def plotDistanceBoostManhattan(d, arg, ax, max_x, chrom, i):
     d['BOOST']=d['BOOST'] * arg['lim']
     d['prodx'] = d['DP']*d['POS']
     d['prody'] = d['DP']*d['BOOST']
-    interval_ranges = [x for x in range(0, max_x, arg['--distance-avg'])]
+    interval_ranges = [x for x in range(0, max_x, arg['--distance-boost'])]
     if interval_ranges[-1] < max_x:
         interval_ranges.append(max_x)
     interval_labels = [f'{start}-{end-1}' for start, end in zip(interval_ranges, interval_ranges[1:])]
@@ -2739,15 +2757,17 @@ def plotDistanceBoostManhattan(d, arg, ax, max_x, chrom, i):
 
     c_=arg['--palette']['BOOST']
     ax2=ax.twinx()
-    ax2.plot(res['POSx'], res['VALy'], c=c_, lw=1.25, linestyle='dashed')
-    ax2.set(xlim=(0, max_x), ylim=(0, 1))
     ax2.spines['top'].set_visible(False)
-    ax2.axes.get_yaxis().set_visible(False)
+    ax2.set(xlim=(0, max_x), ylim=(0, 1))
+    ax2.set_yticks([])
+    ax2.plot(res['POSx'], res['VALy'], c=c_, lw=1.25, linestyle='dashed')
+    
+    
     if chrom[i] == chrom[-1]:
         ax2.axes.get_yaxis().set_visible(True)
         ax2.set_yticks(ticks=[0, 0.25, 0.5, 0.75, 1])
-        ax2.set_yticklabels(labels=[0, 0.25, 0.5, 0.75, 1], fontsize=8)
-        ax2.set_ylabel(ylabel='Boost', fontsize=12, rotation=90, labelpad=15)
+        ax2.set_yticklabels(labels=[0, 0.25, 0.5, 0.75, 1], fontsize=man_yticksS)
+        ax2.set_ylabel(ylabel='Boost', fontsize=man_ylabS, rotation=90, labelpad=man_ylabD)
 
 
 def plotDistanceBoost(d, arg, ax, max_x, chrom):
@@ -2760,7 +2780,7 @@ def plotDistanceBoost(d, arg, ax, max_x, chrom):
     max_x = arg['contigs'][chrom]
     d['prodx'] = d['DP']*d['POS']
     d['prody'] = d['DP']*d['BOOST']
-    interval_ranges = [x for x in range(0, max_x, arg['--distance-avg'])]
+    interval_ranges = [x for x in range(0, max_x, arg['--distance-boost'])]
     if interval_ranges[-1] < max_x:
         interval_ranges.append(max_x)
     interval_labels = [f'{start}-{end-1}' for start, end in zip(interval_ranges, interval_ranges[1:])]
@@ -2784,11 +2804,12 @@ def plot_ED100_4(arg, ax, max_x, max_y, ed100, ch):
     c_ = arg['--palette']['mvg']
     ax2.set(xlim=(0, max_x), ylim=(0, max_y))
     ax2.set_yticks(ticks=[0, 0.5, 1, 1.5])
-    ax2.set_yticklabels(labels=[0, 0.5, 1, 1.5], fontsize=10)
+    ax2.set_yticklabels(labels=[0, 0.5, 1, 1.5], fontsize=15)
     #ax2.tick_params(axis='y', which='major', labelsize=10)
     if flag:
         ed100ch = ed100[ed100['#CHROM'] == ch]
-        ax2.set_ylabel(ylabel='ED $\mathregular{100^4}$  $\mathregular{x10^8}$ ', fontsize=12, rotation=90, labelpad=15)
+        #print(ed100ch)
+        ax2.set_ylabel(ylabel='ED $\mathregular{100^4}$  $\mathregular{x10^8}$ ', fontsize=18, rotation=90, labelpad=15)
         ax2.plot(ed100ch['POS'], ed100ch['ED100_4'], c=c_, lw=arg['LINE_W'])
     ax2.spines['top'].set_visible(False)
 

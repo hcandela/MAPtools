@@ -290,10 +290,6 @@ Output options:
   arg = read_header_plot(arg)
   arg, df = load_dataframe_plotting(arg)
 
-  #cc = arg['--contigs']
-  #del arg['--contigs']
-  #print(arg)
-  #arg['--contigs'] = cc
   arg['version'] = v_plot
   #print(arg)
   #Allele Frequency plots
