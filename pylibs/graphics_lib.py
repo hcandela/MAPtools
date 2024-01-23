@@ -1568,7 +1568,7 @@ def ED_multi_Vertical_graph(df, arg):
             ax[i].set_xticks(ticks=np.arange(0, max_x, 5e6))
             ax[i].tick_params(axis='x', which='both', length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
             ax[i].tick_params(labelbottom=False)
-            ax[i].set_ylabel(ylabel='ED m', fontsize=sets['ylabSIZE'], rotation=90, labelpad=sets['ylabDIST'])
+            ax[i].set_ylabel(ylabel='EDm', fontsize=sets['ylabSIZE'], rotation=90, labelpad=sets['ylabDIST'])
             ax[i].set_yticks(ticks=[0,0.5,1,1.5])
             ax[i].set_yticklabels(labels=[0,0.5,1,1.5], fontsize=sets['yticksSIZE'])
             ax[i].set_title('{})'.format(arg['labs'][chrom[i]]), fontsize=sets['titleSIZE'], rotation=0, x=sets['titleXPOS'], y=sets['titleYPOS'])
@@ -1631,7 +1631,7 @@ def EDmanhattanPlot(df, arg):
         ax[i].set(xlim=(0, max_x), ylim=(0, 1.5))
         ax[i].set_xticks([])
         ax[i].set_xlabel(xlabel=f'{chrom[i]}', fontsize=sets['xlabSIZE'], labelpad=sets['xlabDIST'])
-        ax[i].set_ylabel(ylabel='ED m', fontsize=sets['ylabSIZE'],labelpad=sets['ylabDIST'], rotation=90)
+        ax[i].set_ylabel(ylabel='EDm', fontsize=sets['ylabSIZE'],labelpad=sets['ylabDIST'], rotation=90)
         #labs_list.append('({}) Chromosome {}.'.format(arg['labs'][chrom[i]],chrom[i]))
         ax[i].tick_params(axis='y', which='major', labelsize=sets['yticksSIZE'])
         ax[i].tick_params(axis='y', which='both', length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
@@ -2958,7 +2958,7 @@ def plot_ED100_4(arg, ax, max_x, max_y, ed100, ch, sets):
     if flag:
         ed100ch = ed100[ed100['#CHROM'] == ch]
         #print(ed100ch)
-        ax2.set_ylabel(ylabel='ED $\mathregular{100^4}$  $\mathregular{x10^8}$ ', fontsize=sets['ylabSIZE'], rotation=90, labelpad=sets['ylabDIST'])
+        ax2.set_ylabel(ylabel='ED$\mathregular{100^4}$$\mathregular{x10^8}$ ', fontsize=sets['ylabSIZE'], rotation=90, labelpad=sets['ylabDIST'])
         ax2.plot(ed100ch['POS'], ed100ch['ED100_4'], c=c_, lw=arg['LINE_W'])
     ax2.spines['top'].set_visible(False)
 
