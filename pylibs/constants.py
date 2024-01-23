@@ -155,10 +155,10 @@ man_ylabD = 20
 man_yticksS = 15
 
 #MonoPlotsOptions
-mon_xlabS = 18
-mon_xlabD = 15
-mon_xticksS = 15
-mon_scioffset = 12
-mon_ylabD = 15
-mon_ylabS = 18
-mon_yticksS = 15
+mon_xlabS = 20
+mon_xlabD = 17
+mon_xticksS = 17
+mon_scioffset = 14
+mon_ylabD = 17
+mon_ylabS = 20
+mon_yticksS = 17
