@@ -685,8 +685,7 @@ def EDmonoPlot(df, arg):
         max_x = int(arg['contigs'][chrom[ch]])
         x = d[['POS']]
         y = d[['ED']]
-        fig, ax = plt.subplots(figsize=(10, 4.2))
-        plt.subplots_adjust(bottom=sets['bottomDIST'],top=sets['topDIST'],right=sets['rightDIST'],left=sets['leftDIST'])
+        fig, ax = plt.subplots(figsize=(sets['figwidth'], sets['figheight']))
         ax.scatter(x, y, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'], clip_on=False)
         ax.set(xlim=(0, max_x), ylim=(0, 1.5))
         ax.set_xticks(ticks=np.arange(0, max_x, 5e6))
@@ -706,10 +705,10 @@ def EDmonoPlot(df, arg):
         if isinstance(ed100,pd.DataFrame):
             plot_ED100_4(arg, ax, max_x, max_y, ed100, chrom[ch], sets)
             
-
         rtch = rt.format(chrom[ch])
         filename = rtch + typ
         filename = check_save(arg, filename)
+        plt.tight_layout()
         plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
         plt.close()
 
@@ -734,8 +733,7 @@ def GmonoPlot(df, arg):
         max_x = int(arg['contigs'][chrom[ch]])
         x = d[['POS']]
         y = d[['G']]
-        fig, ax = plt.subplots(figsize=(10, 4.2))
-        plt.subplots_adjust(bottom=sets['bottomDIST'],top=sets['topDIST'],right=sets['rightDIST'],left=sets['leftDIST'])
+        fig, ax = plt.subplots(figsize=(sets['figwidth'], sets['figheight']))
         ax.scatter(x, y, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'], clip_on=False)
         ax.set(xlim=(0, max_x), ylim=(min_y, max_y))
         ax.set_xticks(ticks=np.arange(0, max_x, 5e6))
@@ -758,6 +756,7 @@ def GmonoPlot(df, arg):
         rtch = rt.format(chrom[ch])
         filename = rtch + typ
         filename = check_save(arg, filename)
+        plt.tight_layout()
         plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
         plt.close()
         cap = list()
@@ -848,7 +847,7 @@ def AF_manhattan_plot(df, arg, g_type):
         af = len(arg['--chromosomes'])*sets['chromMinWIDTH']
     else:
         af = sets['maxWIDTH']
-    fig, ax = plt.subplots(1, len(chrom), figsize=(af, 3))
+    fig, ax = plt.subplots(1, len(chrom), figsize=(af, sets['figheight']))
 
     for i in range(len(chrom)):
         d = df[df['#CHROM'] == chrom[i]]
@@ -874,18 +873,18 @@ def AF_manhattan_plot(df, arg, g_type):
             if arg['--boost'] != False:
                 keyB = 36
                 if 'SNPidx1' in arg['--fields'] and 'SNPidx2' not in arg['--fields']:
-                    plot_boostManhattan(d, arg, ax[i], max_x, chrom, i)
+                    plot_boostManhattan(d, arg, ax[i], max_x, chrom, i, sets)
                     boost = True
                 if g_type == 'SNPidx2' or g_type == 'MAX_SNPidx2':
-                    plot_boostManhattan(d, arg, ax[i], max_x, chrom, i)
+                    plot_boostManhattan(d, arg, ax[i], max_x, chrom, i, sets)
                     boost = True
             if arg['--distance-boost'] != False:
                 keyB = 35
                 if 'SNPidx1' in arg['--fields'] and 'SNPidx2' not in arg['--fields']:
-                    plotDistanceBoostManhattan(d, arg, ax[i], max_x, chrom, i)
+                    plotDistanceBoostManhattan(d, arg, ax[i], max_x, chrom, i, sets)
                     boost = True
                 if g_type == 'SNPidx2' or g_type == 'MAX_SNPidx2':
-                    plotDistanceBoostManhattan(d, arg, ax[i], max_x, chrom, i)
+                    plotDistanceBoostManhattan(d, arg, ax[i], max_x, chrom, i, sets)
                     boost = True
         if arg['--ci95'] and g_type == 'DELTA':
             if arg['--moving-avg'] != False:
@@ -902,7 +901,8 @@ def AF_manhattan_plot(df, arg, g_type):
             ax[1].remove()
         if i > 0:
             ax[i].axes.get_yaxis().set_visible(False)
-    fig.subplots_adjust(wspace=0, bottom=sets['bottomDIST'],top=sets['topDIST'],right=sets['rightDIST'],left=sets['leftDIST'])
+    fig.tight_layout()
+    fig.subplots_adjust(wspace=sets['wspace'])
     filename = rt + typ
     filename = check_save(arg, filename)
     f_name.append(filename)
@@ -944,7 +944,7 @@ def AFCombinedManhattanPlot(df, arg):
         af = len(arg['--chromosomes'])*sets['chromMinWIDTH']
     else:
         af = sets['maxWIDTH']
-    fig, ax = plt.subplots(1, len(chrom), figsize=(af, 3))
+    fig, ax = plt.subplots(1, len(chrom), figsize=(af, sets['figheight']))
 
     for i in range(len(chrom)):
         d = df[df['#CHROM'] == chrom[i]]
@@ -989,7 +989,8 @@ def AFCombinedManhattanPlot(df, arg):
             ax[1].remove()
         if i > 0:
             ax[i].axes.get_yaxis().set_visible(False)
-    fig.subplots_adjust(wspace=0, bottom=sets['bottomDIST'],top=sets['topDIST'],right=sets['rightDIST'],left=sets['leftDIST'])
+    fig.tight_layout()
+    fig.subplots_adjust(wspace=sets['wspace'])
     filename = rt + typ
     filename = check_save(arg, filename)
     f_name.append(filename)
@@ -1021,7 +1022,7 @@ def pval_manhattan_plot(df, arg):
         af = len(arg['--chromosomes'])*sets['chromMinWIDTH']
     else:
         af = sets['maxWIDTH']
-    fig, ax = plt.subplots(1, len(chrom), figsize=(af, 3))
+    fig, ax = plt.subplots(1, len(chrom), figsize=(af, sets['figheight']))
     threshold = -log(0.05/len(df.axes[0]))/log(10)
     for i in range(len(chrom)):
         d = df[df['#CHROM'] == chrom[i]]
@@ -1073,10 +1074,10 @@ def pval_manhattan_plot(df, arg):
             ax[1].remove()
         if i > 0:
             ax[i].axes.get_yaxis().set_visible(False)
-    fig.subplots_adjust(wspace=0, bottom=sets['bottomDIST'],top=sets['topDIST'],right=sets['rightDIST'],left=sets['leftDIST'])
+    fig.tight_layout()
+    fig.subplots_adjust(wspace=sets['wspace'])
     filename = rt + typ
     filename = check_save(arg, filename)
-    print(filename)
     f_name.append(filename)
     plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
     plt.close()
@@ -1108,8 +1109,7 @@ def pval_mono_graph(df, arg):
         cap = list()
         x=d[['POS']]
         y=d[['log10PVALUE']]
-        fig, ax=plt.subplots(figsize=(10, 4.2))
-        plt.subplots_adjust(bottom=sets['bottomDIST'],top=sets['topDIST'],right=sets['rightDIST'],left=sets['leftDIST'])
+        fig, ax=plt.subplots(figsize=(sets['figwidth'], sets['figheight']))
         ax.scatter(x, y, s=arg['DOT_SIZE'], color=arg['--palette']['dots'], alpha=arg['--alpha'], clip_on=False)
         ax.set(xlim=(0, max_x), ylim=((min(min_y, threshold)-1)//1, 0))
         ax.set_xticks(ticks=np.arange(0, max_x, 5e6))
@@ -1136,7 +1136,7 @@ def pval_mono_graph(df, arg):
 
         filename=rtch + typ
         filename=check_save(arg, filename)
-
+        plt.tight_layout()
         plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
         plt.close()
 
@@ -1174,8 +1174,7 @@ def AF1_AF2_mono_graph(df, arg):
         y1=d[['SNPidx1']]
         y2=d[['SNPidx2']]
         # AF1
-        fig, ax=plt.subplots(figsize=(10, 4.2))
-        plt.subplots_adjust(bottom=sets['bottomDIST'],top=sets['topDIST'],right=sets['rightDIST'],left=sets['leftDIST'])
+        fig, ax=plt.subplots(figsize=(sets['figwidth'], sets['figheight']))
         ax.scatter(x, y1, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'], clip_on=False)
         ax.set(xlim=(0, max_x), ylim=(0, 1))
         ax.set_xticks(ticks=np.arange(0, max_x, 5e6))
@@ -1211,6 +1210,7 @@ def AF1_AF2_mono_graph(df, arg):
         rtch1 = rt1.format(chrom[i])
         filename=rtch1 + typ
         filename=check_save(arg, filename)
+        plt.tight_layout()
         plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
         plt.close()
         cap = list()
@@ -1227,9 +1227,8 @@ def AF1_AF2_mono_graph(df, arg):
                 cap.append(arg['lines'][l2].format(arg['color_names']['SNPidx2'], str(arg['--distance-avg'])))
             write_caption(f,cap,arg) 
         # AF2
-        fig, ax=plt.subplots(figsize=(10, 4.2))
+        fig, ax=plt.subplots(figsize=(sets['figwidth'], sets['figheight']))
         ax.scatter(x, y2, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'], clip_on=False)
-        plt.subplots_adjust(bottom=sets['bottomDIST'],top=sets['topDIST'],right=sets['rightDIST'],left=sets['leftDIST'])
         ax.set(xlim=(0, max_x), ylim=(0, 1))
         ax.set_xticks(ticks=np.arange(0, max_x, 5e6))
         ax.set_xticklabels(labels=np.arange(0, max_x, 5e6),fontsize=sets['xticksSIZE'])
@@ -1238,7 +1237,7 @@ def AF1_AF2_mono_graph(df, arg):
         ax.ticklabel_format(axis='x', style='scientific',scilimits=(6, 6), useMathText=True)
         ax.xaxis.get_offset_text().set_fontsize(sets['xSCIoffsetSIZE'])
         ax.set_xlabel(xlabel='Chromosomal position (bp)', fontsize=sets['xlabSIZE'], labelpad=sets['xlabDIST'])
-        ax.set_ylabel(ylabel='Allele frequency', fontsize=sets['ylabSIZE'], rotation=90, labelpad=sets['ylabDIST'])
+        ax.set_ylabel(ylabel='Allele Frequency', fontsize=sets['ylabSIZE'], rotation=90, labelpad=sets['ylabDIST'])
         ax.set_yticks(ticks=[0, 0.25, 0.5, 0.75, 1])
         ax.set_yticklabels(labels=[0, 0.25, 0.5, 0.75, 1], fontsize=sets['yticksSIZE'])
         ax.tick_params(axis='y', which='both', length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
@@ -1256,6 +1255,7 @@ def AF1_AF2_mono_graph(df, arg):
         rtch2 = rt2.format(chrom[i])
         filename=rtch2 + typ
         filename=check_save(arg, filename)
+        plt.tight_layout()
         plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
         plt.close()
         cap = list()
@@ -1397,8 +1397,7 @@ def AF_mono_graph(df, arg, g_type):
         max_x=int(arg['contigs'][chrom[i]])
         x=d[['POS']]
         y=d[[g_type]]
-        fig, ax=plt.subplots(figsize=(10, 4.2))
-        plt.subplots_adjust(bottom=sets['bottomDIST'],top=sets['topDIST'],right=sets['rightDIST'],left=sets['leftDIST'])
+        fig, ax=plt.subplots(figsize=(sets['figwidth'], sets['figheight']))
         ax.scatter(x, y, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'], clip_on=False)
         ax.set(xlim=(0, max_x), ylim=lim_y)
         ax.set_xticks(ticks=np.arange(0, max_x, 5e6))
@@ -1449,6 +1448,7 @@ def AF_mono_graph(df, arg, g_type):
         rtch = rt.format(chrom[i])
         filename=rtch + typ
         filename=check_save(arg, filename)
+        plt.tight_layout()
         plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
         plt.close()
         cap = list()
@@ -1483,9 +1483,9 @@ def pval_multi_Vertical_graph(df, arg):
     for chrom_list in arg['chrom_lists']:
         chrom = chrom_list
         if len(chrom) > 1:
-            fig,ax=plt.subplots(len(chrom), 1, figsize=(10, 2.5*len(chrom)))
+            fig,ax=plt.subplots(len(chrom), 1, figsize=(sets['figwidth'], sets['chromHeight']*len(chrom)))
         if len(chrom) == 1:
-            fig, ax=plt.subplots(2,1,figsize=(10, 2.5*2))
+            fig, ax=plt.subplots(2,1,figsize=(sets['figwidth'], sets['chromHeight']*2))
         for i in range(len(chrom)):
             d=df[df['#CHROM'] == chrom[i]]
             x=d[['POS']]
@@ -1496,7 +1496,7 @@ def pval_multi_Vertical_graph(df, arg):
             ax[i].tick_params(labelbottom=False)
             ax[i].tick_params(axis='x', which='both', length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
             ax[i].set_ylabel(ylabel='log'+r'$_{10}$'+'(p-value)', fontsize=sets['ylabSIZE'], rotation=90, labelpad=sets['ylabDIST'])
-            ax[i].set_title('({})'.format(arg['labs'][chrom[i]]), fontsize=sets['titleSIZE'], rotation=0, x=sets['titleXPOS'], y=sets['titleYPOS'])
+            ax[i].set_title('{})'.format(arg['labs'][chrom[i]]), fontsize=sets['titleSIZE'], rotation=0, x=sets['titleXPOS'], y=sets['titleYPOS'])
             labs_list.append('({}) Chromosome {}.'.format(arg['labs'][chrom[i]],chrom[i]))
             ax[i].tick_params(axis='y', which='major', labelsize=sets['yticksSIZE'], length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
             for spine in ax[i].spines.values():
@@ -1520,8 +1520,8 @@ def pval_multi_Vertical_graph(df, arg):
                 ax[i].xaxis.get_offset_text().set_fontsize(sets['xSCIoffsetSIZE'])
                 ax[i].set_xlabel(xlabel='Chromosomal position (bp)', fontsize=sets['xlabSIZE'], labelpad=sets['xlabDIST'])
 
-
-        fig.subplots_adjust(hspace=sets['hspace'], bottom=sets['bottomDIST'],top=sets['topDIST'],right=sets['rightDIST'],left=sets['leftDIST'])
+        fig.tight_layout(pad=sets['pad'])
+        fig.subplots_adjust(hspace=sets['hspace'])
         filename= rt + typ
         filename=check_save(arg, filename)
         f_name.append(filename)
@@ -1556,9 +1556,9 @@ def ED_multi_Vertical_graph(df, arg):
     for chrom_list in arg['chrom_lists']:
         chrom = chrom_list
         if len(chrom) > 1:
-            fig,ax=plt.subplots(len(chrom), 1, figsize=(10, 2.5*len(chrom)))
+            fig,ax=plt.subplots(len(chrom), 1, figsize=(sets['figwidth'], sets['chromHeight']*len(chrom)))
         if len(chrom) == 1:
-            fig, ax=plt.subplots(2,1,figsize=(10, 2.5*2))
+            fig, ax=plt.subplots(2,1,figsize=(sets['figwidth'], sets['chromHeight']*2))
         for i in range(len(chrom)):
             d=df[df['#CHROM'] == chrom[i]]
             x=d[['POS']]
@@ -1571,7 +1571,7 @@ def ED_multi_Vertical_graph(df, arg):
             ax[i].set_ylabel(ylabel='ED m', fontsize=sets['ylabSIZE'], rotation=90, labelpad=sets['ylabDIST'])
             ax[i].set_yticks(ticks=[0,0.5,1,1.5])
             ax[i].set_yticklabels(labels=[0,0.5,1,1.5], fontsize=sets['yticksSIZE'])
-            ax[i].set_title('({})'.format(arg['labs'][chrom[i]]), fontsize=sets['titleSIZE'], rotation=0, x=sets['titleXPOS'], y=sets['titleYPOS'])
+            ax[i].set_title('{})'.format(arg['labs'][chrom[i]]), fontsize=sets['titleSIZE'], rotation=0, x=sets['titleXPOS'], y=sets['titleYPOS'])
             labs_list.append('({}) Chromosome {}.'.format(arg['labs'][chrom[i]],chrom[i]))
             ax[i].tick_params(axis='y', which='major', labelsize=sets['yticksSIZE'])
             ax[i].tick_params(axis='y', which='both', length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
@@ -1589,8 +1589,8 @@ def ED_multi_Vertical_graph(df, arg):
                 ax[i].ticklabel_format(axis='x', style='scientific', scilimits=(6, 6), useMathText=True)
                 ax[i].xaxis.get_offset_text().set_fontsize(sets['xSCIoffsetSIZE'])
                 ax[i].set_xlabel(xlabel='Chromosomal position (bp)', fontsize=sets['xlabSIZE'], labelpad=sets['xlabDIST'])
-
-        fig.subplots_adjust(hspace=sets['hspace'], bottom=sets['bottomDIST'],top=sets['topDIST'],right=sets['rightDIST'],left=sets['leftDIST'])
+        fig.tight_layout(pad=sets['pad'])
+        fig.subplots_adjust(hspace=sets['hspace'])
         filename= rt + typ
         filename=check_save(arg, filename)
         f_name.append(filename)
@@ -1621,7 +1621,7 @@ def EDmanhattanPlot(df, arg):
         af = len(arg['--chromosomes'])*sets['chromMinWIDTH']
     else:
         af = sets['maxWIDTH']
-    fig, ax = plt.subplots(1, len(chrom), figsize=(af, 3))
+    fig, ax = plt.subplots(1, len(chrom), figsize=(af, sets['figheight']))
     for i in range(len(chrom)):
         d=df[df['#CHROM'] == chrom[i]]
         max_x = int(arg['contigs'][chrom[i]])
@@ -1665,8 +1665,8 @@ def EDmanhattanPlot(df, arg):
             ax[i].axes.get_yaxis().set_visible(False)
         ax[0].set_yticks(ticks=[0, 0.5, 1, 1.5])
         ax[0].set_yticklabels(labels=[0, 0.5, 1, 1.5], fontsize=sets['yticksSIZE'])
-
-    fig.subplots_adjust(wspace=0, bottom=sets['bottomDIST'],top=sets['topDIST'],right=sets['rightDIST'],left=sets['leftDIST'])
+    plt.tight_layout()
+    fig.subplots_adjust(wspace=sets['wspace'])
     filename= rt + typ
     filename=check_save(arg, filename)
     f_name.append(filename)
@@ -1694,9 +1694,9 @@ def G_multi_Vertical_graph(df, arg):
     for chrom_list in arg['chrom_lists']:
         chrom = chrom_list
         if len(chrom) > 1:
-            fig,ax=plt.subplots(len(chrom), 1, figsize=(10, 2.5*len(chrom)))
+            fig,ax=plt.subplots(len(chrom), 1, figsize=(sets['figwidth'], sets['chromHeight']*len(chrom)))
         if len(chrom) == 1:
-            fig, ax=plt.subplots(2,1,figsize=(10, 2.5*2))
+            fig, ax=plt.subplots(2,1,figsize=(sets['figwidth'], sets['chromHeight']*2))
         for i in range(len(chrom)):
             d=df[df['#CHROM'] == chrom[i]]
             x=d[['POS']]
@@ -1707,7 +1707,7 @@ def G_multi_Vertical_graph(df, arg):
             ax[i].tick_params(labelbottom=False)
             ax[i].tick_params(axis='x', which='both', length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
             ax[i].set_ylabel(ylabel='G-statistic', fontsize=sets['ylabSIZE'], rotation=90, labelpad=sets['ylabDIST'])
-            ax[i].set_title('({})'.format(arg['labs'][chrom[i]]), fontsize=sets['titleSIZE'], rotation=0, x=sets['titleXPOS'], y=sets['titleYPOS'])
+            ax[i].set_title('{})'.format(arg['labs'][chrom[i]]), fontsize=sets['titleSIZE'], rotation=0, x=sets['titleXPOS'], y=sets['titleYPOS'])
             labs_list.append('({}) Chromosome {}.'.format(arg['labs'][chrom[i]],chrom[i]))
             ax[i].tick_params(axis='y', which='major', labelsize=sets['yticksSIZE'], length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
             for spine in ax[i].spines.values():
@@ -1727,8 +1727,8 @@ def G_multi_Vertical_graph(df, arg):
                 ax[i].ticklabel_format(axis='x', style='scientific', scilimits=(6, 6), useMathText=True)
                 ax[i].xaxis.get_offset_text().set_fontsize(sets['xSCIoffsetSIZE'])
                 ax[i].set_xlabel(xlabel='Chromosomal position (bp)',  fontsize=sets['xlabSIZE'], labelpad=sets['xlabDIST'])
-
-        fig.subplots_adjust(hspace=sets['hspace'], bottom=sets['bottomDIST'],top=sets['topDIST'],right=sets['rightDIST'],left=sets['leftDIST'])
+        fig.tight_layout(pad=sets['pad'])
+        fig.subplots_adjust(hspace=sets['hspace'])
         filename= rt + typ
         filename=check_save(arg, filename)
         f_name.append(filename)
@@ -1759,7 +1759,7 @@ def GmanhattanPlot(df, arg):
         af = len(arg['--chromosomes'])*sets['chromMinWIDTH']
     else:
         af = sets['maxWIDTH']
-    fig, ax = plt.subplots(1, len(chrom), figsize=(af, 3))
+    fig, ax = plt.subplots(1, len(chrom), figsize=(af, sets['figheight']))
     for i in range(len(chrom)):
         d=df[df['#CHROM'] == chrom[i]]
         max_x = int(arg['contigs'][chrom[i]])
@@ -1786,7 +1786,8 @@ def GmanhattanPlot(df, arg):
             ax[1].remove()
         if i > 0:
             ax[i].axes.get_yaxis().set_visible(False)
-    fig.subplots_adjust(wspace=0, bottom=sets['bottomDIST'],top=sets['topDIST'],right=sets['rightDIST'],left=sets['leftDIST'])
+    fig.tight_layout()
+    fig.subplots_adjust(wspace=sets['wspace'])
     filename= rt + typ
     filename=check_save(arg, filename)
     f_name.append(filename)
@@ -1821,9 +1822,9 @@ def AF_multi_Vertical_graph(df, arg, g_type):
     for chrom_list in arg['chrom_lists']:
         chrom = chrom_list
         if len(chrom) > 1:
-            fig, ax=plt.subplots(len(chrom), 1, figsize=(10, 2.5*len(chrom)))
+            fig, ax=plt.subplots(len(chrom), 1, figsize=(sets['figwidth'], sets['chromHeight']*len(chrom)))
         if len(chrom) == 1:
-            fig, ax=plt.subplots(2,1,figsize=(10,2.5*2))
+            fig, ax=plt.subplots(2,1,figsize=(sets['figwidth'],sets['chromHeight']*2))
         for i in range(len(chrom)):
             d=df[df['#CHROM'] == chrom[i]]
             x=d[['POS']]
@@ -1835,7 +1836,7 @@ def AF_multi_Vertical_graph(df, arg, g_type):
             ax[i].tick_params(axis='x', which='both', length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
             ax[i].tick_params(labelbottom=False)
             ax[i].set_ylabel(ylabel=ylab, fontsize=sets['ylabSIZE'], rotation=90, labelpad=sets['ylabDIST'])
-            ax[i].set_title('({})'.format(arg['labs'][chrom[i]]), fontsize=sets['titleSIZE'], rotation=0, x = sets['titleXPOS'], y=sets['titleYPOS'])
+            ax[i].set_title('{})'.format(arg['labs'][chrom[i]]), fontsize=sets['titleSIZE'], rotation=0, x = sets['titleXPOS'], y=sets['titleYPOS'])
             labs_list.append('({}) Chromosome {}.'.format(arg['labs'][chrom[i]],chrom[i]))
             ax[i].set_yticks(ticks=ticks_y)
             ax[i].set_yticklabels(labels=ticks_y, fontsize=sets['yticksSIZE'])
@@ -1850,18 +1851,18 @@ def AF_multi_Vertical_graph(df, arg, g_type):
                 if arg['--boost'] != False:
                     keyB = 36
                     if 'SNPidx1' in arg['--fields'] and 'SNPidx2' not in arg['--fields']:
-                        plot_boost(d, arg, ax[i], max_x)
+                        plot_boost(d, arg, ax[i], max_x, sets)
                         boost = True
                     if g_type == 'SNPidx2' or g_type == 'MAX_SNPidx2':
-                        plot_boost(d, arg, ax[i], max_x)
+                        plot_boost(d, arg, ax[i], max_x, sets)
                         boost = True
                 if arg['--distance-boost'] != False:
                     keyB = 35
                     if 'SNPidx1' in arg['--fields'] and 'SNPidx2' not in arg['--fields']:
-                        plotDistanceBoost(d, arg, ax[i], max_x, chrom[i])
+                        plotDistanceBoost(d, arg, ax[i], max_x, chrom[i], sets)
                         boost = True
                     if g_type == 'SNPidx2' or g_type == 'MAX_SNPidx2':
-                        plotDistanceBoost(d, arg, ax[i], max_x, chrom[i])
+                        plotDistanceBoost(d, arg, ax[i], max_x, chrom[i], sets)
                         boost = True
             
             if arg['--ci95'] and g_type == 'DELTA':
@@ -1882,7 +1883,8 @@ def AF_multi_Vertical_graph(df, arg, g_type):
                 ax[i].ticklabel_format(axis='x', style='scientific', scilimits=(6, 6), useMathText=True)
                 ax[i].xaxis.get_offset_text().set_fontsize(sets['xSCIoffsetSIZE'])
                 ax[i].set_xlabel(xlabel='Chromosomal position (bp)', fontsize=sets['xlabSIZE'], labelpad=sets['xlabDIST'])
-        fig.subplots_adjust(hspace=sets['hspace'], bottom=sets['bottomDIST'],top=sets['topDIST'],right=sets['rightDIST'],left=sets['leftDIST'])
+        fig.tight_layout(pad=sets['pad'])
+        fig.subplots_adjust(hspace=sets['hspace'])
         filename= rt + typ
         filename=check_save(arg, filename)
         f_name.append(filename)
@@ -1929,9 +1931,9 @@ def AF12_multi_Vertical_graph(df, arg):
     for chrom_list in arg['chrom_lists']:
         chrom = chrom_list
         if len(chrom) > 1:
-            fig, ax=plt.subplots(len(chrom), 1, figsize=(10, 2.5*len(chrom)))
+            fig, ax=plt.subplots(len(chrom), 1, figsize=(sets['figwidth'], sets['chromHeight']*len(chrom)))
         if len(chrom) == 1:
-            fig, ax=plt.subplots(2,1,figsize=(10, 2.5*2))
+            fig, ax=plt.subplots(2,1,figsize=(sets['figwidth'], sets['chromHeight']*2))
         for i in range(len(chrom)):
             d=df[df['#CHROM'] == chrom[i]]
             x=d[['POS']]
@@ -1944,7 +1946,7 @@ def AF12_multi_Vertical_graph(df, arg):
             ax[i].tick_params(labelbottom=False)
             ax[i].set_ylabel(ylabel='A. F.', fontsize=sets['ylabSIZE'], rotation=90, labelpad=sets['ylabDIST'])
             ax[i].set_title('({})'.format(arg['labs'][chrom[i]]), fontsize=sets['titleSIZE'], rotation=0, x =sets['titleXPOS'], y=sets['titleYPOS']) 
-            labs_list.append('({}) Chromosome {}.'.format(arg['labs'][chrom[i]],chrom[i]))  
+            labs_list.append('{}) Chromosome {}.'.format(arg['labs'][chrom[i]],chrom[i]))  
             ax[i].set_yticks(ticks=ticks_y)
             ax[i].set_yticklabels(labels=ticks_y, fontsize=sets['yticksSIZE'])
             ax[i].tick_params(axis='y', which='both', length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
@@ -1975,8 +1977,8 @@ def AF12_multi_Vertical_graph(df, arg):
                 ax[i].ticklabel_format(axis='x', style='scientific', scilimits=(6, 6), useMathText=True)
                 ax[i].xaxis.get_offset_text().set_fontsize(sets['xSCIoffsetSIZE'])
                 ax[i].set_xlabel(xlabel='Chromosomal position (bp)', fontsize=sets['xlabSIZE'],labelpad=sets['xlabDIST'])
-
-        fig.subplots_adjust(hspace=sets['hspace'], bottom=sets['bottomDIST'],top=sets['topDIST'],right=sets['rightDIST'],left=sets['leftDIST'])
+        plt.tight_layout(pad=sets['pad'])
+        fig.subplots_adjust(hspace=sets['hspace'])
         filename=rt1+typ
         filename=check_save(arg, filename)
         f1_name.append(filename)
@@ -2002,9 +2004,9 @@ def AF12_multi_Vertical_graph(df, arg):
     for chrom_list in arg['chrom_lists']:
         chrom = chrom_list
         if len(chrom) > 1:
-            fig,ax=plt.subplots(len(chrom), 1, figsize=(10, 2.5*len(chrom)))
+            fig,ax=plt.subplots(len(chrom), 1, figsize=(sets['figwidth'], sets['chromHeight']*len(chrom)))
         if len(chrom) == 1:
-            fig, ax=plt.subplots(2,1,figsize=(10, 2.5*2))
+            fig, ax=plt.subplots(2,1,figsize=(sets['figwidth'], sets['chromHeight']*2))
         for i in range(len(chrom)):
             d=df[df['#CHROM'] == chrom[i]]
             x=d[['POS']]
@@ -2039,7 +2041,8 @@ def AF12_multi_Vertical_graph(df, arg):
                 ax[i].xaxis.get_offset_text().set_fontsize(sets['xSCIoffsetSIZE'])
                 ax[i].set_xlabel(xlabel='Chromosomal position (bp)', fontsize=sets['xlabSIZE'],labelpad=sets['xlabDIST'])
 
-        fig.subplots_adjust(hspace=sets['hspace'], bottom=sets['bottomDIST'],top=sets['topDIST'],right=sets['rightDIST'],left=sets['leftDIST'])
+        fig.tight_layout(pad=sets['pad'])
+        fig.subplots_adjust(hspace=sets['hspace'])
         filename=rt2+typ
         filename=check_save(arg, filename)
         f2_name.append(filename)
@@ -2199,7 +2202,7 @@ def combinedPlot(df, arg):
             k1 = 8
             k2 = 10
     for i in range(len(chrom)):
-        fig, ax=plt.subplots(3, 2, figsize=(8.5, 8.5))#(7,9)paper
+        fig, ax=plt.subplots(3, 2, figsize=(sets['figwidth'], sets['figheight']))
         d=df[df['#CHROM'] == chrom[i]]
         max_x = arg['contigs'][chrom[i]]
         if max_x > 60000000:
@@ -2371,10 +2374,11 @@ def combinedPlot(df, arg):
         ax[2,1].spines['right'].set_visible(False)
         ax[2,1].tick_params(axis='y', which='major', labelsize=sets['yticksSIZE'])
         ax[2,1].tick_params(axis='y', which='both', length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
-        for spine in ax[2,0].spines.values():
+        for spine in ax[2,1].spines.values():
             spine.set_linewidth(sets['axSpinesWIDTH'])
         # Save file
-        fig.subplots_adjust(hspace=sets['hspace'], wspace=sets['wspace'], bottom=sets['bottomDIST'],top=sets['topDIST'],right=sets['rightDIST'],left=sets['leftDIST'])
+        fig.tight_layout()
+        fig.subplots_adjust(hspace=sets['hspace'], wspace=sets['wspace'])
         rtch = rt.format(chrom[i])
         filename=rtch + typ
         filename=check_save(arg, filename)
@@ -2820,7 +2824,7 @@ def distanceSNPidx(d, arg, ax, chrom):
     ax[2].plot(res['POSx'], res['avgD'], c=arg['--palette']['DELTA'], lw=arg['LINE_W'])
 
 
-def plot_boostManhattan(d, arg, ax, max_x, chrom, i):
+def plot_boostManhattan(d, arg, ax, max_x, chrom, i, sets):
     # Mediamovil Boost
     if 'SNPidx2' not in arg['--fields']:
         d['DP']=d['DPdom_1']+d['DPrec_1']
@@ -2839,13 +2843,15 @@ def plot_boostManhattan(d, arg, ax, max_x, chrom, i):
     ax2.set(xlim=(0, max_x), ylim=(0, 1))
     ax2.set_yticks([])
     ax2.plot(d['medboostx'], d['medboost'], c=c_, lw=arg['LINE_W'], linestyle='dashed')
-    
+    ax2.tick_params(axis='y', which='both', length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
+    for spine in ax2.spines.values():
+        spine.set_linewidth(sets['axSpinesWIDTH'])
 
     if chrom[i] == chrom[-1]:
         ax2.axes.get_yaxis().set_visible(True)
         ax2.set_yticks(ticks=[0, 0.25, 0.5, 0.75, 1])
-        ax2.set_yticklabels(labels=[0, 0.25, 0.5, 0.75, 1], fontsize=man_yticksS)
-        ax2.set_ylabel(ylabel='Boost', fontsize=man_ylabS, rotation=90, labelpad=man_ylabD)
+        ax2.set_yticklabels(labels=[0, 0.25, 0.5, 0.75, 1], fontsize=sets['yticksSIZE'])
+        ax2.set_ylabel(ylabel='Boost',fontsize=sets['ylabSIZE'], rotation=90, labelpad=sets['ylabDIST'])
 
 def plot_boost(d, arg, ax, max_x, sets):
     # Mediamovil Boost
@@ -2867,10 +2873,12 @@ def plot_boost(d, arg, ax, max_x, sets):
     ax2.set(xlim=(0, max_x), ylim=(0, 1))
     ax2.set_yticks(ticks=[0, 0.25, 0.5, 0.75, 1])
     ax2.tick_params(axis='y', which='both', length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
+    for spine in ax2.spines.values():
+        spine.set_linewidth(sets['axSpinesWIDTH'])
     ax2.set_yticklabels(labels=[0, 0.25, 0.5, 0.75, 1], fontsize=sets['yticksSIZE'])
     ax2.set_ylabel(ylabel='Boost', fontsize=sets['ylabSIZE'], rotation=90, labelpad=sets['ylabDIST'])
 
-def plotDistanceBoostManhattan(d, arg, ax, max_x, chrom, i):
+def plotDistanceBoostManhattan(d, arg, ax, max_x, chrom, i, sets):
     # Mediamovil Boost
     if 'SNPidx2' not in arg['--fields']:
         d['DP']=d['DPdom_1']+d['DPrec_1']
@@ -2895,13 +2903,15 @@ def plotDistanceBoostManhattan(d, arg, ax, max_x, chrom, i):
     ax2.set(xlim=(0, max_x), ylim=(0, 1))
     ax2.set_yticks([])
     ax2.plot(res['POSx'], res['VALy'], c=c_, lw=arg['LINE_W'], linestyle='dashed')
-    
+    ax2.tick_params(axis='y', which='both', length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
+    for spine in ax2.spines.values():
+        spine.set_linewidth(sets['axSpinesWIDTH'])
     
     if chrom[i] == chrom[-1]:
         ax2.axes.get_yaxis().set_visible(True)
         ax2.set_yticks(ticks=[0, 0.25, 0.5, 0.75, 1])
-        ax2.set_yticklabels(labels=[0, 0.25, 0.5, 0.75, 1], fontsize=man_yticksS)
-        ax2.set_ylabel(ylabel='Boost', fontsize=man_ylabS, rotation=90, labelpad=man_ylabD)
+        ax2.set_yticklabels(labels=[0, 0.25, 0.5, 0.75, 1], fontsize=sets['yticksSIZE'])
+        ax2.set_ylabel(ylabel='Boost',fontsize=sets['ylabSIZE'], rotation=90, labelpad=sets['ylabDIST'])
 
 
 def plotDistanceBoost(d, arg, ax, max_x, chrom, sets):
@@ -2929,6 +2939,8 @@ def plotDistanceBoost(d, arg, ax, max_x, chrom, sets):
     ax2.plot(res['POSx'], res['VALy'], c=c_, lw=arg['LINE_W'], linestyle='dashed')
     ax2.set(xlim=(0, max_x), ylim=(0, 1))
     ax2.tick_params(axis='y', which='both', length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
+    for spine in ax2.spines.values():
+        spine.set_linewidth(sets['axSpinesWIDTH'])
     ax2.set_yticks(ticks=[0, 0.25, 0.5, 0.75, 1])
     ax2.set_yticklabels(labels=[0, 0.25, 0.5, 0.75, 1], fontsize=sets['yticksSIZE'])
     ax2.set_ylabel(ylabel='Boost', fontsize=sets['ylabSIZE'], rotation=90, labelpad=sets['ylabDIST'])
@@ -2941,7 +2953,8 @@ def plot_ED100_4(arg, ax, max_x, max_y, ed100, ch, sets):
     ax2.set_yticks(ticks=[0, 0.5, 1, 1.5])
     ax2.set_yticklabels(labels=[0, 0.5, 1, 1.5], fontsize=sets['yticksSIZE'])
     ax2.tick_params(axis='y', which='both', length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
-    #ax2.tick_params(axis='y', which='major', labelsize=10)
+    for spine in ax2.spines.values():
+        spine.set_linewidth(sets['axSpinesWIDTH'])
     if flag:
         ed100ch = ed100[ed100['#CHROM'] == ch]
         #print(ed100ch)
