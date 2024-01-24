@@ -282,7 +282,7 @@ Plot types:
   
 Output options:
   -o, --outdir DIR              output plot files to DIR [default: graphics]
-  -O, --output-type TYPE        available types: pdf, svg, jpg, png [default: pdf]
+  -O, --output-type TYPE        available types: pdf, svg, jpg, png [default: jpg]
   """
   arg = docopt(plot_doc, argv=None, help=True,version=v_plot)
   #print(arg)

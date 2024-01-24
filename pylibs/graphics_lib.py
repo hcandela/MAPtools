@@ -180,7 +180,7 @@ def load_dataframe_plotting(arg):
         df = df.reset_index()
 
     if arg['alias'] != False:
-        if all(key in arg['--chromosomes']  for key in arg['alias'].keys()):
+        if set(arg['--chromosomes']).issubset(arg['alias']):
             arg['--contigs'] = {arg['alias'].get(k,k): v for k, v in arg['--contigs'].items()}
             arg['--chromosomes'] = [arg['alias'].get(c, c) for c in arg['--chromosomes']]
             df['#CHROM'] = df['#CHROM'].map(arg['alias'])
