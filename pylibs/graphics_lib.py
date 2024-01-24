@@ -159,6 +159,8 @@ def test_plot(arg, __doc__):
 def load_dataframe_plotting(arg):
     read_palette(arg)
     read_settings(arg)
+    read_alias(arg)
+    
     inp_f = arg['--input']
     inp_ext = inp_f.split('.')[-1]
     if inp_ext == 'csv':
@@ -176,6 +178,14 @@ def load_dataframe_plotting(arg):
         df1['#CHROM'] = pd.Categorical(df1['#CHROM'], categories=chroms_, ordered=True)
         df = df1.sort_values(by=['#CHROM','POS'])
         df = df.reset_index()
+
+    if arg['alias'] != False:
+        if all(key in arg['--chromosomes']  for key in arg['alias'].keys()):
+            arg['--contigs'] = {arg['alias'].get(k,k): v for k, v in arg['--contigs'].items()}
+            arg['--chromosomes'] = [arg['alias'].get(c, c) for c in arg['--chromosomes']]
+            df['#CHROM'] = df['#CHROM'].map(arg['alias'])
+        else:
+            print('Warning: The chromosome names do not match those in the alias list. Names may not be substituted.', file=sys.stderr)
 
     if len(arg['--chromosomes']) > 1 and arg['--multi-chrom']:
         arg['--multi-chrom'] = True
@@ -500,6 +510,20 @@ def read_settings(arg):
             if v == 'None':
                 dicc[k] = None
     arg['sets'] = data
+def read_alias(arg):
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    json_file_path = os.path.join(script_dir,'..','alias.json')
+    try:
+        with open(json_file_path) as json_file:
+            data = json.load(json_file)
+    except FileNotFoundError:
+        print('Error: Please put the file \"alias.json\" in the MAPtools folder.', file=sys.stderr)
+        sys.exit()
+    
+    if data == dict():
+        arg['alias'] = False
+    else:
+        arg['alias'] = data
 
 def check_save(arg, file_name):
     typ = arg['--output-type']
@@ -802,7 +826,7 @@ def pval_multi_graph(df, arg):
                     plot_avg(d, arg, ax[i], 'log10PVALUE')
             if arg['--distance-avg'] != False:
                     plotDistanceAvg(d, chrom[i], arg, ax[i], 'log10PVALUE')
-            if arg['--bonferroni']:
+            if arg['--bonferroni'] and not d.empty:
                 threshold = log(0.05/len(df.axes[0]))/log(10)
                 max_x_ch = (max(d['POS'])/max_x)
                 ax[i].axhline(y=threshold, color='black', xmin=0,xmax=max_x_ch, linestyle='dashed', linewidth=0.75)
@@ -1067,7 +1091,7 @@ def pval_manhattan_plot(df, arg):
 
         ax[i].spines['top'].set_visible(False)
         ax[i].spines['right'].set_visible(False)
-        if arg['--bonferroni']:
+        if arg['--bonferroni'] and not d.empty:
             max_x_ch = (max(d['POS'])/max_x)
             ax[i].axhline(y=threshold, color='black', xmin=0,xmax=max_x_ch, linestyle='dashed', linewidth=0.75)
         if len(chrom) == 1:
@@ -1127,7 +1151,7 @@ def pval_mono_graph(df, arg):
             plotDistanceAvg(d, chrom[i], arg, ax, 'log10PVALUE')
         if arg['--moving-avg'] != False:
             plot_avg(d, arg, ax, 'log10PVALUE')
-        if arg['--bonferroni']:
+        if arg['--bonferroni'] and not d.empty:
             max_x_ch=(max(d['POS'])/max_x)
             ax.axhline(y=threshold, color='black', xmin=0,xmax=max_x_ch, linestyle='dashed', linewidth=0.75)
         ax.spines['top'].set_visible(False)
@@ -1508,7 +1532,7 @@ def pval_multi_Vertical_graph(df, arg):
                 plot_avg(d, arg, ax[i], 'log10PVALUE')
             if arg['--distance-avg'] != False:
                 plotDistanceAvg(d, chrom[i], arg, ax[i], 'log10PVALUE')
-            if arg['--bonferroni']:
+            if arg['--bonferroni'] and not d.empty:
                 max_x_ch=(max(d['POS'])/max_x)
                 ax[i].axhline(y=threshold, color='black', xmin=0,xmax=max_x_ch, linestyle='dashed', linewidth=0.75)
             ax[i].spines['top'].set_visible(False)
@@ -1541,7 +1565,7 @@ def pval_multi_Vertical_graph(df, arg):
             cap.append(arg['lines'][14].format(arg['color_names']['log10PVALUE'],'',str(arg['--moving-avg'])))
         if arg['--distance-avg'] != False:
                 cap.append(arg['lines'][13].format(arg['color_names']['log10PVALUE'],'',str(arg['--distance-avg'])))
-        if arg['--bonferroni']:
+        if arg['--bonferroni'] and not d.empty:
             cap.append(arg['lines'][15].format(str(arg['n_markers'])))
         write_caption(f,cap,arg)
 
@@ -2143,7 +2167,7 @@ def AF1_AF2_pval_mono(df, arg):
             plot_avg(d, arg, ax[2], 'log10PVALUE')
         if arg['--distance-avg'] != False:
             plotDistanceAvg(d, chrom[i], arg, ax[2], 'log10PVALUE')
-        if arg['--bonferroni']:
+        if arg['--bonferroni'] and not d.empty:
             threshold=log(0.05/len(df.axes[0]))/log(10)
             max_x_ch=(max(d['POS'])/max_x)
             ax[2].axhline(y=threshold, color='black', xmin=0,xmax=max_x_ch, linestyle='dashed', linewidth=0.75)
@@ -2366,7 +2390,7 @@ def combinedPlot(df, arg):
             plot_avg(d, arg, ax[2,1], 'log10PVALUE')
         if arg['--distance-avg'] != False:
             plotDistanceAvg(d, chrom[i], arg, ax[2,1], 'log10PVALUE')
-        if arg['--bonferroni']:
+        if arg['--bonferroni'] and not d.empty:
             max_x_ch=(max(d['POS'])/max_x)
             ax[2,1].axhline(y=threshold, color='black', xmin=0,xmax=max_x_ch, linestyle='dashed', linewidth=0.75)
         ax[2,1].xaxis.set_major_formatter(ScalarFormatter())
@@ -2515,7 +2539,7 @@ def qtl_mixed_plot(df, arg):
             plot_avg(d, arg, ax[3], 'log10PVALUE')
         if arg['--distance-avg'] != False:
             plotDistanceAvg(d, chrom[i], arg, ax[3], 'log10PVALUE')
-        if arg['--bonferroni']:
+        if arg['--bonferroni'] and not d.empty:
             threshold=log(0.05/len(df.axes[0]))/log(10)
             max_x_ch=(max(d['POS'])/max_x)
             ax[3].axhline(y=threshold, color='black', xmin=0,xmax=max_x_ch, linestyle='dashed', linewidth=0.75)
