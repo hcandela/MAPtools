@@ -572,14 +572,14 @@ def grouped_by(df, arg):
 
         for g in g_list:  # for each group in group list
             res = list()
-            if 'DPdom_2' not in arg['--fields'] and 'DPrec_2' not in arg['--fields']:
+            if 'DPdom_1' not in arg['--fields'] and 'DPrec_1' not in arg['--fields']:
                 rAt, rBt, rPost, rTt = 0, 0, 0, 0
             else:
                 rAt, rBt, rCt, rDt, rPost, rTt = 0, 0, 0, 0, 0, 0
             for i in g:  # for each index in group
-                if 'DPdom_2' not in arg['--fields'] and 'DPrec_2' not in arg['--fields']:
-                    rA = d.loc[i].DPdom_1
-                    rB = d.loc[i].DPrec_1
+                if 'DPdom_1' not in arg['--fields'] and 'DPrec_1' not in arg['--fields']:
+                    rA = d.loc[i].DPdom_2
+                    rB = d.loc[i].DPrec_2
                     rT = rA + rB
                     rPos = d.loc[i].POS*rT
                     rTt += rT
@@ -601,7 +601,7 @@ def grouped_by(df, arg):
                     rPost += rPos
             rPost = round(rPost/(rTt))
             res += [chrom[ch], rPost, rAt, rBt]
-            if 'DPdom_2' in arg['--fields'] and 'DPrec_2' in arg['--fields']:
+            if 'DPdom_1' in arg['--fields'] and 'DPrec_1' in arg['--fields']:
                 res += [int(rCt), int(rDt)]
                 if 'SNPidx1' in arg['--fields'] and 'SNPidx2' in arg['--fields']:
                     rSNPidx1 = rBt/(rAt+rBt)
@@ -633,11 +633,11 @@ def grouped_by(df, arg):
                     boost = 1/(sys.float_info.min + abs(1 - 1 /
                                max(rMAX_SNPidx2, 1-rMAX_SNPidx2)))
                     res += [rMAX_SNPidx2, boost]
-                elif 'SNPidx1' in arg['--fields']:
-                    rSNPidx1 = rBt/(rAt+rBt)
+                elif 'SNPidx2' in arg['--fields']:
+                    rSNPidx2 = rBt/(rAt+rBt)
                     boost = 1/(sys.float_info.min +
-                               abs(1 - 1/max(rSNPidx1, 1-rSNPidx1)))
-                    res += [rSNPidx1, boost]
+                               abs(1 - 1/max(rSNPidx2, 1-rSNPidx2)))
+                    res += [rSNPidx2, boost]
 
             n_line = spacer.join(str(field) for field in res) + '\n'
             write_line(n_line, fsal)

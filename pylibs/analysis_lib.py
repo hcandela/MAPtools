@@ -337,9 +337,9 @@ def choose_header(arg):
 	if 'mbs' in arg.keys():
 		if len(inf_s) == 1 or 'D' not in inf_s:
 			if arg['--ref-genotype'] == 'miss' and 'Pr' not in inf_s and 'Pd' not in inf_s:
-				header = ['#CHROM','POS','DOM','REC','DPdom_1','DPrec_1','MAX_SNPidx2','BOOST']
+				header = ['#CHROM','POS','DOM','REC','DPdom_2','DPrec_2','MAX_SNPidx2','BOOST']
 			else:
-				header = ['#CHROM','POS','DOM','REC','DPdom_1','DPrec_1','SNPidx1','BOOST']
+				header = ['#CHROM','POS','DOM','REC','DPdom_2','DPrec_2','SNPidx2','BOOST']
 		elif ('D' in inf_s and 'R' in inf_s) and arg['--ref-genotype'] != 'miss' or 'Pr' in inf_s or 'Pd' in inf_s:
 			header = ['#CHROM','POS','DOM','REC','DPdom_1','DPrec_1','DPdom_2','DPrec_2','SNPidx1','SNPidx2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE','DELTA','ED','G']
 		elif 'D' in inf_s and 'R' in inf_s and arg['--ref-genotype'] == 'miss' and 'Pd' not in inf_s and 'Pr' not in inf_s:
