@@ -694,8 +694,8 @@ def EDmonoPlot(df, arg):
         ax.xaxis.set_major_formatter(ScalarFormatter())
         ax.ticklabel_format(axis='x', style='scientific',scilimits=(6, 6), useMathText=True)
         ax.xaxis.get_offset_text().set_fontsize(sets['xSCIoffsetSIZE'])
-        ax.set_xlabel(xlabel='Chromosomal position (pb)', fontsize=sets['xlabSIZE'], labelpad=sets['xlabDIST'])
-        ax.set_ylabel(ylabel='Euclidean distance', fontsize=sets['ylabSIZE'], rotation=90, labelpad=sets['ylabDIST'])
+        ax.set_xlabel(xlabel='Genomic position (pb)', fontsize=sets['xlabSIZE'], labelpad=sets['xlabDIST'])
+        ax.set_ylabel(ylabel='EDm', fontsize=sets['ylabSIZE'], rotation=90, labelpad=sets['ylabDIST'])
         ax.set_yticks(ticks=[0, 0.5, 1, 1.5])
         ax.set_yticklabels(labels=[0, 0.5, 1, 1.5], fontsize=sets['yticksSIZE'])
         ax.tick_params(axis='y', which='both', length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
@@ -836,11 +836,11 @@ def AF_manhattan_plot(df, arg, g_type):
     typ = arg['--output-type']
     #labs_list = list()
     f_name = list()
-    ylab = 'Allele Frequency'
+    ylab = 'SNP-index'
     boost = False
+    multi = (False, True)
     ticks_y=[0, 0.25, 0.5, 0.75, 1]
     lim_y=(0, 1)
-    multi = (False, True)
     arg, ticks_y, lim_y, ylab, t, rt, key2, key = chooseOptionsAFPlots(arg, multi, g_type, ticks_y, lim_y, ylab)
     chrom = arg['--chromosomes']
     if len(arg['--chromosomes'])*sets['chromMinWIDTH'] <= sets['maxWIDTH']:
@@ -873,18 +873,18 @@ def AF_manhattan_plot(df, arg, g_type):
             if arg['--boost'] != False:
                 keyB = 36
                 if 'SNPidx1' in arg['--fields'] and 'SNPidx2' not in arg['--fields']:
-                    plot_boostManhattan(d, arg, ax[i], max_x, chrom, i, sets)
+                    plot_boostManhattan(d, arg, ax[i], max_x, chrom, i, sets, ticks_y, g_type)
                     boost = True
                 if g_type == 'SNPidx2' or g_type == 'MAX_SNPidx2':
-                    plot_boostManhattan(d, arg, ax[i], max_x, chrom, i, sets)
+                    plot_boostManhattan(d, arg, ax[i], max_x, chrom, i, sets, ticks_y, g_type)
                     boost = True
             if arg['--distance-boost'] != False:
                 keyB = 35
                 if 'SNPidx1' in arg['--fields'] and 'SNPidx2' not in arg['--fields']:
-                    plotDistanceBoostManhattan(d, arg, ax[i], max_x, chrom, i, sets)
+                    plotDistanceBoostManhattan(d, arg, ax[i], max_x, chrom, i, sets, ticks_y, g_type)
                     boost = True
                 if g_type == 'SNPidx2' or g_type == 'MAX_SNPidx2':
-                    plotDistanceBoostManhattan(d, arg, ax[i], max_x, chrom, i, sets)
+                    plotDistanceBoostManhattan(d, arg, ax[i], max_x, chrom, i, sets, ticks_y, g_type)
                     boost = True
         if arg['--ci95'] and g_type == 'DELTA':
             if arg['--moving-avg'] != False:
@@ -934,7 +934,7 @@ def AFCombinedManhattanPlot(df, arg):
     typ = arg['--output-type']
     #labs_list = list()
     f_name = list()
-    ylab = 'Allele Frequency'
+    ylab = 'SNP-index'
     ticks_y=[0, 0.25, 0.5, 0.75, 1]
     lim_y=(0, 1)
     t,rt = arg['titles'][4]
@@ -1117,7 +1117,7 @@ def pval_mono_graph(df, arg):
         ax.xaxis.set_major_formatter(ScalarFormatter())
         ax.ticklabel_format(axis='x', style='scientific',scilimits=(6, 6), useMathText=True)
         ax.xaxis.get_offset_text().set_fontsize(sets['xSCIoffsetSIZE'])
-        ax.set_xlabel(xlabel='Chromosomal position (bp)', fontsize=sets['xlabSIZE'], labelpad=sets['xlabDIST'])
+        ax.set_xlabel(xlabel='Genomic position (bp)', fontsize=sets['xlabSIZE'], labelpad=sets['xlabDIST'])
         ax.set_ylabel(ylabel='log'+r'$_{10}$'+'(p-value)', fontsize=sets['ylabSIZE'], labelpad=sets['ylabDIST'])
         ax.tick_params(axis='y', which='major', labelsize=sets['yticksSIZE'])
         ax.tick_params(axis='y', which='both', length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
@@ -1183,8 +1183,8 @@ def AF1_AF2_mono_graph(df, arg):
         ax.xaxis.set_major_formatter(ScalarFormatter())
         ax.ticklabel_format(axis='x', style='scientific',scilimits=(6, 6), useMathText=True)
         ax.xaxis.get_offset_text().set_fontsize(sets['xSCIoffsetSIZE'])
-        ax.set_xlabel(xlabel='Chromosomal position (bp)'.format(chrom[i]), fontsize=sets['xlabSIZE'], labelpad=sets['xlabDIST'])
-        ax.set_ylabel(ylabel='Allele Frequency', fontsize=sets['ylabSIZE'], rotation=90, labelpad=sets['ylabDIST'])
+        ax.set_xlabel(xlabel='Genomic position (bp)'.format(chrom[i]), fontsize=sets['xlabSIZE'], labelpad=sets['xlabDIST'])
+        ax.set_ylabel(ylabel='SNP-index1', fontsize=sets['ylabSIZE'], rotation=90, labelpad=sets['ylabDIST'])
         ax.set_yticks(ticks=[0, 0.25, 0.5, 0.75, 1])
         ax.set_yticklabels(labels=[0, 0.25, 0.5, 0.75, 1], fontsize=sets['yticksSIZE'])
         ax.tick_params(axis='y', which='both', length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
@@ -1236,8 +1236,8 @@ def AF1_AF2_mono_graph(df, arg):
         ax.xaxis.set_major_formatter(ScalarFormatter())
         ax.ticklabel_format(axis='x', style='scientific',scilimits=(6, 6), useMathText=True)
         ax.xaxis.get_offset_text().set_fontsize(sets['xSCIoffsetSIZE'])
-        ax.set_xlabel(xlabel='Chromosomal position (bp)', fontsize=sets['xlabSIZE'], labelpad=sets['xlabDIST'])
-        ax.set_ylabel(ylabel='Allele Frequency', fontsize=sets['ylabSIZE'], rotation=90, labelpad=sets['ylabDIST'])
+        ax.set_xlabel(xlabel='Genomic position (bp)', fontsize=sets['xlabSIZE'], labelpad=sets['xlabDIST'])
+        ax.set_ylabel(ylabel='SNP-index2', fontsize=sets['ylabSIZE'], rotation=90, labelpad=sets['ylabDIST'])
         ax.set_yticks(ticks=[0, 0.25, 0.5, 0.75, 1])
         ax.set_yticklabels(labels=[0, 0.25, 0.5, 0.75, 1], fontsize=sets['yticksSIZE'])
         ax.tick_params(axis='y', which='both', length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
@@ -1277,6 +1277,7 @@ def chooseOptionsAFPlots(arg, multi, g_type, ticks_y, lim_y, ylab):
     key = False
     if arg['type'] == 'mbs':
         if g_type == 'SNPidx1':
+            ylab = 'SNP-index1'
             key2 = 0
             if arg['--moving-avg'] != False:
                 key = 3
@@ -1291,6 +1292,7 @@ def chooseOptionsAFPlots(arg, multi, g_type, ticks_y, lim_y, ylab):
                     t,_,_,rt=arg['titles'][2]
 
         if g_type == 'SNPidx2':
+            ylab = 'SNP-index2'
             key2 = 1
             if arg['--moving-avg'] != False:
                 key = 5
@@ -1312,7 +1314,7 @@ def chooseOptionsAFPlots(arg, multi, g_type, ticks_y, lim_y, ylab):
                 key = 34
             ticks_y=[0.5, 0.75, 1]
             lim_y=(0.5, 1)
-            ylab = 'Max A. F.'
+            ylab = 'Max SNP-idx2'
             if not multi[0] and not multi[1]:
                 t,rt=arg['titles'][18]
             else:
@@ -1322,6 +1324,7 @@ def chooseOptionsAFPlots(arg, multi, g_type, ticks_y, lim_y, ylab):
                     t,_,rt=arg['titles'][19]
     else:
         if g_type == 'SNPidx1':
+            ylab = 'SNP-index1'
             key2 = 6
             if arg['--moving-avg'] != False:
                 key = 9
@@ -1335,6 +1338,7 @@ def chooseOptionsAFPlots(arg, multi, g_type, ticks_y, lim_y, ylab):
                 if multi[1]:
                     t,_,_,rt=arg['titles'][7]
         if g_type == 'SNPidx2':
+            ylab = 'SNP-index2'
             key2 = 7
             if arg['--moving-avg'] != False:
                 key = 11
@@ -1376,7 +1380,6 @@ def chooseOptionsAFPlots(arg, multi, g_type, ticks_y, lim_y, ylab):
             key = 20
         if arg['--distance-avg'] != False:
             key = 21
-
     return arg, ticks_y, lim_y, ylab, t, rt, key2, key
 
 def AF_mono_graph(df, arg, g_type):
@@ -1386,7 +1389,7 @@ def AF_mono_graph(df, arg, g_type):
     typ=arg['--output-type']
     ticks_y=[0, 0.25, 0.5, 0.75, 1]
     lim_y=(0, 1)
-    ylab = 'Allele Frequency'
+    ylab = 'SNP-index'
     boost = False
     multi = (False, False)
     arg, ticks_y, lim_y, ylab, t, rt, key2, key = chooseOptionsAFPlots(arg, multi, g_type, ticks_y, lim_y, ylab)
@@ -1406,7 +1409,7 @@ def AF_mono_graph(df, arg, g_type):
         ax.xaxis.set_major_formatter(ScalarFormatter())
         ax.ticklabel_format(axis='x', style='scientific',scilimits=(6, 6), useMathText=True)
         ax.xaxis.get_offset_text().set_fontsize(sets['xSCIoffsetSIZE'])
-        ax.set_xlabel(xlabel='Chromosomal position (bp)', fontsize=sets['xlabSIZE'], labelpad=sets['xlabDIST'])
+        ax.set_xlabel(xlabel='Genomic position (bp)', fontsize=sets['xlabSIZE'], labelpad=sets['xlabDIST'])
         ax.set_ylabel(ylabel=ylab, fontsize=sets['ylabSIZE'], rotation=90, labelpad=sets['ylabDIST'])
         ax.set_yticks(ticks=ticks_y)
         ax.set_yticklabels(labels=ticks_y, fontsize=sets['yticksSIZE'])
@@ -1421,18 +1424,18 @@ def AF_mono_graph(df, arg, g_type):
             if arg['--boost'] != False:
                 keyB = 36
                 if 'SNPidx1' in arg['--fields'] and 'SNPidx2' not in arg['--fields']:
-                    plot_boost(d, arg, ax, max_x, sets)
+                    plot_boost(d, arg, ax, max_x, sets, ticks_y, g_type, multi)
                     boost = True
                 if g_type == 'SNPidx2' or g_type == 'MAX_SNPidx2':
-                    plot_boost(d, arg, ax, max_x, sets)
+                    plot_boost(d, arg, ax, max_x, sets, ticks_y, g_type, multi)
                     boost = True
             if arg['--distance-boost'] != False:
                 keyB = 35
                 if 'SNPidx1' in arg['--fields'] and 'SNPidx2' not in arg['--fields']:
-                    plotDistanceBoost(d, arg, ax, max_x, chrom[i], sets)
+                    plotDistanceBoost(d, arg, ax, max_x, chrom[i], sets, ticks_y, g_type, multi)
                     boost = True
                 if g_type == 'SNPidx2' or g_type == 'MAX_SNPidx2':
-                    plotDistanceBoost(d, arg, ax, max_x, chrom[i], sets)
+                    plotDistanceBoost(d, arg, ax, max_x, chrom[i], sets, ticks_y, g_type, multi)
                     boost = True
         
         if arg['--ci95'] and g_type == 'DELTA':
@@ -1518,7 +1521,7 @@ def pval_multi_Vertical_graph(df, arg):
                 ax[i].xaxis.set_major_formatter(ScalarFormatter())
                 ax[i].ticklabel_format(axis='x', style='scientific', scilimits=(6, 6), useMathText=True)
                 ax[i].xaxis.get_offset_text().set_fontsize(sets['xSCIoffsetSIZE'])
-                ax[i].set_xlabel(xlabel='Chromosomal position (bp)', fontsize=sets['xlabSIZE'], labelpad=sets['xlabDIST'])
+                ax[i].set_xlabel(xlabel='Genomic position (bp)', fontsize=sets['xlabSIZE'], labelpad=sets['xlabDIST'])
 
         fig.tight_layout(pad=sets['pad'])
         fig.subplots_adjust(hspace=sets['hspace'])
@@ -1588,7 +1591,7 @@ def ED_multi_Vertical_graph(df, arg):
                 ax[i].xaxis.set_major_formatter(ScalarFormatter())
                 ax[i].ticklabel_format(axis='x', style='scientific', scilimits=(6, 6), useMathText=True)
                 ax[i].xaxis.get_offset_text().set_fontsize(sets['xSCIoffsetSIZE'])
-                ax[i].set_xlabel(xlabel='Chromosomal position (bp)', fontsize=sets['xlabSIZE'], labelpad=sets['xlabDIST'])
+                ax[i].set_xlabel(xlabel='Genomic position (bp)', fontsize=sets['xlabSIZE'], labelpad=sets['xlabDIST'])
         fig.tight_layout(pad=sets['pad'])
         fig.subplots_adjust(hspace=sets['hspace'])
         filename= rt + typ
@@ -1726,7 +1729,7 @@ def G_multi_Vertical_graph(df, arg):
                 ax[i].xaxis.set_major_formatter(ScalarFormatter())
                 ax[i].ticklabel_format(axis='x', style='scientific', scilimits=(6, 6), useMathText=True)
                 ax[i].xaxis.get_offset_text().set_fontsize(sets['xSCIoffsetSIZE'])
-                ax[i].set_xlabel(xlabel='Chromosomal position (bp)',  fontsize=sets['xlabSIZE'], labelpad=sets['xlabDIST'])
+                ax[i].set_xlabel(xlabel='Genomic position (bp)',  fontsize=sets['xlabSIZE'], labelpad=sets['xlabDIST'])
         fig.tight_layout(pad=sets['pad'])
         fig.subplots_adjust(hspace=sets['hspace'])
         filename= rt + typ
@@ -1812,7 +1815,7 @@ def AF_multi_Vertical_graph(df, arg, g_type):
     max_x=arg['max_lenght']
     ticks_y=[0, 0.5, 1]#[0, 0.25, 0.5, 0.75, 1]
     lim_y=(0, 1)
-    ylab = 'A. F.'
+    ylab = 'SNP-index'
     boost = False
     multi = (True,False)    #Multivertical Not Manhattan
     labs_list = list()
@@ -1851,18 +1854,18 @@ def AF_multi_Vertical_graph(df, arg, g_type):
                 if arg['--boost'] != False:
                     keyB = 36
                     if 'SNPidx1' in arg['--fields'] and 'SNPidx2' not in arg['--fields']:
-                        plot_boost(d, arg, ax[i], max_x, sets)
+                        plot_boost(d, arg, ax[i], max_x, sets, ticks_y, g_type,multi)
                         boost = True
                     if g_type == 'SNPidx2' or g_type == 'MAX_SNPidx2':
-                        plot_boost(d, arg, ax[i], max_x, sets)
+                        plot_boost(d, arg, ax[i], max_x, sets, ticks_y, g_type,multi)
                         boost = True
                 if arg['--distance-boost'] != False:
                     keyB = 35
                     if 'SNPidx1' in arg['--fields'] and 'SNPidx2' not in arg['--fields']:
-                        plotDistanceBoost(d, arg, ax[i], max_x, chrom[i], sets)
+                        plotDistanceBoost(d, arg, ax[i], max_x, chrom[i], sets, ticks_y, g_type,multi)
                         boost = True
                     if g_type == 'SNPidx2' or g_type == 'MAX_SNPidx2':
-                        plotDistanceBoost(d, arg, ax[i], max_x, chrom[i], sets)
+                        plotDistanceBoost(d, arg, ax[i], max_x, chrom[i], sets, ticks_y, g_type,multi)
                         boost = True
             
             if arg['--ci95'] and g_type == 'DELTA':
@@ -1882,7 +1885,7 @@ def AF_multi_Vertical_graph(df, arg, g_type):
                 ax[i].xaxis.set_major_formatter(ScalarFormatter())
                 ax[i].ticklabel_format(axis='x', style='scientific', scilimits=(6, 6), useMathText=True)
                 ax[i].xaxis.get_offset_text().set_fontsize(sets['xSCIoffsetSIZE'])
-                ax[i].set_xlabel(xlabel='Chromosomal position (bp)', fontsize=sets['xlabSIZE'], labelpad=sets['xlabDIST'])
+                ax[i].set_xlabel(xlabel='Genomic position (bp)', fontsize=sets['xlabSIZE'], labelpad=sets['xlabDIST'])
         fig.tight_layout(pad=sets['pad'])
         fig.subplots_adjust(hspace=sets['hspace'])
         filename= rt + typ
@@ -1944,7 +1947,7 @@ def AF12_multi_Vertical_graph(df, arg):
             ax[i].set_xticks(ticks=np.arange(0, max_x, 5e6))
             ax[i].tick_params(axis='x', which='both', length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
             ax[i].tick_params(labelbottom=False)
-            ax[i].set_ylabel(ylabel='A. F.', fontsize=sets['ylabSIZE'], rotation=90, labelpad=sets['ylabDIST'])
+            ax[i].set_ylabel(ylabel='SNP-index1', fontsize=sets['ylabSIZE'], rotation=90, labelpad=sets['ylabDIST'])
             ax[i].set_title('({})'.format(arg['labs'][chrom[i]]), fontsize=sets['titleSIZE'], rotation=0, x =sets['titleXPOS'], y=sets['titleYPOS']) 
             labs_list.append('{}) Chromosome {}.'.format(arg['labs'][chrom[i]],chrom[i]))  
             ax[i].set_yticks(ticks=ticks_y)
@@ -1976,7 +1979,7 @@ def AF12_multi_Vertical_graph(df, arg):
                 ax[i].xaxis.set_major_formatter(ScalarFormatter())
                 ax[i].ticklabel_format(axis='x', style='scientific', scilimits=(6, 6), useMathText=True)
                 ax[i].xaxis.get_offset_text().set_fontsize(sets['xSCIoffsetSIZE'])
-                ax[i].set_xlabel(xlabel='Chromosomal position (bp)', fontsize=sets['xlabSIZE'],labelpad=sets['xlabDIST'])
+                ax[i].set_xlabel(xlabel='Genomic position (bp)', fontsize=sets['xlabSIZE'],labelpad=sets['xlabDIST'])
         plt.tight_layout(pad=sets['pad'])
         fig.subplots_adjust(hspace=sets['hspace'])
         filename=rt1+typ
@@ -2016,7 +2019,7 @@ def AF12_multi_Vertical_graph(df, arg):
             ax[i].set_xticks(ticks=np.arange(0, max_x, 5e6))
             ax[i].tick_params(axis='x', which='both', length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
             ax[i].tick_params(labelbottom=False)
-            ax[i].set_ylabel(ylabel='A. F.', fontsize=sets['ylabSIZE'], rotation=90, labelpad=sets['ylabDIST'])
+            ax[i].set_ylabel(ylabel='SNP-index2', fontsize=sets['ylabSIZE'], rotation=90, labelpad=sets['ylabDIST'])
             ax[i].set_title('({})'.format(arg['labs'][chrom[i]]), fontsize=sets['titleSIZE'], rotation=0, x =sets['titleXPOS'], y=sets['titleYPOS'])
             ax[i].set_yticks(ticks=ticks_y)
             ax[i].set_yticklabels(labels=ticks_y, fontsize=sets['yticksSIZE'])
@@ -2039,7 +2042,7 @@ def AF12_multi_Vertical_graph(df, arg):
                 ax[i].xaxis.set_major_formatter(ScalarFormatter())
                 ax[i].ticklabel_format(axis='x', style='scientific', scilimits=(6, 6), useMathText=True)
                 ax[i].xaxis.get_offset_text().set_fontsize(sets['xSCIoffsetSIZE'])
-                ax[i].set_xlabel(xlabel='Chromosomal position (bp)', fontsize=sets['xlabSIZE'],labelpad=sets['xlabDIST'])
+                ax[i].set_xlabel(xlabel='Genomic position (bp)', fontsize=sets['xlabSIZE'],labelpad=sets['xlabDIST'])
 
         fig.tight_layout(pad=sets['pad'])
         fig.subplots_adjust(hspace=sets['hspace'])
@@ -2146,7 +2149,7 @@ def AF1_AF2_pval_mono(df, arg):
             ax[2].axhline(y=threshold, color='black', xmin=0,xmax=max_x_ch, linestyle='dashed', linewidth=0.75)
         ax[2].xaxis.set_major_formatter(ScalarFormatter())
         ax[2].ticklabel_format(axis='x', style='scientific',scilimits=(6, 6), useMathText=True)
-        ax[2].set_xlabel(xlabel='Chromosomal position (bp)',fontsize=15)
+        ax[2].set_xlabel(xlabel='Genomic position (bp)',fontsize=15)
 
         ax[2].spines['top'].set_visible(False)
         ax[2].spines['right'].set_visible(False)
@@ -2225,9 +2228,9 @@ def combinedPlot(df, arg):
         ax[0,0].tick_params(axis='x', which='both', length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
         ax[0,0].set_yticks(ticks=[0, 0.5, 1])
         ax[0,0].set_yticklabels(labels=[0, 0.5, 1], fontsize=sets['yticksSIZE'])
-        ax[0,0].set_ylabel('SNP-index 1', fontsize=sets['ylabSIZE'],labelpad=sets['ylabDIST'])
+        ax[0,0].set_ylabel('SNP-index1', fontsize=sets['ylabSIZE'],labelpad=sets['ylabDIST'])
         ax[0,0].yaxis.set_label_coords(sets['ylabXPOS'],sets['ylabYPOS'])
-        ax[0,0].set_title('(a)', fontsize=sets['titleSIZE'], rotation=0, x=sets['titleXPOS'], y=sets['titleYPOS'])
+        ax[0,0].set_title('a)', fontsize=sets['titleSIZE'], rotation=0, x=sets['titleXPOS'], y=sets['titleYPOS'])
         ax[0,0].axhline(y=0.5, color='black', linestyle='dashed', linewidth=0.75)
         ax[0,0].spines['top'].set_visible(False)
         ax[0,0].spines['right'].set_visible(False)
@@ -2248,9 +2251,9 @@ def combinedPlot(df, arg):
         ax[1,0].tick_params(axis='x', which='both', length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
         ax[1,0].set_yticks(ticks=[0, 0.5, 1])
         ax[1,0].set_yticklabels(labels=[0, 0.5, 1], fontsize=sets['yticksSIZE'])
-        ax[1,0].set_ylabel('SNP-index 2', fontsize=sets['ylabSIZE'],labelpad=sets['ylabDIST'])
+        ax[1,0].set_ylabel('SNP-index2', fontsize=sets['ylabSIZE'],labelpad=sets['ylabDIST'])
         ax[1,0].yaxis.set_label_coords(sets['ylabXPOS'],sets['ylabYPOS'])
-        ax[1,0].set_title('(b)', fontsize=sets['titleSIZE'], rotation=0, x=sets['titleXPOS'], y=sets['titleYPOS'])
+        ax[1,0].set_title('b)', fontsize=sets['titleSIZE'], rotation=0, x=sets['titleXPOS'], y=sets['titleYPOS'])
         ax[1,0].axhline(y=0.5, color='black', linestyle='dashed', linewidth=0.75)
         ax[1,0].spines['top'].set_visible(False)
         ax[1,0].spines['right'].set_visible(False)
@@ -2279,7 +2282,7 @@ def combinedPlot(df, arg):
         ax[2,0].set_xticklabels(labels=np.arange(0, max_x, paso),fontsize=sets['xticksSIZE'])
         ax[2,0].set_ylabel(ylabel= ylab ,fontsize=sets['ylabSIZE'],labelpad=sets['ylabDIST'])
         ax[2,0].yaxis.set_label_coords(sets['ylabXPOS'],sets['ylabYPOS'])
-        ax[2,0].set_title('(c)', fontsize=sets['titleSIZE'], rotation=0, x=sets['titleXPOS'], y=sets['titleYPOS'])
+        ax[2,0].set_title('c)', fontsize=sets['titleSIZE'], rotation=0, x=sets['titleXPOS'], y=sets['titleYPOS'])
         ax[2,0].set_yticks(ticks=ticks_y)
         ax[2,0].set_yticklabels(labels=ticks_y, fontsize=sets['yticksSIZE'])
 
@@ -2296,7 +2299,7 @@ def combinedPlot(df, arg):
         ax[2,0].xaxis.set_major_formatter(ScalarFormatter())
         ax[2,0].ticklabel_format(axis='x', style='scientific',scilimits=(6, 6), useMathText=True)
         ax[2,0].xaxis.get_offset_text().set_fontsize(sets['xSCIoffsetSIZE'])
-        ax[2,0].set_xlabel(xlabel='Chromosomal position (bp)',fontsize=sets['xlabSIZE'],labelpad=sets['xlabDIST'])
+        ax[2,0].set_xlabel(xlabel='Genomic position (bp)',fontsize=sets['xlabSIZE'],labelpad=sets['xlabDIST'])
         ax[2,0].spines['top'].set_visible(False)
         ax[2,0].spines['right'].set_visible(False)
         ax[2,0].tick_params(axis='y', which='major', labelsize=sets['yticksSIZE'])
@@ -2313,9 +2316,9 @@ def combinedPlot(df, arg):
         ax[0,1].set_xticks(ticks=np.arange(0, max_x, paso))
         ax[0,1].tick_params(labelbottom=False)
         ax[0,1].tick_params(axis='x', which='both', length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
-        ax[0,1].set_ylabel(ylabel='Euclidean distance', fontsize=sets['ylabSIZE'],labelpad=sets['ylabDIST'], rotation=90)
+        ax[0,1].set_ylabel(ylabel='EDm', fontsize=sets['ylabSIZE'],labelpad=sets['ylabDIST'], rotation=90)
         ax[0,1].yaxis.set_label_coords(sets['ylabXPOS'],sets['ylabYPOS'])
-        ax[0,1].set_title('(d)',fontsize=sets['titleSIZE'], rotation=0, x=sets['titleXPOS'], y=sets['titleYPOS'])
+        ax[0,1].set_title('d)',fontsize=sets['titleSIZE'], rotation=0, x=sets['titleXPOS'], y=sets['titleYPOS'])
         ax[0,1].set_yticks(ticks=[0, 0.5, 1, 1.5])
         ax[0,1].set_yticklabels(labels=[0, 0.5, 1, 1.5], fontsize=sets['yticksSIZE'])
         ax[0,1].tick_params(axis='y', which='major', labelsize=sets['yticksSIZE'])
@@ -2335,7 +2338,7 @@ def combinedPlot(df, arg):
         ax[1,1].tick_params(axis='x', which='both', length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
         ax[1,1].set_ylabel(ylabel='G-statistic', fontsize=sets['ylabSIZE'],labelpad=sets['ylabDIST'], rotation=90)
         ax[1,1].yaxis.set_label_coords(sets['ylabXPOS'],sets['ylabYPOS'])
-        ax[1,1].set_title('(e)', fontsize=sets['titleSIZE'], rotation=0, x=sets['titleXPOS'], y=sets['titleYPOS'])
+        ax[1,1].set_title('e)', fontsize=sets['titleSIZE'], rotation=0, x=sets['titleXPOS'], y=sets['titleYPOS'])
         ax[1,1].tick_params(axis='y', which='major', labelsize=sets['yticksSIZE'])
         ax[1,1].tick_params(axis='y', which='both', length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
         for spine in ax[1,1].spines.values():
@@ -2357,7 +2360,7 @@ def combinedPlot(df, arg):
         ax[2,1].tick_params(axis='x', which='both', length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
         ax[2,1].set_ylabel(ylabel='log'+r'$_{10}$'+'(p-value)',fontsize=sets['ylabSIZE'],labelpad=sets['ylabDIST'])
         ax[2,1].yaxis.set_label_coords(sets['ylabXPOS'],sets['ylabYPOS'])
-        ax[2,1].set_title('(f)', fontsize=sets['titleSIZE'], rotation=0, x=sets['titleXPOS'], y=sets['titleYPOS'])
+        ax[2,1].set_title('f)', fontsize=sets['titleSIZE'], rotation=0, x=sets['titleXPOS'], y=sets['titleYPOS'])
         ax[2,1].tick_params(axis='y', which='major', labelsize=sets['yticksSIZE'])
         if arg['--moving-avg'] != False:
             plot_avg(d, arg, ax[2,1], 'log10PVALUE')
@@ -2369,7 +2372,7 @@ def combinedPlot(df, arg):
         ax[2,1].xaxis.set_major_formatter(ScalarFormatter())
         ax[2,1].ticklabel_format(axis='x', style='scientific',scilimits=(6, 6), useMathText=True)
         ax[2,1].xaxis.get_offset_text().set_fontsize(sets['xSCIoffsetSIZE'])
-        ax[2,1].set_xlabel(xlabel='Chromosomal position (bp)',fontsize=sets['xlabSIZE'],labelpad=sets['xlabDIST'])
+        ax[2,1].set_xlabel(xlabel='Genomic position (bp)',fontsize=sets['xlabSIZE'],labelpad=sets['xlabDIST'])
         ax[2,1].spines['top'].set_visible(False)
         ax[2,1].spines['right'].set_visible(False)
         ax[2,1].tick_params(axis='y', which='major', labelsize=sets['yticksSIZE'])
@@ -2518,7 +2521,7 @@ def qtl_mixed_plot(df, arg):
             ax[3].axhline(y=threshold, color='black', xmin=0,xmax=max_x_ch, linestyle='dashed', linewidth=0.75)
         ax[3].xaxis.set_major_formatter(ScalarFormatter())
         ax[3].ticklabel_format(axis='x', style='scientific',scilimits=(6, 6), useMathText=True)
-        ax[3].set_xlabel(xlabel='Chromosomal position (bp)',fontsize=14)
+        ax[3].set_xlabel(xlabel='Genomic position (bp)',fontsize=14)
         ax[3].spines['top'].set_visible(False)
         ax[3].spines['right'].set_visible(False)
 
@@ -2601,7 +2604,7 @@ def snp_index_graph(df, arg):
         ax[2].tick_params(labelbottom=True)
         ax[2].set_xticks(ticks=np.arange(0,max_x,5e6))
         ax[2].set_xticklabels(labels=np.arange(0, max_x, 5e6), fontsize=8)
-        ax[2].set_xlabel(xlabel='Chromosomal position (bp)', fontsize=15)
+        ax[2].set_xlabel(xlabel='Genomic position (bp)', fontsize=15)
         ax[2].xaxis.set_major_formatter(ScalarFormatter())
         ax[2].ticklabel_format(axis='x', style='scientific',scilimits=(6, 6), useMathText=True)
         ax[2].set_yticklabels(labels=[-1, 0, 1], rotation=90,fontsize=8)
@@ -2824,7 +2827,7 @@ def distanceSNPidx(d, arg, ax, chrom):
     ax[2].plot(res['POSx'], res['avgD'], c=arg['--palette']['DELTA'], lw=arg['LINE_W'])
 
 
-def plot_boostManhattan(d, arg, ax, max_x, chrom, i, sets):
+def plot_boostManhattan(d, arg, ax, max_x, chrom, i, sets, ticks_y, g_type):
     # Mediamovil Boost
     if 'SNPidx2' not in arg['--fields']:
         d['DP']=d['DPdom_1']+d['DPrec_1']
@@ -2838,6 +2841,8 @@ def plot_boostManhattan(d, arg, ax, max_x, chrom, i, sets):
     d['medboostx']=(d['prodboostx'].rolling(
         arg['--boost']).sum() / d['DP'].rolling(arg['--boost']).sum())
     c_=arg['--palette']['BOOST']
+    if g_type == 'MAX_SNPidx2':
+        ticks_y = [0,0.25,0.5,0.75,1]
     ax2=ax.twinx()
     ax2.spines['top'].set_visible(False)
     ax2.set(xlim=(0, max_x), ylim=(0, 1))
@@ -2849,11 +2854,11 @@ def plot_boostManhattan(d, arg, ax, max_x, chrom, i, sets):
 
     if chrom[i] == chrom[-1]:
         ax2.axes.get_yaxis().set_visible(True)
-        ax2.set_yticks(ticks=[0, 0.25, 0.5, 0.75, 1])
-        ax2.set_yticklabels(labels=[0, 0.25, 0.5, 0.75, 1], fontsize=sets['yticksSIZE'])
+        ax2.set_yticks(ticks=ticks_y)
+        ax2.set_yticklabels(labels=ticks_y, fontsize=sets['yticksSIZE'])
         ax2.set_ylabel(ylabel='Boost',fontsize=sets['ylabSIZE'], rotation=90, labelpad=sets['ylabDIST'])
 
-def plot_boost(d, arg, ax, max_x, sets):
+def plot_boost(d, arg, ax, max_x, sets, ticks_y, g_type, multi):
     # Mediamovil Boost
     if 'SNPidx2' not in arg['--fields']:
         d['DP']=d['DPdom_1']+d['DPrec_1']
@@ -2867,18 +2872,20 @@ def plot_boost(d, arg, ax, max_x, sets):
     d['medboostx']=(d['prodboostx'].rolling(
         arg['--boost']).sum() / d['DP'].rolling(arg['--boost']).sum())
     ax2=ax.twinx()
+    if g_type == 'MAX_SNPidx2':
+        ticks_y =  [0,0.5,1] if multi[0] else [0,0.25,0.5,0.75,1]
     ax2.spines['top'].set_visible(False)
     c_=arg['--palette']['BOOST']
     ax2.plot(d['medboostx'], d['medboost'], c=c_, lw=arg['LINE_W'], linestyle='dashed')
     ax2.set(xlim=(0, max_x), ylim=(0, 1))
-    ax2.set_yticks(ticks=[0, 0.25, 0.5, 0.75, 1])
+    ax2.set_yticks(ticks=ticks_y)
     ax2.tick_params(axis='y', which='both', length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
     for spine in ax2.spines.values():
         spine.set_linewidth(sets['axSpinesWIDTH'])
-    ax2.set_yticklabels(labels=[0, 0.25, 0.5, 0.75, 1], fontsize=sets['yticksSIZE'])
+    ax2.set_yticklabels(labels=ticks_y, fontsize=sets['yticksSIZE'])
     ax2.set_ylabel(ylabel='Boost', fontsize=sets['ylabSIZE'], rotation=90, labelpad=sets['ylabDIST'])
 
-def plotDistanceBoostManhattan(d, arg, ax, max_x, chrom, i, sets):
+def plotDistanceBoostManhattan(d, arg, ax, max_x, chrom, i, sets, ticks_y, g_type):
     # Mediamovil Boost
     if 'SNPidx2' not in arg['--fields']:
         d['DP']=d['DPdom_1']+d['DPrec_1']
@@ -2906,15 +2913,16 @@ def plotDistanceBoostManhattan(d, arg, ax, max_x, chrom, i, sets):
     ax2.tick_params(axis='y', which='both', length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
     for spine in ax2.spines.values():
         spine.set_linewidth(sets['axSpinesWIDTH'])
-    
+    if g_type == 'MAX_SNPidx2':
+        ticks_y = [0,0.25,0.5,0.75,1]
     if chrom[i] == chrom[-1]:
         ax2.axes.get_yaxis().set_visible(True)
-        ax2.set_yticks(ticks=[0, 0.25, 0.5, 0.75, 1])
-        ax2.set_yticklabels(labels=[0, 0.25, 0.5, 0.75, 1], fontsize=sets['yticksSIZE'])
+        ax2.set_yticks(ticks=ticks_y)
+        ax2.set_yticklabels(labels=ticks_y, fontsize=sets['yticksSIZE'])
         ax2.set_ylabel(ylabel='Boost',fontsize=sets['ylabSIZE'], rotation=90, labelpad=sets['ylabDIST'])
 
 
-def plotDistanceBoost(d, arg, ax, max_x, chrom, sets):
+def plotDistanceBoost(d, arg, ax, max_x, chrom, sets, ticks_y, g_type, multi):
     # Mediamovil Boost
     if 'SNPidx2' not in arg['--fields']:
         d['DP']=d['DPdom_1']+d['DPrec_1']
@@ -2934,6 +2942,8 @@ def plotDistanceBoost(d, arg, ax, max_x, chrom, sets):
     res['VALy'] = (res['prody']/res['DP'])
     res = res.dropna()
     ax2=ax.twinx()
+    if g_type == 'MAX_SNPidx2':
+        ticks_y =  [0,0.5,1] if multi[0] else [0,0.25,0.5,0.75,1]
     ax2.spines['top'].set_visible(False)
     c_=arg['--palette']['BOOST']
     ax2.plot(res['POSx'], res['VALy'], c=c_, lw=arg['LINE_W'], linestyle='dashed')
@@ -2941,8 +2951,8 @@ def plotDistanceBoost(d, arg, ax, max_x, chrom, sets):
     ax2.tick_params(axis='y', which='both', length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
     for spine in ax2.spines.values():
         spine.set_linewidth(sets['axSpinesWIDTH'])
-    ax2.set_yticks(ticks=[0, 0.25, 0.5, 0.75, 1])
-    ax2.set_yticklabels(labels=[0, 0.25, 0.5, 0.75, 1], fontsize=sets['yticksSIZE'])
+    ax2.set_yticks(ticks=ticks_y)
+    ax2.set_yticklabels(labels=ticks_y, fontsize=sets['yticksSIZE'])
     ax2.set_ylabel(ylabel='Boost', fontsize=sets['ylabSIZE'], rotation=90, labelpad=sets['ylabDIST'])
 
 def plot_ED100_4(arg, ax, max_x, max_y, ed100, ch, sets):
@@ -3036,7 +3046,7 @@ def Delta2_Vertical_graph(df, arg):
                 ax[i].set_xticklabels(labels=np.arange(0, max_x, 5e6), fontsize=8, color='black')
                 ax[i].xaxis.set_major_formatter(ScalarFormatter())
                 ax[i].ticklabel_format(axis='x', style='scientific', scilimits=(6, 6), useMathText=True)
-                ax[i].set_xlabel(xlabel='Chromosomal position (bp)', fontsize=15)
+                ax[i].set_xlabel(xlabel='Genomic position (bp)', fontsize=15)
 
         fig.subplots_adjust(hspace=0.1)
         filename='delta2multiV'+typ
