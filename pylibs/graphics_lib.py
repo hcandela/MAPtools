@@ -157,10 +157,8 @@ def test_plot(arg, __doc__):
     return arg
 
 def load_dataframe_plotting(arg):
-    read_palette(arg)
     read_settings(arg)
-    read_alias(arg)
-    
+
     inp_f = arg['--input']
     inp_ext = inp_f.split('.')[-1]
     if inp_ext == 'csv':
@@ -471,45 +469,6 @@ def check_merge(arg,__doc__):
     # Checking graphic types
     return arg
 
-def read_palette(arg):
-    script_dir = os.path.dirname(os.path.realpath(__file__))
-    json_file_path = os.path.join(script_dir,'..','palette.json')
-    try:
-        with open(json_file_path) as json_file:
-            data = json.load(json_file)
-    except FileNotFoundError:
-        print('Error: Please put the file \"palette.json\" in the MAPtools folder.', file=sys.stderr)
-        sys.exit()
-    #arg['DPI'] = data['DPI']
-    #arg['DOT_SIZE'] = data['DOT_SIZE']
-    #arg['LINE_W'] = data['LINE_W']
-    palette = arg['--palette']
-    if palette not in data.keys():
-        print(f'Warning: {palette} is not one of the available palette names.\nSwitching to standard', file=sys.stderr)
-        palette = 'standard'
-    
-    for key,val in data[palette].items():
-        if val == list():
-            palette = 'standard'
-            break
-    arg['--palette'] = {k: v[0] for k, v in data[palette].items()}
-    arg['color_names'] = {k: v[1] for k, v in data[palette].items()}
-
-def read_settings2(arg):
-    script_dir = os.path.dirname(os.path.realpath(__file__))
-    json_file_path = os.path.join(script_dir,'..','settings2.json')
-    try:
-        with open(json_file_path) as json_file:
-            data = json.load(json_file)
-    except FileNotFoundError:
-        print('Error: Please put the file \"settings.json\" in the MAPtools folder.', file=sys.stderr)
-        sys.exit()
-
-    for key,dicc in data.items():
-        for k,v in dicc.items():
-            if v == 'None':
-                dicc[k] = None
-    arg['sets'] = data
 
 def read_settings(arg):
     script_dir = os.path.dirname(os.path.realpath(__file__))
@@ -521,25 +480,32 @@ def read_settings(arg):
         print('Error: Please put the file \"settings.json\" in the MAPtools folder.', file=sys.stderr)
         sys.exit()
 
-    for key,dicc in data.items():
+    s = data['settings']
+    for key,dicc in s.items():
         for k,v in dicc.items():
             if v == 'None':
                 dicc[k] = None
-    arg['sets'] = data
-def read_alias(arg):
-    script_dir = os.path.dirname(os.path.realpath(__file__))
-    json_file_path = os.path.join(script_dir,'..','alias.json')
-    try:
-        with open(json_file_path) as json_file:
-            data = json.load(json_file)
-    except FileNotFoundError:
-        print('Error: Please put the file \"alias.json\" in the MAPtools folder.', file=sys.stderr)
-        sys.exit()
+    arg['sets'] = s
     
-    if data == dict():
+    a = data['alias']
+    if a == dict():
         arg['alias'] = False
     else:
-        arg['alias'] = data
+        arg['alias'] = a
+    
+    p = data['palettes']
+    palette = arg['--palette']
+    if palette not in p.keys():
+        print(f'Warning: {palette} is not one of the available palette names.\nSwitching to standard', file=sys.stderr)
+        palette = 'standard'
+    
+    for key,val in p[palette].items():
+        if val == list():
+            palette = 'standard'
+            break
+    arg['--palette'] = {k: v[0] for k, v in p[palette].items()}
+    arg['color_names'] = {k: v[1] for k, v in p[palette].items()}
+
 
 def check_save(arg, file_name):
     typ = arg['--output-type']
@@ -1152,6 +1118,7 @@ def pval_mono_graph(df, arg):
         fig, ax=plt.subplots(figsize=(sets['figwidth'], sets['figheight']))
         ax.scatter(x, y, s=arg['DOT_SIZE'], color=arg['--palette']['dots'], alpha=arg['--alpha'], clip_on=False)
         ax.set(xlim=(0, max_x), ylim=((min(min_y, threshold)-1)//1, 0))
+        ax.tick_params(axis='x', which='both', length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
         ax.set_xticks(ticks=np.arange(0, max_x, 5e6))
         ax.set_xticklabels(labels=np.arange(0, max_x, 5e6),fontsize=sets['xticksSIZE'])
         ax.xaxis.set_major_formatter(ScalarFormatter())
