@@ -494,7 +494,23 @@ def read_palette(arg):
             break
     arg['--palette'] = {k: v[0] for k, v in data[palette].items()}
     arg['color_names'] = {k: v[1] for k, v in data[palette].items()}
-    
+
+def read_settings2(arg):
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    json_file_path = os.path.join(script_dir,'..','settings2.json')
+    try:
+        with open(json_file_path) as json_file:
+            data = json.load(json_file)
+    except FileNotFoundError:
+        print('Error: Please put the file \"settings.json\" in the MAPtools folder.', file=sys.stderr)
+        sys.exit()
+
+    for key,dicc in data.items():
+        for k,v in dicc.items():
+            if v == 'None':
+                dicc[k] = None
+    arg['sets'] = data
+
 def read_settings(arg):
     script_dir = os.path.dirname(os.path.realpath(__file__))
     json_file_path = os.path.join(script_dir,'..','settings.json')
@@ -925,7 +941,7 @@ def AF_manhattan_plot(df, arg, g_type):
             ax[1].remove()
         if i > 0:
             ax[i].axes.get_yaxis().set_visible(False)
-    fig.tight_layout()
+    #fig.tight_layout()
     fig.subplots_adjust(wspace=sets['wspace'])
     filename = rt + typ
     filename = check_save(arg, filename)
@@ -1098,7 +1114,7 @@ def pval_manhattan_plot(df, arg):
             ax[1].remove()
         if i > 0:
             ax[i].axes.get_yaxis().set_visible(False)
-    fig.tight_layout()
+    #fig.tight_layout()
     fig.subplots_adjust(wspace=sets['wspace'])
     filename = rt + typ
     filename = check_save(arg, filename)
@@ -1692,7 +1708,7 @@ def EDmanhattanPlot(df, arg):
             ax[i].axes.get_yaxis().set_visible(False)
         ax[0].set_yticks(ticks=[0, 0.5, 1, 1.5])
         ax[0].set_yticklabels(labels=[0, 0.5, 1, 1.5], fontsize=sets['yticksSIZE'])
-    plt.tight_layout()
+    #plt.tight_layout()
     fig.subplots_adjust(wspace=sets['wspace'])
     filename= rt + typ
     filename=check_save(arg, filename)
@@ -1813,7 +1829,7 @@ def GmanhattanPlot(df, arg):
             ax[1].remove()
         if i > 0:
             ax[i].axes.get_yaxis().set_visible(False)
-    fig.tight_layout()
+    #fig.tight_layout()
     fig.subplots_adjust(wspace=sets['wspace'])
     filename= rt + typ
     filename=check_save(arg, filename)
