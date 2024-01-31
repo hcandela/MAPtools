@@ -277,8 +277,10 @@ def checkPlottingOptions(arg,df):
         if 'SNPidx2' in arg['--fields']:
             arg['--allele-freq-2'] = True
         # Activaba Combine cuando usabas -a en todos los gráficos
-        #if 'SNPidx1' in arg['--fields'] and 'SNPidx2' in arg['--fields']:
-        #    arg['--combine'] = True
+        if 'SNPidx1' in arg['--fields'] and 'SNPidx2' in arg['--fields'] and arg['--combine'] == True:
+            arg['--combine'] = True
+        else:
+            arg['--combine'] = False
         if len(arg['--chromosomes']) > 1:
             arg['--multi-chrom'] = True
         if 'MAX_SNPidx2' in arg['--fields'] and arg['type'] == 'mbs':
@@ -2871,10 +2873,17 @@ def plot_boost(d, arg, ax, max_x, sets, ticks_y, g_type, multi):
         d['DP']=d['DPdom_1']+d['DPrec_1']
     else:
         d['DP']=d['DPdom_2']+d['DPrec_2']
-    d['BOOST']=d['BOOST'] * arg['lim']
-    d['prodboost']=d['BOOST'] * d['DP']
-    d['medboost']=(d['prodboost'].rolling(arg['--boost']).sum() / \
-                   d['DP'].rolling(arg['--boost']).sum())
+    #d['BOOST']=d['BOOST'] * arg['lim']
+    #d['prodboost']=d
+    # (arg['--boost']).sum() / \
+    #               d['DP'].rolling(arg['--boost']).sum())
+    #d['prodboostx']=d['POS'] * d['DP']
+    #d['medboostx']=(d['prodboostx'].rolling(
+    #    arg['--boost']).sum() / d['DP'].rolling(arg['--boost']).sum())
+    d['prody']=d['SNPidx2'] * d['DP']
+    d['medboost']=(d['prody'].rolling(arg['--boost']).sum() / d['DP'].rolling(arg['--boost']).sum())
+    d['BOOST2'] = 1/( arg['lim']+abs(1-1/(np.maximum(d['medboost'], 1-d['medboost']))))
+    d['BOOST2'] = d['BOOST2']* arg['lim']
     d['prodboostx']=d['POS'] * d['DP']
     d['medboostx']=(d['prodboostx'].rolling(
         arg['--boost']).sum() / d['DP'].rolling(arg['--boost']).sum())
@@ -2883,7 +2892,7 @@ def plot_boost(d, arg, ax, max_x, sets, ticks_y, g_type, multi):
         ticks_y =  [0,0.5,1] if multi[0] else [0,0.25,0.5,0.75,1]
     ax2.spines['top'].set_visible(False)
     c_=arg['--palette']['BOOST']
-    ax2.plot(d['medboostx'], d['medboost'], c=c_, lw=arg['LINE_W'], linestyle='dashed')
+    ax2.plot(d['medboostx'], d['BOOST2'], c=c_, lw=arg['LINE_W'], linestyle='dashed')
     ax2.set(xlim=(0, max_x), ylim=(0, 1))
     ax2.set_yticks(ticks=ticks_y)
     ax2.tick_params(axis='y', which='both', length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
