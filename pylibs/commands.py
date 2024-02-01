@@ -249,11 +249,8 @@ Options:
 Plot options:
   -A, --moving-avg INT          add moving averages to plots, calculated using INT adjacent markers
   -W, --distance-avg INT        add weighted averages to plots, calculated for all markers located
-                                within an INT bp interval
-  -b, --boost INT               add boost to allele frequency plots, calculated as the average boost
-                                values of INT adjacent markers
-  -B, --distance-boost INT      add boost to allele frequency plots, calculated for all markers located
-                                within an INT bp interval
+                                within an INT bp interval.
+  -b, --boost                   add boost to allele frequency plots. Requires -A or -W
   --bonferroni                  add Bonferroni threshold to p-value plots. Requires -p or -a
   --ci95                        add 95% confidence interval to delta plots. Requires -A or -W
   --palette STR                 select a colour palette [default: standard]
@@ -291,7 +288,8 @@ Output options:
   arg, df = load_dataframe_plotting(arg)
 
   arg['version'] = v_plot
-  #print(arg)
+  
+  
   #Allele Frequency plots
   if arg['--allele-freq-1'] == True:
     arg = create_subfolder(arg, 'AlleleFrequency1/')

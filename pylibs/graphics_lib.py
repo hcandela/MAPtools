@@ -178,7 +178,7 @@ def load_dataframe_plotting(arg):
         df = df.reset_index()
 
     if arg['alias'] != False:
-        if set(arg['--chromosomes']).issubset(arg['alias']):
+        if set(arg['alias']).issubset(arg['--chromosomes']):
             arg['--contigs'] = {arg['alias'].get(k,k): v for k, v in arg['--contigs'].items()}
             arg['--chromosomes'] = [arg['alias'].get(c, c) for c in arg['--chromosomes']]
             df['#CHROM'] = df['#CHROM'].map(arg['alias'])
@@ -247,25 +247,10 @@ def checkPlottingOptions(arg,df):
     arg['lines'] = LINES
     arg['ED100'] = False
     if arg['type'] == 'mbs':
-        if arg['--boost'] != None and arg['--distance-boost'] != None:
-            print('Error: Options -b and -B are incompatible', file=sys.stderr)
-            sys.exit()
-
-        if arg['--boost'] == None:
-            arg['--boost'] = False
-        else:
-            arg['--boost'] = int(arg['--boost'])
-            if arg['--boost'] <= 0:
-                print('Error: The window size for boost (-b) must be an integer higher than zero.', file=sys.stderr)
-                sys.exit()
-
-        if arg['--distance-boost'] == None:
-            arg['--distance-boost'] = False
-        else:
-            arg['--distance-boost'] = int(arg['--distance-boost'])
-            if arg['--distance-boost'] <= 0:
-                print('Error: The window size for boost (-B) must be an integer higher than zero.', file=sys.stderr)
-                sys.exit()
+        if arg['--boost'] == True:
+            if arg['--moving-avg'] == False and arg['--distance-avg'] == False:
+                arg['--boost'] = False
+                print('Warning: Activate the -A or -W options to use boost.', file=sys.stderr)
 
     if arg['--all']:
         if 'log10PVALUE' in arg['--fields']:
@@ -878,19 +863,13 @@ def AF_manhattan_plot(df, arg, g_type):
             plotDistanceAvg(d, chrom[i], arg, ax[i], g_type)
 
         if arg['type'] == 'mbs':
-            if arg['--boost'] != False:
+            if arg['--boost'] == True and arg['--moving-avg'] != False:
                 keyB = 36
-                if 'SNPidx1' in arg['--fields'] and 'SNPidx2' not in arg['--fields']:
-                    plot_boostManhattan(d, arg, ax[i], max_x, chrom, i, sets, ticks_y, g_type)
-                    boost = True
                 if g_type == 'SNPidx2' or g_type == 'MAX_SNPidx2':
                     plot_boostManhattan(d, arg, ax[i], max_x, chrom, i, sets, ticks_y, g_type)
                     boost = True
-            if arg['--distance-boost'] != False:
+            if arg['--boost'] == True and arg['--distance-avg'] != False:
                 keyB = 35
-                if 'SNPidx1' in arg['--fields'] and 'SNPidx2' not in arg['--fields']:
-                    plotDistanceBoostManhattan(d, arg, ax[i], max_x, chrom, i, sets, ticks_y, g_type)
-                    boost = True
                 if g_type == 'SNPidx2' or g_type == 'MAX_SNPidx2':
                     plotDistanceBoostManhattan(d, arg, ax[i], max_x, chrom, i, sets, ticks_y, g_type)
                     boost = True
@@ -928,10 +907,10 @@ def AF_manhattan_plot(df, arg, g_type):
             cap.append(arg['lines'][key].format(arg['color_names'][g_type], str(arg['--distance-avg'])))
         if arg['type'] == 'mbs':
             if boost == True:
-                if arg['--boost'] != False:
-                    cap.append(arg['lines'][keyB].format(arg['color_names']['BOOST'], str(arg['--boost'])))
-                if arg['--distance-boost'] != False:
-                    cap.append(arg['lines'][keyB].format(arg['color_names']['BOOST'], str(arg['--distance-boost'])))
+                if arg['--moving-avg'] != False:
+                    cap.append(arg['lines'][keyB].format(arg['color_names']['BOOST'], str(arg['--moving-avg'])))
+                if arg['--distance-avg'] != False:
+                    cap.append(arg['lines'][keyB].format(arg['color_names']['BOOST'], str(arg['--distance-avg'])))
         if arg['--ci95'] and g_type == 'DELTA':
                 cap.append(arg['lines'][22].format(str(arg['n_markers'])))
         write_caption(f, cap,arg)
@@ -1430,19 +1409,13 @@ def AF_mono_graph(df, arg, g_type):
         if arg['--distance-avg'] != False:
             plotDistanceAvg(d, chrom[i], arg, ax, g_type)
         if arg['type'] == 'mbs':
-            if arg['--boost'] != False:
+            if arg['--boost'] == True and arg['--moving-avg'] != False:
                 keyB = 36
-                if 'SNPidx1' in arg['--fields'] and 'SNPidx2' not in arg['--fields']:
-                    plot_boost(d, arg, ax, max_x, sets, ticks_y, g_type, multi)
-                    boost = True
                 if g_type == 'SNPidx2' or g_type == 'MAX_SNPidx2':
                     plot_boost(d, arg, ax, max_x, sets, ticks_y, g_type, multi)
                     boost = True
-            if arg['--distance-boost'] != False:
+            if arg['--boost'] == True and arg['--distance-avg'] != False:
                 keyB = 35
-                if 'SNPidx1' in arg['--fields'] and 'SNPidx2' not in arg['--fields']:
-                    plotDistanceBoost(d, arg, ax, max_x, chrom[i], sets, ticks_y, g_type, multi)
-                    boost = True
                 if g_type == 'SNPidx2' or g_type == 'MAX_SNPidx2':
                     plotDistanceBoost(d, arg, ax, max_x, chrom[i], sets, ticks_y, g_type, multi)
                     boost = True
@@ -1475,10 +1448,10 @@ def AF_mono_graph(df, arg, g_type):
                 cap.append(arg['lines'][key].format(arg['color_names'][g_type], str(arg['--distance-avg'])))
             if arg['type'] == 'mbs':
                 if boost == True:
-                    if arg['--boost'] != False:
-                        cap.append(arg['lines'][keyB].format(arg['color_names']['BOOST'], str(arg['--boost'])))
-                    if arg['--distance-boost'] != False:
-                        cap.append(arg['lines'][keyB].format(arg['color_names']['BOOST'], str(arg['--distance-boost'])))
+                    if arg['--moving-avg'] != False:
+                        cap.append(arg['lines'][keyB].format(arg['color_names']['BOOST'], str(arg['--moving-avg'])))
+                    if arg['--distance-avg'] != False:
+                        cap.append(arg['lines'][keyB].format(arg['color_names']['BOOST'], str(arg['--distance-avg'])))
             if arg['--ci95'] and g_type == 'DELTA':
                 cap.append(arg['lines'][22].format(str(arg['n_markers'])))
             write_caption(f, cap, arg)
@@ -1860,19 +1833,13 @@ def AF_multi_Vertical_graph(df, arg, g_type):
             if arg['--distance-avg'] != False:
                 plotDistanceAvg(d, chrom[i], arg, ax[i], g_type)
             if arg['type'] == 'mbs':
-                if arg['--boost'] != False:
+                if arg['--boost'] == True and arg['--moving-avg'] != False:
                     keyB = 36
-                    if 'SNPidx1' in arg['--fields'] and 'SNPidx2' not in arg['--fields']:
-                        plot_boost(d, arg, ax[i], max_x, sets, ticks_y, g_type,multi)
-                        boost = True
                     if g_type == 'SNPidx2' or g_type == 'MAX_SNPidx2':
                         plot_boost(d, arg, ax[i], max_x, sets, ticks_y, g_type,multi)
                         boost = True
-                if arg['--distance-boost'] != False:
+                if arg['--boost'] == True and arg['--distance-avg'] != False:
                     keyB = 35
-                    if 'SNPidx1' in arg['--fields'] and 'SNPidx2' not in arg['--fields']:
-                        plotDistanceBoost(d, arg, ax[i], max_x, chrom[i], sets, ticks_y, g_type,multi)
-                        boost = True
                     if g_type == 'SNPidx2' or g_type == 'MAX_SNPidx2':
                         plotDistanceBoost(d, arg, ax[i], max_x, chrom[i], sets, ticks_y, g_type,multi)
                         boost = True
@@ -1915,10 +1882,10 @@ def AF_multi_Vertical_graph(df, arg, g_type):
             cap.append(arg['lines'][key].format(arg['color_names'][g_type], str(arg['--distance-avg'])))
         if arg['type'] == 'mbs':
             if boost == True:
-                if arg['--boost'] != False:
-                    cap.append(arg['lines'][keyB].format(arg['color_names']['BOOST'], str(arg['--boost'])))
-                if arg['--distance-boost'] != False:
-                    cap.append(arg['lines'][keyB].format(arg['color_names']['BOOST'], str(arg['--distance-boost'])))
+                if arg['--moving-avg'] != False:
+                    cap.append(arg['lines'][keyB].format(arg['color_names']['BOOST'], str(arg['--moving-avg'])))
+                if arg['--distance-avg'] != False:
+                    cap.append(arg['lines'][keyB].format(arg['color_names']['BOOST'], str(arg['--distance-avg'])))
         if arg['--ci95'] and g_type == 'DELTA':
             cap.append(arg['lines'][22].format(str(arg['n_markers'])))
         write_caption(f, cap,arg)
@@ -2838,17 +2805,15 @@ def distanceSNPidx(d, arg, ax, chrom):
 
 def plot_boostManhattan(d, arg, ax, max_x, chrom, i, sets, ticks_y, g_type):
     # Mediamovil Boost
-    if 'SNPidx2' not in arg['--fields']:
-        d['DP']=d['DPdom_1']+d['DPrec_1']
-    else:
-        d['DP']=d['DPdom_2']+d['DPrec_2']
-    d['BOOST']=d['BOOST'] * arg['lim']
-    d['prodboost']=d['BOOST'] * d['DP']
-    d['medboost']=(d['prodboost'].rolling(arg['--boost']).sum() / \
-                   d['DP'].rolling(arg['--boost']).sum())
+    d['DP']=d['DPdom_2']+d['DPrec_2']
+    d['prody']=d['SNPidx2'] * d['DP']
+    d['medboost']=(d['prody'].rolling(arg['--moving-avg']).sum() / \
+                   d['DP'].rolling(arg['--moving-avg']).sum())
+    d['BOOST2'] = 1/( arg['lim']+abs(1-1/(np.maximum(d['medboost'], 1-d['medboost']))))
+    d['BOOST2'] = d['BOOST2']* arg['lim']
     d['prodboostx']=d['POS'] * d['DP']
     d['medboostx']=(d['prodboostx'].rolling(
-        arg['--boost']).sum() / d['DP'].rolling(arg['--boost']).sum())
+        arg['--moving-avg']).sum() / d['DP'].rolling(arg['--moving-avg']).sum())
     c_=arg['--palette']['BOOST']
     if g_type == 'MAX_SNPidx2':
         ticks_y = [0,0.25,0.5,0.75,1]
@@ -2856,7 +2821,7 @@ def plot_boostManhattan(d, arg, ax, max_x, chrom, i, sets, ticks_y, g_type):
     ax2.spines['top'].set_visible(False)
     ax2.set(xlim=(0, max_x), ylim=(0, 1))
     ax2.set_yticks([])
-    ax2.plot(d['medboostx'], d['medboost'], c=c_, lw=arg['LINE_W'], linestyle='dashed')
+    ax2.plot(d['medboostx'], d['BOOST2'], c=c_, lw=arg['LINE_W'], linestyle='dashed')
     ax2.tick_params(axis='y', which='both', length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
     for spine in ax2.spines.values():
         spine.set_linewidth(sets['axSpinesWIDTH'])
@@ -2869,24 +2834,14 @@ def plot_boostManhattan(d, arg, ax, max_x, chrom, i, sets, ticks_y, g_type):
 
 def plot_boost(d, arg, ax, max_x, sets, ticks_y, g_type, multi):
     # Mediamovil Boost
-    if 'SNPidx2' not in arg['--fields']:
-        d['DP']=d['DPdom_1']+d['DPrec_1']
-    else:
-        d['DP']=d['DPdom_2']+d['DPrec_2']
-    #d['BOOST']=d['BOOST'] * arg['lim']
-    #d['prodboost']=d
-    # (arg['--boost']).sum() / \
-    #               d['DP'].rolling(arg['--boost']).sum())
-    #d['prodboostx']=d['POS'] * d['DP']
-    #d['medboostx']=(d['prodboostx'].rolling(
-    #    arg['--boost']).sum() / d['DP'].rolling(arg['--boost']).sum())
+    d['DP']=d['DPdom_2']+d['DPrec_2']
     d['prody']=d['SNPidx2'] * d['DP']
-    d['medboost']=(d['prody'].rolling(arg['--boost']).sum() / d['DP'].rolling(arg['--boost']).sum())
+    d['medboost']=(d['prody'].rolling(arg['--moving-avg']).sum() / d['DP'].rolling(arg['--moving-avg']).sum())
     d['BOOST2'] = 1/( arg['lim']+abs(1-1/(np.maximum(d['medboost'], 1-d['medboost']))))
     d['BOOST2'] = d['BOOST2']* arg['lim']
     d['prodboostx']=d['POS'] * d['DP']
     d['medboostx']=(d['prodboostx'].rolling(
-        arg['--boost']).sum() / d['DP'].rolling(arg['--boost']).sum())
+        arg['--moving-avg']).sum() / d['DP'].rolling(arg['--moving-avg']).sum())
     ax2=ax.twinx()
     if g_type == 'MAX_SNPidx2':
         ticks_y =  [0,0.5,1] if multi[0] else [0,0.25,0.5,0.75,1]
@@ -2903,21 +2858,19 @@ def plot_boost(d, arg, ax, max_x, sets, ticks_y, g_type, multi):
 
 def plotDistanceBoostManhattan(d, arg, ax, max_x, chrom, i, sets, ticks_y, g_type):
     # Mediamovil Boost
-    if 'SNPidx2' not in arg['--fields']:
-        d['DP']=d['DPdom_1']+d['DPrec_1']
-    else:
-        d['DP']=d['DPdom_2']+d['DPrec_2']
-    d['BOOST']=d['BOOST'] * arg['lim']
-    d['prodx'] = d['DP']*d['POS']
-    d['prody'] = d['DP']*d['BOOST']
-    interval_ranges = [x for x in range(0, max_x, arg['--distance-boost'])]
+    d['DP']=d['DPdom_2']+d['DPrec_2']
+    d['prodx'] = d['POS']*d['DP']
+    d['prody'] = d['SNPidx2']*d['DP']
+    interval_ranges = [x for x in range(0, max_x, arg['--distance-avg'])]
     if interval_ranges[-1] < max_x:
         interval_ranges.append(max_x)
     interval_labels = [f'{start}-{end-1}' for start, end in zip(interval_ranges, interval_ranges[1:])]
     d['Interval'] = pd.cut(d['POS'], bins=interval_ranges, labels=interval_labels)
     res = d.groupby('Interval').agg({'prodx': sum, 'prody': sum, 'DP': sum})
+    res['BOOST2'] = 1/( arg['lim'] + abs(1-1/(np.maximum(res['prody'], 1-res['prody']))))
+    res['BOOST2'] = res['BOOST2']*arg['lim']
     res['POSx'] = (res['prodx']/res['DP'])
-    res['VALy'] = (res['prody']/res['DP'])
+    res['VALy'] = (res['BOOST2']/res['DP'])
     res = res.dropna()
 
     c_=arg['--palette']['BOOST']
@@ -2940,22 +2893,20 @@ def plotDistanceBoostManhattan(d, arg, ax, max_x, chrom, i, sets, ticks_y, g_typ
 
 def plotDistanceBoost(d, arg, ax, max_x, chrom, sets, ticks_y, g_type, multi):
     # Mediamovil Boost
-    if 'SNPidx2' not in arg['--fields']:
-        d['DP']=d['DPdom_1']+d['DPrec_1']
-    else:
-        d['DP']=d['DPdom_2']+d['DPrec_2']
-    d['BOOST']=d['BOOST'] * arg['lim']
     max_x = arg['contigs'][chrom]
+    d['DP']=d['DPdom_2']+d['DPrec_2']
     d['prodx'] = d['DP']*d['POS']
-    d['prody'] = d['DP']*d['BOOST']
-    interval_ranges = [x for x in range(0, max_x, arg['--distance-boost'])]
+    d['prody'] = d['DP']*d['SNPidx2']
+    interval_ranges = [x for x in range(0, max_x, arg['--distance-avg'])]
     if interval_ranges[-1] < max_x:
         interval_ranges.append(max_x)
     interval_labels = [f'{start}-{end-1}' for start, end in zip(interval_ranges, interval_ranges[1:])]
     d['Interval'] = pd.cut(d['POS'], bins=interval_ranges, labels=interval_labels)
     res = d.groupby('Interval').agg({'prodx': sum, 'prody': sum, 'DP': sum})
+    res['BOOST2'] = 1/( arg['lim'] + abs(1-1/(np.maximum(res['prody'], 1-res['prody']))))
+    res['BOOST2'] = res['BOOST2']*arg['lim']
     res['POSx'] = (res['prodx']/res['DP'])
-    res['VALy'] = (res['prody']/res['DP'])
+    res['VALy'] = (res['BOOST2']/res['DP'])
     res = res.dropna()
     ax2=ax.twinx()
     if g_type == 'MAX_SNPidx2':
