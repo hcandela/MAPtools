@@ -25,7 +25,7 @@ TITLES = {#AF MBS
           10:('\u0394 SNP-index plot with data from both bulks.','delta_multiV','delta_Manhattan'),
           #p-value
           11:('p-values of two-tailed Fisher\'s exact tests in chromosome {}.', 'pvalue_{}'),
-          12:('p-values of two-tailed Fisher\'s exact tests.{}', 'pvalue_multiV','pvalue_Manhattan'),
+          12:('p-values of two-tailed Fisher\'s exact tests.', 'pvalue_multiV','pvalue_Manhattan'),
           #ED
           13:('Euclidean Distance between frequencies in both bulks in chromosome {}.', 'ED_{}'),
           14:('Euclidean Distance between frequencies in both bulks.','ED_multiV', 'ED_Manhattan'),
@@ -33,7 +33,7 @@ TITLES = {#AF MBS
           15:('G-statistic of the two-phase sampling inherent to both bulks in chromosome {}, calculated using the procedure used in Magwene et al. (2011).','G_{}'),
           16:('G-statistic of the two-phase sampling inherent to both bulks, calculated using the procedure used in Magwene et al. (2011).','G_multiV', 'G_Manhattan'),
           #Combined
-          17:('Combined {} chromosome statistics plot.', 'Combined_statistics_{}'),
+          17:('Different statistics place on chromosome {}.', 'Combined_statistics_{}'),
           #Maximum
           18:('Maximum of allele frequency of individuals exhibiting the recessive phenotype, in chromosome {}.', 'MAXAF2_{}'),
           19:('Maximum of allele frequency of individuals exhibiting the recessive phenotype', 'MAXAF2_multiV', 'MAXAF2_Manhattan')
@@ -70,24 +70,28 @@ LINES = {#AF MBS
          22:'The shaded region shows the confidence interval for a proportion difference at a significance level of 5%, adjusted by the Bonferroni correction (n={}).',
          #ED
          23:'Each {} dot represents the Euclidean distance for each individual marker.',
-         24:'The {} line is the smoothed statistic ED100^4 for Euclidean distance, calculated by summing of 100 individual markers raised to the fourth power as described in (de la Fuente Cantó, et al. 2022).',
+         24:'The {} line is the smoothed statistic ED100^4 for Euclidean distance, calculated by summing of 100 individual markers raised to the fourth power as described in de la Fuente Cantó, et al. (2022).',
          #G
          25:'Each {} dot represents the G-statistic for each individual marker.',
          26:'The {} line represents the weighted average of the G-statistic of markers within a {}-bp range.',
          27:'The {} line indicates the weighted moving average of the G-statistic at {} adjacent polymorphisms.',
          #Combined
-         28:'The {} line represents the weighted average for the rest of the plotted variables of markers within a {}-bp range.',
-         29:'The {} line indicates the moving average for the rest of the plotted variables, at {} adjacent polymorphisms.',
+         28:' Unless otherwise stated, continuous lines represents the weighted moving average calculated using the markers within a {}-bp range.',
+         29:' Unless otherwise stated, continuous lines represents the weighted moving average calculated using a sliding window of {} adjacent markers.',
             #MBS
-         30:'(a) SNP-index plot for the bulk of dominant phenotype individuals.{} (b) SNP-index plot for the bulk of recessive phenotype individuals.{}'\
+         30:'Each dot corresponds to an individual biallelic marker segregating in the population.'\
+            '{}'\
+            '(a) SNP-index plot for the bulk of dominant phenotype individuals. (b) SNP-index plot for the bulk of recessive phenotype individuals.'\
             ' (c) \u0394 SNP-index plot, subtracting the SNP-index value of the recessive bulk from that of the dominant bulk{}. {}'\
-            ' (d) Euclidean distance for each individual marker. {}'\
+            ' (d) Euclidean distance for each individual marker (dots). {}'\
             ' (e) G-statistic for each individual marker.'\
             ' (f) p-values of two-tailed Fisher\'s exact tests. {}',
             #QTL
-         31:'(a) SNP-index plot for the bulk of high phenotype individuals. {} (b) SNP-index plot for the bulk of low phenotype individuals. {}'\
+         31:'Each dot corresponds to an individual biallelic marker segregating in the population.'\
+            '{}'\
+            '(a) SNP-index plot for the bulk of high phenotype individuals. (b) SNP-index plot for the bulk of low phenotype individuals.'\
             ' (c) \u0394 SNP-index plot, subtracting the SNP-index value of the low bulk from that of the high bulk{}. {}'\
-            ' (d) Euclidean distance for each individual marker. {}'\
+            ' (d) Euclidean distance for each individual marker (dots). {}'\
             ' (e) G-statistic for each individual marker.'\
             ' (f) p-values of two-tailed Fisher\'s exact tests. {}',         
          #MAX
@@ -97,6 +101,7 @@ LINES = {#AF MBS
          #BOOST
          35:'The {} dashed line is the weighted average of Boost of markers within a  {}-bp range. Boost was calculated from the allele frecuency values of the recessive bulk, using the procedure described in SHOREmap (Schneeberger, et al. 2009).',
          36:'The {} dashed line is the moving average of Boost at {} adjacent polymorphisms. Boost was calculated from the allele frecuency values of the recessive bulk, using the procedure described in SHOREmap (Schneeberger, et al. 2009).'
+
 }
 
 variable_descriptions={

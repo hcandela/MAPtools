@@ -911,7 +911,7 @@ def AF_manhattan_plot(df, arg, g_type):
                     cap.append(arg['lines'][keyB].format(arg['color_names']['BOOST'], str(arg['--moving-avg'])))
                 if arg['--distance-avg'] != False:
                     cap.append(arg['lines'][keyB].format(arg['color_names']['BOOST'], str(arg['--distance-avg'])))
-        if arg['--ci95'] and g_type == 'DELTA':
+        if arg['--ci95'] and g_type == 'DELTA' and (arg['--moving-avg'] != False or arg['--distance-avg'] != False):
                 cap.append(arg['lines'][22].format(str(arg['n_markers'])))
         write_caption(f, cap,arg)
 
@@ -976,7 +976,7 @@ def AFCombinedManhattanPlot(df, arg):
             ax[1].remove()
         if i > 0:
             ax[i].axes.get_yaxis().set_visible(False)
-    fig.tight_layout()
+    #fig.tight_layout()
     fig.subplots_adjust(wspace=sets['wspace'])
     filename = rt + typ
     filename = check_save(arg, filename)
@@ -987,7 +987,7 @@ def AFCombinedManhattanPlot(df, arg):
     if arg['--captions']:
         f = create_caption(arg,rt)
         cap.append(', '.join(f_name))
-        #cap.append(t.format(', '.join(labs_list)))
+        cap.append(t)
         if arg['--moving-avg'] != False:
             cap.append(arg['lines'][l2].format(arg['color_names']['SNPidx2'], str(arg['--moving-avg'])))
             cap.append(arg['lines'][l1].format(arg['color_names']['SNPidx1'], str(arg['--moving-avg'])))
@@ -1452,7 +1452,7 @@ def AF_mono_graph(df, arg, g_type):
                         cap.append(arg['lines'][keyB].format(arg['color_names']['BOOST'], str(arg['--moving-avg'])))
                     if arg['--distance-avg'] != False:
                         cap.append(arg['lines'][keyB].format(arg['color_names']['BOOST'], str(arg['--distance-avg'])))
-            if arg['--ci95'] and g_type == 'DELTA':
+            if arg['--ci95'] and g_type == 'DELTA' and (arg['--moving-avg'] != False or arg['--distance-avg'] != False):
                 cap.append(arg['lines'][22].format(str(arg['n_markers'])))
             write_caption(f, cap, arg)
 
@@ -1516,7 +1516,7 @@ def pval_multi_Vertical_graph(df, arg):
     if arg['--captions']:
         f = create_caption(arg,rt)
         cap.append(', '.join(f_name))
-        cap.append(t.format(' '.join(labs_list)))
+        cap.append(t)
         cap = cap + labs_list
         cap.append(arg['lines'][12].format(arg['color_names']['dots'],''))
         if arg['--moving-avg'] != False:
@@ -1886,7 +1886,7 @@ def AF_multi_Vertical_graph(df, arg, g_type):
                     cap.append(arg['lines'][keyB].format(arg['color_names']['BOOST'], str(arg['--moving-avg'])))
                 if arg['--distance-avg'] != False:
                     cap.append(arg['lines'][keyB].format(arg['color_names']['BOOST'], str(arg['--distance-avg'])))
-        if arg['--ci95'] and g_type == 'DELTA':
+        if arg['--ci95'] and g_type == 'DELTA' and (arg['--moving-avg'] != False or arg['--distance-avg'] != False):
             cap.append(arg['lines'][22].format(str(arg['n_markers'])))
         write_caption(f, cap,arg)
 
@@ -2166,20 +2166,12 @@ def combinedPlot(df, arg):
     min_yp=min(df['log10PVALUE'])*1.05
     if arg['type'] == 'mbs':
         key = 30
-        if arg['--moving-avg'] != False:
-            k1 = 3
-            k2 = 5
-        if arg['--distance-avg'] != False:
-            k1 = 2
-            k2 = 4
     else:
         key = 31
-        if arg['--moving-avg'] != False:
-            k1 = 9
-            k2 = 11
-        if arg['--distance-avg'] != False:
-            k1 = 8
-            k2 = 10
+    if arg['--moving-avg'] != False:
+            k1 = 29
+    if arg['--distance-avg'] != False:
+            k1 = 28
     for i in range(len(chrom)):
         fig, ax=plt.subplots(3, 2, figsize=(sets['figwidth'], sets['figheight']))
         d=df[df['#CHROM'] == chrom[i]]
@@ -2331,8 +2323,8 @@ def combinedPlot(df, arg):
         # log10PVALUE
         ax[2,1].scatter(x, y6, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'], clip_on=False)
         ax[2,1].set(xlim=(0, max_x), ylim=((min(min_yp, threshold)-1)//1, 0))
-        ax[2,1].set_xticks(ticks=np.arange(0, max_x, 5e6))
-        ax[2,1].set_xticklabels(labels=np.arange(0, max_x, 5e6),fontsize=sets['xticksSIZE'])
+        ax[2,1].set_xticks(ticks=np.arange(0, max_x, paso))
+        ax[2,1].set_xticklabels(labels=np.arange(0, max_x, paso),fontsize=sets['xticksSIZE'])
         ax[2,1].tick_params(axis='x', which='both', length=sets['ticksSpinesLENGTH'], width=sets['ticksSpinesWIDTH'])
         ax[2,1].set_ylabel(ylabel='log'+r'$_{10}$'+'(p-value)',fontsize=sets['ylabSIZE'],labelpad=sets['ylabDIST'])
         ax[2,1].yaxis.set_label_coords(sets['ylabXPOS'],sets['ylabYPOS'])
@@ -2369,33 +2361,19 @@ def combinedPlot(df, arg):
             f = create_caption(arg, rtch)
             cap.append(filename)
             cap.append(t.format(chrom[i]))
-            if arg['--moving-avg'] != False:
+            if arg['--moving-avg'] != False or arg['--distance-avg'] != False:  
                 cap.append(arg['lines'][key].format(
-                                        arg['lines'][k1].format(arg['color_names']['SNPidx1'], str(arg['--moving-avg'])),\
-                                        arg['lines'][k2].format(arg['color_names']['SNPidx2'], str(arg['--moving-avg'])),\
+                                        arg['lines'][k1].format(str(arg['--moving-avg'])),\
                                         '' if arg['--ref-genotype'] == True else ', in absolute value',\
-                                        arg['lines'][22].format(arg['color_names']['ci'], str(arg['n_markers'])) if arg['--ci95'] else '',\
+                                        arg['lines'][22].format(str(arg['n_markers'])) if arg['--ci95'] else '',\
                                         arg['lines'][24].format(arg['color_names']['mvg']) if isinstance(ed100,pd.DataFrame) else '',\
                                         arg['lines'][15].format(str(arg['n_markers'])) if arg['--bonferroni'] else ''
                                         ))
-            
-                cap.append(arg['lines'][29].format(arg['color_names']['mvg'], str(arg['--moving-avg'])))
-            elif arg['--distance-avg'] != False:
-                cap.append(arg['lines'][key].format(
-                                        arg['lines'][k1].format(arg['color_names']['SNPidx1'], str(arg['--distance-avg'])),\
-                                        arg['lines'][k2].format(arg['color_names']['SNPidx2'], str(arg['--distance-avg'])),\
-                                        '' if arg['--ref-genotype'] == True else ', in absolute value',\
-                                        arg['lines'][22].format(arg['color_names']['ci'], str(arg['n_markers'])) if arg['--ci95'] else '',\
-                                        arg['lines'][24].format(arg['color_names']['mvg']) if isinstance(ed100,pd.DataFrame) else '',\
-                                        arg['lines'][15].format(str(arg['n_markers'])) if arg['--bonferroni'] else ''
-                                        ))
-                cap.append(arg['lines'][28].format(arg['color_names']['mvg'], str(arg['--distance-avg'])))
             else:
                 cap.append(arg['lines'][key].format(
                                         '',\
-                                        '',\
                                         '' if arg['--ref-genotype'] == True else ', in absolute value',\
-                                        arg['lines'][22].format(arg['color_names']['ci']) if arg['--ci95'] else '',\
+                                        '',\
                                         arg['lines'][24].format(arg['color_names']['mvg']) if isinstance(ed100,pd.DataFrame) else '',\
                                         arg['lines'][15].format(str(arg['n_markers'])) if arg['--bonferroni'] else ''
                                         ))
