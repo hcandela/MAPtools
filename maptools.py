@@ -38,8 +38,6 @@ if __name__ == '__main__':
         plot(argv)
     elif args['<command>'] == 'merge':
         merge(argv)
-    #elif args['<command>'] == 'annotatevcf':
-    #    annotatevcf(argv)
     elif args['<command>'] == 'annotate':
         annotate(argv)
     elif args['<command>'] == 'citation':

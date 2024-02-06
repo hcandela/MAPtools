@@ -21,12 +21,6 @@ from matplotlib.ticker import (MultipleLocator,
 # warnings.filterwarnings("ignore")
 # sys.path.append(os.getcwd())
 pd.options.mode.chained_assignment = None
-# ['#CHROM','POS','REF','REC','DPdom_1','DPrec_1','MAX_SNPidx2','BOOST']
-# ['#CHROM','POS','REF','REC','DPdom_1','DPrec_1','SNPidx1','BOOST']
-# ['#CHROM','POS','REF','REC','DPdom_1','DPrec_1','DPdom_2','DPrec_2','SNPidx1','SNPidx2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE']
-# ['#CHROM','POS','REF','REC','DPdom_1','DPrec_1','DPdom_2','DPrec_2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE']
-# ['#CHROM','POS','REF','REC','DPdom_1','DPrec_1','DPdom_2','DPrec_2','PVALUE','log10PVALUE']
-# ['#CHROM','POS','REF','REC','DPdom_1','DPrec_1','DPdom_2','DPrec_2','SNPidx1','SNPidx2','DELTA','PVALUE','log10PVALUE']
 
 def read_header_plot(arg):
     arg['--contigs'] = dict()
@@ -406,15 +400,10 @@ def check_merge(arg,__doc__):
     except FileNotFoundError:
         print('Error: The input file {} does not exist'.format(inp_f), file=sys.stderr)
         sys.exit()
-    if arg['--output-type'] in {'csv','txt'}:
-        if arg['--output-type'] == 'csv':
-            arg['spacer'] = ','
-        elif arg['--output-type'] == 'txt':
-            arg['spacer'] = '\t'
-        arg['--output-type'] = '.' + arg['--output-type']
-    else:
-        print('Error: select a valid format.', file=sys.stderr)
-        sys.exit()
+
+    arg['spacer'] = '\t'
+    arg['--output-type'] = '.txt'
+
     if arg['--output'] != None:
         wd = os.getcwd()
         outdir_list = arg['--output'].split('/')[:-1]
@@ -522,25 +511,6 @@ def pvalor2(a, b, c, d):
     return pvalue, log(pvalue)/log(10)
 
 
-def expected_pvalue(row):
-    a = int(row[0])
-    b = int(row[1])
-    c = int(row[2])
-    d = int(row[3])
-    fila1 = a + b
-    fila2 = c + d
-    col1 = a + c
-    col2 = b + d
-    tot = col1 + col2
-    a_ex = round((fila1*col1)/tot)
-    b_ex = round((fila1*col2)/tot)
-    c_ex = round((fila2*col1)/tot)
-    d_ex = round((fila2*col2)/tot)
-    e_pvalue = pvalor(a_ex, b_ex, c_ex, d_ex)
-    e_logpvalue = -(log(e_pvalue)/log(10))
-    return e_logpvalue
-
-
 def grouped_by(df, arg):
     w = arg['--window']
     chrom = arg['--chromosomes']
@@ -609,9 +579,6 @@ def grouped_by(df, arg):
                 if 'FISHER' in arg['--fields']:
                     fisher = LogFisher(rAt, rBt, rCt, rDt)
                     res += [fisher]
-                if 'BOOST' in arg['--fields']:
-                    boost = 1/(sys.float_info.min + abs(1 - 1/max(rSNPidx2, 1-rSNPidx2)))
-                    res += [boost]
 
                 pval, log10pval = pvalor2(rAt, rBt, rCt, rDt)
                 rDELTA = rSNPidx2 - rSNPidx1
@@ -623,14 +590,10 @@ def grouped_by(df, arg):
             else:
                 if 'MAX_SNPidx2' in arg['--fields']:
                     rMAX_SNPidx2 = (max(rAt, rBt))/(rAt+rBt)
-                    boost = 1/(sys.float_info.min + abs(1 - 1 /
-                               max(rMAX_SNPidx2, 1-rMAX_SNPidx2)))
-                    res += [rMAX_SNPidx2, boost]
+                    res += [rMAX_SNPidx2]
                 elif 'SNPidx2' in arg['--fields']:
                     rSNPidx2 = rBt/(rAt+rBt)
-                    boost = 1/(sys.float_info.min +
-                               abs(1 - 1/max(rSNPidx2, 1-rSNPidx2)))
-                    res += [rSNPidx2, boost]
+                    res += [rSNPidx2]
 
             n_line = spacer.join(str(field) for field in res) + '\n'
             write_line(n_line, fsal)
@@ -764,64 +727,6 @@ def GmonoPlot(df, arg):
             if arg['--distance-avg'] != False:
                 cap.append(arg['lines'][26].format(arg['color_names']['mvg'], str(arg['--distance-avg'])))
             write_caption(f,cap,arg)
-
-def pval_multi_graph(df, arg):
-    t, rt = arg['titles'][1]
-    if arg['--captions']:
-        f = create_caption(arg, rt)
-    typ = arg['--output-type']
-    min_y = min(df['log10PVALUE'])*1.05
-    labs_list = list()
-    f_name = list()
-    for chrom_list in arg['chrom_lists']:
-        chrom = chrom_list
-        if len(chrom) > 1:
-            fig, ax = plt.subplots(1, len(chrom), figsize=(len(chrom)*(3.3333333335), 2))
-        if len(chrom) == 1:
-            fig, ax = plt.subplots(1,2,figsize=(2*(3), 2))
-        for i in range(len(chrom)):
-            d = df[df['#CHROM'] == chrom[i]]
-            max_x = int(arg['contigs'][chrom[i]])
-            x = d[['POS']]
-            y = d[['log10PVALUE']]
-            ax[i].scatter(x, y, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'], clip_on=False)
-            ax[i].set(xlim=(0, max_x), ylim=(min_y, 0))
-            ax[i].set_xticks([])
-            ax[i].set_xlabel(xlabel='chr {}'.format(chrom[i]), fontsize=8)
-            labs_list.append('Chromosome {}'.format(chrom[i]))
-            ax[i].set_ylabel(ylabel='log'+r'$_{10}$'+'(p-value)',fontsize=12,labelpad=15)
-            ax[i].tick_params(axis='y', which='major', labelsize=8)
-            if arg['--moving-avg'] != False:
-                    plot_avg(d, arg, ax[i], 'log10PVALUE')
-            if arg['--distance-avg'] != False:
-                    plotDistanceAvg(d, chrom[i], arg, ax[i], 'log10PVALUE')
-            if arg['--bonferroni'] and not d.empty:
-                threshold = log(0.05/len(df.axes[0]))/log(10)
-                max_x_ch = (max(d['POS'])/max_x)
-                ax[i].axhline(y=threshold, color='black', xmin=0,xmax=max_x_ch, linestyle='dashed', linewidth=0.75)
-            if len(chrom) == 1:
-                ax[1].remove()
-            if i > 0:
-                ax[i].axes.get_yaxis().set_visible(False)
-        fig.subplots_adjust(wspace=0)
-        filename = rt + typ
-
-        filename = check_save(arg, filename)
-        f_name.append(filename)
-        plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
-        plt.close()
-    cap = list()
-    if arg['--captions']:
-        cap.append(', '.join(f_name))
-        cap.append(t.format(', '.join(labs_list)))
-        cap.append(arg['lines'][0].format(arg['color_names']['dots']))
-        if arg['--moving-avg'] != False:
-            cap.append(arg['lines'][1].format(arg['color_names']['log10PVALUE'], str(arg['--moving-avg'])))
-        if arg['--distance-avg'] != False:
-            cap.append(arg['lines'][-7].format(arg['color_names']['log10PVALUE'], str(arg['--distance-avg'])))
-        if arg['--bonferroni']:
-            cap.append(arg['lines'][2].format(str(arg['n_markers'])))
-        write_caption(f, cap,arg)
 
 
 def AF_manhattan_plot(df, arg, g_type):
@@ -2043,118 +1948,6 @@ def AF12_multi_Vertical_graph(df, arg):
             cap.append(arg['lines'][l1].format(arg['color_names']['SNPidx1'], str(arg['--distance-avg'])))
         write_caption(f,cap,arg)
 
-def AF1_AF2_pval_mono(df, arg):
-    global fields
-    chrom=arg['--chromosomes']
-    typ=arg['--output-type']
-    min_y=min(df['log10PVALUE'])*1.05
-
-    for i in range(len(chrom)):
-        fig, ax=plt.subplots(3, 1, figsize=(8.5, 7))#(7,9)paper
-        d=df[df['#CHROM'] == chrom[i]]
-        max_x = arg['contigs'][chrom[i]]
-        t,rt = arg['titles'][10]
-        x=d[['POS']]
-        y1=d['SNPidx1']
-        y2=d['SNPidx2']
-        y3=d['log10PVALUE']
-        # SNPidx1
-        ax[0].scatter(x, y1, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'], clip_on=False)
-        ax[0].set(xlim=(0, max_x), ylim=(0, 1))
-        ax[0].set_xticks(ticks=np.arange(0, max_x, 5e6))
-        ax[0].tick_params(labelbottom=False)
-        ax[0].set_ylabel(ylabel='Allele Frequency', fontsize=12, rotation=90, labelpad=15)
-        ax[0].set_title('(a)', fontsize=16, rotation=0, x = -0.14, y=0.85)
-        ax[0].set_yticks(ticks=[0, 0.25, 0.5, 0.75, 1])
-        ax[0].set_yticklabels(labels=[0, 0.25, 0.5, 0.75, 1], fontsize=8)
-        if arg['--moving-avg'] != False:
-            if arg['--combine']:
-                plot_avg(d, arg, ax[0], 'SNPidx2')
-                plot_avg(d, arg, ax[0], 'SNPidx1')
-            else:
-               plot_avg(d, arg, ax[0], 'SNPidx1')
-        
-        if arg['--distance-avg'] != False:
-            if arg['--combine']:
-                plotDistanceAvg(d, chrom[i], arg, ax[0], 'SNPidx2')
-                plotDistanceAvg(d, chrom[i], arg, ax[0], 'SNPidx1')
-            else:
-               plotDistanceAvg(d, chrom[i], arg, ax[0], 'SNPidx1')
-        ax[0].spines['top'].set_visible(False)
-        ax[0].spines['right'].set_visible(False)
-
-        # SNPidx2
-        ax[1].scatter(x, y2, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'], clip_on=False)
-        ax[1].set(xlim=(0, max_x), ylim=(0, 1))
-        ax[1].set_xticks(ticks=np.arange(0, max_x, 5e6))
-        ax[1].tick_params(labelbottom=False)
-        ax[1].set_ylabel(ylabel='Allele Frequency', fontsize=12, rotation=90, labelpad=15)
-        ax[1].set_title('(b)', fontsize=16, rotation=0, x = -0.14, y=0.85)
-        ax[1].set_yticks(ticks=[0, 0.25, 0.5, 0.75, 1])
-        ax[1].set_yticklabels(labels=[0, 0.25, 0.5, 0.75, 1], fontsize=8)
-        if arg['--moving-avg'] != False:
-            if arg['--combine']:
-                plot_avg(d, arg, ax[1], 'SNPidx1')
-                plot_avg(d, arg, ax[1], 'SNPidx2')
-            else:
-               plot_avg(d, arg, ax[1], 'SNPidx2')
-        if arg['--distance-avg'] != False:
-            if arg['--combine']:
-                plotDistanceAvg(d, chrom[i], arg, ax[1], 'SNPidx1')
-                plotDistanceAvg(d, chrom[i], arg, ax[1], 'SNPidx2')
-            else:
-               plotDistanceAvg(d, chrom[i], arg, ax[1], 'SNPidx2')
-        ax[1].spines['top'].set_visible(False)
-        ax[1].spines['right'].set_visible(False)
-
-        # log10PVALUE
-        ax[2].scatter(x, y3, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'], clip_on=False)
-        ax[2].set(xlim=(0, max_x), ylim=(min_y, 0))
-        ax[2].set_xticks(ticks=np.arange(0, max_x, 5e6))
-        ax[2].set_xticklabels(labels=np.arange(0, max_x, 5e6),fontsize=8)
-        ax[2].set_ylabel(ylabel='log'+r'$_{10}$'+'(p-value)',fontsize=12, labelpad=15)
-        ax[2].set_title('(c)', fontsize=16, rotation=0, x = -0.14, y=0.85)
-        ax[2].tick_params(axis='y', which='major', labelsize=8)
-        if arg['--moving-avg'] != False:
-            plot_avg(d, arg, ax[2], 'log10PVALUE')
-        if arg['--distance-avg'] != False:
-            plotDistanceAvg(d, chrom[i], arg, ax[2], 'log10PVALUE')
-        if arg['--bonferroni'] and not d.empty:
-            threshold=log(0.05/len(df.axes[0]))/log(10)
-            max_x_ch=(max(d['POS'])/max_x)
-            ax[2].axhline(y=threshold, color='black', xmin=0,xmax=max_x_ch, linestyle='dashed', linewidth=0.75)
-        ax[2].xaxis.set_major_formatter(ScalarFormatter())
-        ax[2].ticklabel_format(axis='x', style='scientific',scilimits=(6, 6), useMathText=True)
-        ax[2].set_xlabel(xlabel='Genomic position (bp)',fontsize=15)
-
-        ax[2].spines['top'].set_visible(False)
-        ax[2].spines['right'].set_visible(False)
-
-        # Save file
-        fig.subplots_adjust(hspace=0.1)
-        rtch = rt.format(chrom[i])
-        filename=rtch + typ
-        filename=check_save(arg, filename)
-        plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
-        plt.close()
-        cap = list()
-
-        if arg['--captions']:
-            f = create_caption(arg, rtch)
-            cap.append(filename)
-            cap.append(t.format(chrom[i]))
-            cap.append(arg['lines'][7].format(arg['color_names']['dots']))
-            if arg['--moving-avg'] != False:
-                cap.append(arg['lines'][3].format(arg['color_names']['SNPidx1'], str(arg['--moving-avg'])))
-                cap.append(arg['lines'][4].format(arg['color_names']['SNPidx2'], str(arg['--moving-avg'])))
-                cap.append(arg['lines'][1].format(arg['color_names']['SNPidx2'], str(arg['--moving-avg'])))
-            if arg['--distance-avg'] != False:
-                cap.append(arg['lines'][-9].format(arg['color_names']['SNPidx1'], str(arg['--distance-avg'])))
-                cap.append(arg['lines'][-10].format(arg['color_names']['SNPidx2'], str(arg['--distance-avg'])))
-                cap.append(arg['lines'][-7].format(arg['color_names']['SNPidx2'], str(arg['--distance-avg'])))
-            if arg['--bonferroni']:
-                cap.append(arg['lines'][2].format(str(arg['n_markers'])))
-            write_caption(f,cap,arg)
 
 def combinedPlot(df, arg):
     sets = arg['sets']['combined']
@@ -2379,223 +2172,6 @@ def combinedPlot(df, arg):
                                         ))
             write_caption(f,cap, arg)
 
-def qtl_mixed_plot(df, arg):
-    global fields
-    chrom=arg['--chromosomes']
-    typ=arg['--output-type']
-    t,rt = arg['titles'][13]
-    for i in range(len(chrom)):
-        fig, ax=plt.subplots(4, 1, figsize=(8.5, 8.5))#(7,9)paper
-        d=df[df['#CHROM'] == chrom[i]]
-        max_x = arg['contigs'][chrom[i]]
-        x=d[['POS']]
-        y1=d['G']
-        y2=d['ED']
-        y3=d['DELTA']
-        y4=d['log10PVALUE']
-        # G-statistic
-        ax[0].scatter(x, y1, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'], clip_on=False)
-        ax[0].set(xlim=(0, max_x), ylim=(min(df['G']), max(df['G'])))
-        ax[0].set_xticks(ticks=np.arange(0, max_x, 5e6))
-        ax[0].tick_params(labelbottom=False)
-        ax[0].set_ylabel(ylabel='G-statistic', fontsize=12, rotation=90)
-        ax[0].yaxis.set_label_coords(-0.075,0.5)
-        ax[0].tick_params(axis='y', which='major', labelsize=8, size=8)
-        ax[0].set_title('(a)', fontsize=16, rotation=0, x = -0.14, y=0.85)
-        
-        if arg['--moving-avg'] != False:
-            plot_avg(d, arg, ax[0], 'G' )
-        if arg['--distance-avg'] != False:
-            plotDistanceAvg(d, chrom[i], arg, ax[0], 'G')
-        ax[0].spines['top'].set_visible(False)
-        ax[0].spines['right'].set_visible(False)
-
-        # ED
-        ax[1].scatter(x, y2, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'], clip_on=False)
-        ax[1].set(xlim=(0, max_x), ylim=(0, 1.5))
-        ax[1].set_xticks(ticks=np.arange(0, max_x, 5e6))
-        ax[1].tick_params(labelbottom=False)
-        ax[1].set_ylabel(ylabel='Euclidean distance', fontsize=12, rotation=90)
-        ax[1].yaxis.set_label_coords(-0.075,0.5)
-        ax[1].set_title('(b)', fontsize=16, rotation=0, x = -0.14, y=0.85)
-        ax[1].set_yticks(ticks=[0, 0.5, 1, 1.5])
-        ax[1].set_yticklabels(labels=[0, 0.5, 1, 1.5], fontsize=8)
-        plot_ED100_4(d, arg, ax[1], max_x, max(df['ED100_4']))
-        ax[1].spines['top'].set_visible(False)
-        ax[1].spines['right'].set_visible(False)
-
-        # DELTA
-        if arg['--ref-genotype'] == True:
-            ylab = '$\Delta$'+' (SNP-index)'
-            ticks_y=[-1, 0, 1]
-            lim_y=(-1.2, 1.2)
-        else:
-            ylab = '|$\Delta$'+' (SNP-index)|'
-            ticks_y=[0, 0.25, 0.5, 0.75, 1]
-            lim_y=(0, 1.2)
-
-        ax[2].scatter(x, y3, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'], clip_on=False)
-        ax[2].set(xlim=(0, max_x), ylim=lim_y)
-        ax[2].set_xticks(ticks=np.arange(0, max_x, 5e6))
-        ax[2].tick_params(labelbottom=False)
-        ax[2].set_ylabel(ylabel= ylab ,fontsize=12)
-        ax[2].yaxis.set_label_coords(-0.075,0.5)
-        ax[2].set_title('(c)', fontsize=16, rotation=0, x = -0.14, y=0.85)
-        ax[2].set_yticks(ticks=ticks_y)
-        ax[2].set_yticklabels(labels=ticks_y, fontsize=8)
-        if arg['--moving-avg'] != False:
-            plot_avg(d, arg, ax[2], 'DELTA')
-        if arg['--distance-avg'] != False:
-            plotDistanceAvg(d, chrom[i], arg, ax[2], 'DELTA')
-        if arg['--ci95'] and (arg['--moving-avg'] != False or arg['--distance-avg'] != False):
-            if arg['--moving-avg'] != False:
-                calc_ci(d, arg, ax[2])
-            if arg['--distance-avg'] != False:
-                distanceCI(d, arg, ax[2], chrom[i])
-            ax[2].axhline(y=0, color = 'black', linestyle='dashed', linewidth=0.75)
-        ax[2].spines['top'].set_visible(False)
-        ax[2].spines['right'].set_visible(False)
-
-        # log10PVALUE
-        ax[3].scatter(x, y4, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'], clip_on=False)
-        ax[3].set(xlim=(0, max_x), ylim=(min(df['log10PVALUE'])*1.05, 0))
-        ax[3].set_xticks(ticks=np.arange(0, max_x, 5e6))
-        ax[3].set_xticklabels(labels=np.arange(0, max_x, 5e6),fontsize=8)
-        ax[3].set_ylabel(ylabel='log'+r'$_{10}$'+'(p-value)',fontsize=12)
-        ax[3].yaxis.set_label_coords(-0.075,0.5)
-        ax[3].set_title('(d)', fontsize=16, rotation=0, x = -0.14, y=0.85)
-        ax[3].tick_params(axis='y', which='major', labelsize=8)
-        if arg['--moving-avg'] != False:
-            plot_avg(d, arg, ax[3], 'log10PVALUE')
-        if arg['--distance-avg'] != False:
-            plotDistanceAvg(d, chrom[i], arg, ax[3], 'log10PVALUE')
-        if arg['--bonferroni'] and not d.empty:
-            threshold=log(0.05/len(df.axes[0]))/log(10)
-            max_x_ch=(max(d['POS'])/max_x)
-            ax[3].axhline(y=threshold, color='black', xmin=0,xmax=max_x_ch, linestyle='dashed', linewidth=0.75)
-        ax[3].xaxis.set_major_formatter(ScalarFormatter())
-        ax[3].ticklabel_format(axis='x', style='scientific',scilimits=(6, 6), useMathText=True)
-        ax[3].set_xlabel(xlabel='Genomic position (bp)',fontsize=14)
-        ax[3].spines['top'].set_visible(False)
-        ax[3].spines['right'].set_visible(False)
-
-        # Save file
-        fig.subplots_adjust(hspace=0.1)
-        rtch = rt.format(chrom[i])
-        filename=rtch + typ
-        filename=check_save(arg, filename)
-        plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
-        plt.close()
-        cap = list()
-
-        if arg['--captions']:
-            f = create_caption(arg, rtch)
-            cap.append(filename)
-            cap.append(t.format(chrom[i]))
-            if arg['--ref-genotype'] == True:
-                cap.append(arg['lines'][13])
-            else:
-               cap.append(arg['lines'][14])
-            if arg['--moving-avg'] != False:
-                cap.append(arg['lines'][8].format(arg['color_names']['mvg'], str(arg['--moving-avg'])))
-            if arg['--distance-avg'] != False:
-                cap.append(arg['lines'][-12].format(arg['color_names']['mvg'], str(arg['--distance-avg'])))
-            if arg['--bonferroni']:
-                cap.append(arg['lines'][2].format(str(arg['n_markers'])))
-            write_caption(f,cap, arg)
-
-def snp_index_graph(df, arg):
-    global fields
-    chrom=arg['--chromosomes']
-    typ=arg['--output-type']
-    t,rt=arg['titles'][11]
-
-    for i in range(len(chrom)):
-        fig, ax=plt.subplots(3, 1, figsize=(7.5, 5))
-        d=df[df['#CHROM'] == chrom[i]]
-        max_x=arg['contigs'][chrom[i]]
-        x=d[['POS']]
-        y1=d['SNPidx1']
-        y2=d['SNPidx2']
-        y3=d['DELTA']  # delta
-
-        #SNPidx1
-        ax[0].scatter(x, y1, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'], clip_on=False)
-        ax[0].set(xlim=(0, max_x), ylim=(0, 1))
-        ax[0].set_xticks(ticks=np.arange(0, max_x, 5e6))
-        ax[0].tick_params(labelbottom=False)
-        ax[0].set_yticks(ticks=[0, 0.5, 1])
-        ax[0].set_yticklabels(labels=[0, 0.5, 1], rotation=90, fontsize=8)
-        ax[0].set_ylabel('SNP-index', fontsize=12)
-        ax[0].yaxis.set_label_coords(-0.06,0.5)
-        ax[0].set_title('(a)', fontsize=16, rotation=0, x=-0.13, y=0.85)
-        ax[0].axhline(y=0.5, color='black', linestyle='dashed', linewidth=0.75)
-        ax[0].spines['top'].set_visible(False)
-        ax[0].spines['right'].set_visible(False)
-
-        # SNPidx2
-        ax[1].scatter(x, y2, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'], clip_on=False)
-        ax[1].set(xlim=(0, max_x), ylim=(0, 1))
-        ax[1].set_xticks(ticks=np.arange(0, max_x, 5e6))
-        ax[1].tick_params(labelbottom=False)
-        ax[1].set_yticks(ticks=[0, 0.5, 1])
-        ax[1].set_yticklabels(labels=[0, 0.5, 1], fontsize=8, rotation=90)
-        ax[1].set_ylabel('SNP-index', fontsize=12)
-        ax[1].yaxis.set_label_coords(-0.06,0.5)
-        ax[1].set_title('(b)', fontsize=16, rotation=0, x=-0.13, y=0.85)
-        ax[1].axhline(y=0.5, color='black', linestyle='dashed', linewidth=0.75)
-        ax[1].spines['top'].set_visible(False)
-        ax[1].spines['right'].set_visible(False)
-
-        # D-SNPidx
-        if arg['--ci95']:
-            lim_y = (-1.2, 1.2)
-        else:
-            lim_y = (-1, 1)
-        ax[2].scatter(x, y3, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'], clip_on=False)
-        ax[2].set(xlim=(0, max_x), ylim=lim_y)
-        ax[2].set_yticks(ticks=[-1, 0, 1])
-        ax[2].tick_params(labelbottom=True)
-        ax[2].set_xticks(ticks=np.arange(0,max_x,5e6))
-        ax[2].set_xticklabels(labels=np.arange(0, max_x, 5e6), fontsize=8)
-        ax[2].set_xlabel(xlabel='Genomic position (bp)', fontsize=15)
-        ax[2].xaxis.set_major_formatter(ScalarFormatter())
-        ax[2].ticklabel_format(axis='x', style='scientific',scilimits=(6, 6), useMathText=True)
-        ax[2].set_yticklabels(labels=[-1, 0, 1], rotation=90,fontsize=8)
-        ax[2].set_ylabel('$\Delta$'+' (SNP-index)',fontsize=12)
-        ax[2].yaxis.set_label_coords(-0.06,0.5)
-        ax[2].set_title('(c)', fontsize=16, rotation=0, x=-0.13, y=0.85)
-        ax[2].axhline(y=0, color='black', linestyle='dashed', linewidth=0.75)
-        ax[2].spines['top'].set_visible(False)
-        ax[2].spines['right'].set_visible(False)
-
-        if arg['--moving-avg'] != False:
-            plot_avg_qtl_SNPidx(d, arg, ax)
-        if arg['--distance-avg'] != False:
-            distanceSNPidx(d, arg, ax, chrom[i])
-        if arg['--ci95']:
-            if arg['--moving-avg'] != False:
-                calc_ci(d, arg, ax[2])
-            if arg['--distance-avg'] != False:
-                distanceCI(d, arg, ax[2], chrom[i])
-        # Save file
-        fig.subplots_adjust(hspace=0.1)
-        rtch = rt.format(chrom[i])
-        filename=rtch + typ
-        filename=check_save(arg, filename)
-        plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
-        plt.close()
-        cap = list()
-        if arg['--captions']:
-            f = create_caption(arg, rtch)
-            cap.append(filename)
-            cap.append(t.format(chrom[i]))
-            cap.append(arg['lines'][6])
-            if arg['--moving-avg'] != False:
-                cap.append(arg['lines'][8].format(arg['color_names']['mvg'], str(arg['--moving-avg'])))
-                if arg['--ci95']:
-                    cap.append(arg['lines'][7].format(arg['color_names']['ci'], str(arg['n_markers'])))
-            write_caption(f,cap, arg)
 
 def calc_ci(d, arg, ax):
     z95=abs(st.norm.ppf(.025/arg['n_markers']))
@@ -2729,56 +2305,6 @@ def plotDistanceAvg(d, chrom, arg, ax, field):
     res = res.dropna()
 
     ax.plot(res['POSx'], res['VALy'], c=c_, lw=arg['LINE_W'])
-
-
-def plot_avg_qtl_SNPidx(d, arg, ax):
-    color = arg['--palette']['mvg']
-    d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
-    d['DP1']=d['DPdom_1']+d['DPrec_1']
-    d['DP2']=d['DPdom_2']+d['DPrec_2']
-    d['productx']=d['POS'] * d['DP']
-    d['mediamovilx']=(d['productx'].rolling(arg['--moving-avg']).sum() / d['DP'].rolling(arg['--moving-avg']).sum())
-    #SNPidx1
-    d['producty1']=d['SNPidx1'] * d['DP1']
-    d['mediamovily1']=(d['producty1'].rolling(arg['--moving-avg']).sum() / d['DP1'].rolling(arg['--moving-avg']).sum())
-    ax[0].plot(d['mediamovilx'], d['mediamovily1'], c=arg['--palette']['SNPidx1'], lw=arg['LINE_W'])
-    #SNPidx2
-    d['producty2']=d['SNPidx2'] * d['DP2']
-    d['mediamovily2']=(d['producty2'].rolling(arg['--moving-avg']).sum() / d['DP2'].rolling(arg['--moving-avg']).sum())
-    ax[1].plot(d['mediamovilx'], d['mediamovily2'], c=arg['--palette']['SNPidx2'], lw=arg['LINE_W'])
-    # D-SNPidx
-    d['productyD']=d['DELTA'] * d['DP']
-    d['mediamovilD']=(d['productyD'].rolling(arg['--moving-avg']).sum() / d['DP'].rolling(arg['--moving-avg']).sum())
-    ax[2].plot(d['mediamovilx'], d['mediamovilD'], c=arg['--palette']['DELTA'], lw=arg['LINE_W'])
-
-
-def distanceSNPidx(d, arg, ax, chrom):
-    max_x = arg['contigs'][chrom]
-    d['DP']=d['DPdom_1']+d['DPrec_1']+d['DPdom_2']+d['DPrec_2']
-    d['DP1']=d['DPdom_1']+d['DPrec_1']
-    d['DP2']=d['DPdom_2']+d['DPrec_2']
-    d['prodx']=d['POS'] * d['DP']
-    #SNPidx1
-    d['prody1']=d['SNPidx1'] * d['DP1']
-    #SNPidx2
-    d['prody2']=d['SNPidx2'] * d['DP2']
-    # D-SNPidx
-    d['prodyD']=d['DELTA'] * d['DP']
-    interval_ranges = [x for x in range(0, max_x, arg['--distance-avg'])]
-    if interval_ranges[-1] < max_x:
-        interval_ranges.append(max_x)
-    interval_labels = [f'{start}-{end-1}' for start, end in zip(interval_ranges, interval_ranges[1:])]
-    d['Interval'] = pd.cut(d['POS'], bins=interval_ranges, labels=interval_labels)
-    res = d.groupby('Interval').agg({'prodx': sum, 'prody1': sum, 'prody2': sum, 'prodyD': sum,'DP1': sum, 'DP2': sum, 'DP':sum})
-
-    res['POSx'] = (res['prodx']/res['DP'])
-    res['avg1'] = (res['prody1']/res['DP1'])
-    res['avg2'] = (res['prody2']/res['DP2'])
-    res['avgD'] = (res['prodyD']/res['DP'])
-    res = res.dropna()
-    ax[0].plot(res['POSx'], res['avg1'], c=arg['--palette']['SNPidx1'], lw=arg['LINE_W'])
-    ax[1].plot(res['POSx'], res['avg2'], c=arg['--palette']['SNPidx2'], lw=arg['LINE_W'])
-    ax[2].plot(res['POSx'], res['avgD'], c=arg['--palette']['DELTA'], lw=arg['LINE_W'])
 
 
 def plot_boostManhattan(d, arg, ax, max_x, chrom, i, sets, ticks_y, g_type):
@@ -2947,55 +2473,3 @@ def write_caption(f, text, arg):
         f.write('The dots correspond to bins of all markers within a range of {} pb. '.format(str(arg['--distance'])))
     f.write('\n'*2)
     f.close()
-
-def Delta2_Vertical_graph(df, arg):
-    typ=arg['--output-type']
-    max_x=arg['max_lenght']
-    
-    ticks_y=[-1,-0.5,0,0.5, 1]
-    lim_y=(-1, 1)
-    #t1,rt1,_=arg['titles'][7]
-    #t2,rt2,_=arg['titles'][8]
-    labs_list = list()
-    f1_name = list()
-    f2_name = list()
-    for chrom_list in arg['chrom_lists']:
-        chrom = chrom_list
-        if len(chrom) > 1:
-            fig, ax=plt.subplots(len(chrom), 1, figsize=(10, 2.5*len(chrom)))
-        if len(chrom) == 1:
-            fig, ax=plt.subplots(2,1,figsize=(10, 2.5*2))
-        for i in range(len(chrom)):
-            d=df[df['#CHROM'] == chrom[i]]
-            x=d[['POS']]
-            d['delta2'] = d['DPdom_1']/(d['DPdom_1']+d['DPrec_1']) - d['DPdom_2']/(d['DPdom_2']+d['DPrec_2'])
-            y=d[['delta2']]
-            #AF1&2
-            ax[i].scatter(x, y, s=arg['DOT_SIZE'], c=arg['--palette']['dots'], alpha=arg['--alpha'], clip_on=False)
-            ax[i].set(xlim=(0, max_x), ylim=lim_y)
-            ax[i].set_xticks(ticks=np.arange(0, max_x, 5e6))
-            ax[i].tick_params(labelbottom=False)
-            ax[i].set_ylabel(ylabel='Allele Frequency', fontsize=12, rotation=90, labelpad=15)
-            ax[i].set_title('({})'.format(arg['labs'][chrom[i]]), fontsize=16, rotation=0, x = -0.12, y=0.85) 
-            labs_list.append('({}) Chromosome {}.'.format(arg['labs'][chrom[i]],chrom[i]))  
-            ax[i].set_yticks(ticks=ticks_y)
-            ax[i].set_yticklabels(labels=ticks_y, fontsize=8)
-            if arg['--moving-avg'] != False:
-                plot_avg(d, arg, ax[i], 'delta2')
-            ax[i].spines['top'].set_visible(False)
-            ax[i].spines['right'].set_visible(False)
-            if len(chrom) == 1:
-                ax[1].remove()
-            if i == len(chrom)-1 or len(chrom) == 1:
-                ax[i].tick_params(labelbottom=True)
-                ax[i].set_xticklabels(labels=np.arange(0, max_x, 5e6), fontsize=8, color='black')
-                ax[i].xaxis.set_major_formatter(ScalarFormatter())
-                ax[i].ticklabel_format(axis='x', style='scientific', scilimits=(6, 6), useMathText=True)
-                ax[i].set_xlabel(xlabel='Genomic position (bp)', fontsize=15)
-
-        fig.subplots_adjust(hspace=0.1)
-        filename='delta2multiV'+typ
-        filename=check_save(arg, filename)
-        f1_name.append(filename)
-        plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
-        plt.close()

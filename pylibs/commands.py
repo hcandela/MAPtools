@@ -43,8 +43,7 @@ Input Options:
                                   D   for a dominant mutation
                                   R   for a recessive mutation
 Output Options:
-  -o, --output FILE             write output to FILE [standard output]
-  -O, --output-type TYPE        txt: tab separated, csv: comma separated [default: txt]
+  -o, --output FILE             write output to FILE, tab separated [standard output]
     
 Filter Options:
   -C, --max-depth INT           maximum read depth in the D and R bulks for a position to be considered [default: inf]
@@ -79,36 +78,22 @@ Filter Options:
     else:
         inp = sys.stdin
     choose_header(arg)
-    #write_argv2(arg, argv)
-    #print(arg)
+
     for line in inp:
         if line.startswith('#'):
           read_header2(arg,line,argv)
         else:
             fields, pools, genotypes = vcf_line_parser3(line, arg) #nueva linea HC
             if (fields, pools, genotypes) != (0, 0, 0):
-              #ref_allele = fields[2]
-              #REPONER pools, genotypes, normalized = normalize2(pools, arg, genotypes) 
               normalized, sorted = normalize2(pools, arg, genotypes)
-              ####print("Normalize2", pools, genotypes, normalized)
-              #REPONERif (pools, genotypes, normalized) != (0,0,0):
               if normalized != False:
-                ####print("Todo",pools,genotypes,normalized) #,al_normalized)
                 if arg['--no-filter'] == False:
-                   #flag = filter_mbs(arg, pools,genotypes,normalized,al_normalized)
                    flag = filter_mbs(arg, pools, genotypes, normalized, sorted)
-                   ####print("Flag",flag)
                 else:
                    flag = True
                 if flag == True:
-                   #print("Bien!!")
-                   #print(al_normalized)
-                   #print(al_normalized[2:])
-                   calcs = mbs_calc(arg, pools, normalized, sorted) # antes era al_count
-                   #print(calcs)
+                   calcs = mbs_calc(arg, pools, normalized, sorted)
                    if calcs != None:
-                      #al_normalized = 0 #pa que no de el error
-                      #print(fields[:2], calcs)
                       alleles = [ allele for allele in pools['R'].keys()]
                       bases = [alleles[normalized[0]], alleles[normalized[1]]] 
                       new_line(fsal, arg, fields[:2] + bases, calcs)
@@ -138,16 +123,15 @@ Input Options:
                                 Available options:
                                   P     reference genome corresponds to one of the parents of the cross
                                   miss  reference genome does not match the sequence of either parent
+
+Output Options:
+  -o, --output FILE             write output to FILE, tab separated [standard output]
   
 Filter Options:
   -C, --max-depth INT           maximum read depth in the H and L bulks for a position to be considered [default: inf]
   -c, --min-depth INT           minimum read depth in the H and L bulks for a position to be considered [default: 0]
   -I, --skip-indels             ignore indels
   --no-filter                   disable all filters
-
-Output Options:
-  -o, --output FILE             write output to FILE [standard output]
-  -O, --output-type TYPE        txt: tab separated, csv: comma separated [default: txt]
   """
     arg = docopt(qtl_doc, argv=None, help=True, version=v_qtl)
     # print(arg)
@@ -165,36 +149,21 @@ Output Options:
     else:
         inp = sys.stdin
     choose_header(arg)
-    #write_argv2(arg, argv)
-    #print(arg)
     for line in inp:
         if line.startswith('#'):
           read_header2(arg,line,argv)
         else:
-            fields, pools, genotypes = vcf_line_parser3(line, arg) #nueva linea HC
+            fields, pools, genotypes = vcf_line_parser3(line, arg)
             if (fields, pools, genotypes) != (0, 0, 0):
-              #ref_allele = fields[2]
-              #REPONER pools, genotypes, normalized = normalize2(pools, arg, genotypes) 
               normalized, sorted = normalize2(pools, arg, genotypes)
-              ####print("Normalize2", pools, genotypes, normalized)
-              #REPONERif (pools, genotypes, normalized) != (0,0,0):
               if normalized != False:
-                ####print("Todo",pools,genotypes,normalized) #,al_normalized)
                 if arg['--no-filter'] == False:
-                   #flag = filter_mbs(arg, pools,genotypes,normalized,al_normalized)
                    flag = filter_qtl(arg, pools, genotypes, normalized, sorted)
-                   ####print("Flag",flag)
                 else:
                    flag = True
                 if flag == True:
-                   #print("Bien!!")
-                   #print(al_normalized)
-                   #print(al_normalized[2:])
-                   calcs = qtl_calc(arg, pools, normalized, sorted) # antes era al_count
-                   #print(calcs)
+                   calcs = qtl_calc(arg, pools, normalized, sorted)
                    if calcs != None:
-                      #al_normalized = 0 #pa que no de el error
-                      #print(fields[:2], calcs)
                       alleles = [ allele for allele in pools['R'].keys()]
                       bases = [alleles[normalized[0]], alleles[normalized[1]]] 
                       new_line(fsal, arg, fields[:2] + bases, calcs)
@@ -216,8 +185,7 @@ Input Options:
   -c, --chromosomes LIST        comma-separated list of chromosome names [default: all]
   
 Output Options:
-  -o, --output FILE             write output to FILE [standard output]
-  -O, --output-type TYPE        txt: tab separated, csv: comma separated [default: txt]
+  -o, --output FILE             write output to FILE, tab separated [standard output]
   """
   arg = docopt(merge_doc, argv=None, help=True, version=v_merge)
   arg = check_merge(arg, merge_doc)
@@ -333,7 +301,7 @@ Output options:
         #pval_multi_graph(df, arg)
         pval_multi_Vertical_graph(df, arg)
         pval_manhattan_plot(df, arg)
-  ###REVISAR
+
   #Euclidean Distance plots
   if arg['--euclidean-distance'] == True:
     arg = create_subfolder(arg, 'EuclideanDistance/')
@@ -372,8 +340,7 @@ Input Options:
   -t, --transl-table INT        translation table [default: 1]
 
 Output Options:
-  -o, --output FILE             write output to FILE [standard output]
-  -O, --output-type TYPE        txt: tab separated, csv: comma separated [default: txt]                     
+  -o, --output FILE             write output to FILE, tab separated [standard output]                  
   """
   arg = docopt(annotate_doc, argv=None, help=True, version=v_annotate)
   arg['pipe'] = sys.stdin.isatty()
@@ -392,8 +359,6 @@ Output Options:
   else:
     inp = sys.stdin
     arg['spacerin'] = '\t'
-  #write_argv2(arg, argv)
-  #print(arg)
 
   for line in inp:
     if line.startswith('#'):
@@ -415,127 +380,6 @@ Output Options:
   load_reference(df,arg)
   df = df.reset_index()
   load_gff(arg)
-  for idx, row in df.iterrows():
-    if len(row['DOM']) > 1 or len(row['REC']) > 1:
-       is_indel(row, arg)
-       continue
-    arg['variant'] = 'substitution'
-    check_mutation2(row,arg)
-
-
-def annotatevcf(argv):
-  annotate_doc="""
-Usage:
-  maptools.py annotatevcf [options]
-  maptools.py annotatevcf
-
-Options:
-  -h, --help                    show this help message and exit
-  -v, --version                 print version information and exit
-  -i, --input FILE              input file in uncompressed vcf format
-  -g, --gff FILE                genome annotation file in gff3 format
-  -f, --fasta-reference FILE    genome sequence file in fasta format
-
-Input Options:
-  -d, --data LIST               comma separated list of sequenced samples [default: D,R]
-                                Available options:
-                                  D   bulk of phenotypically dominant individuals from a segregating population
-                                  R   bulk of phenotypically recessive individuals from a segregating population
-                                  Pd  re-sequencing of the dominant parent genome
-                                  Pr  re-sequencing of the recessive parent genome
-                                  Wd  re-sequencing of the wild-type strain isogenic to a dominant mutant
-                                  Wr  re-sequencing of the wild-type strain isogenic to a recessive mutant
-                                    Note: Maptools requires that Wd, Wr, Pd and Pr are highly homozygous inbred lines
-
-  -r, --ref-genotype STR        indicate if the reference genome sequence corresponds to one of the parents
-                                of the mapping population [default: miss]
-                                Available options:
-                                  D     reference genome corresponds to the phenotypically dominant parent
-                                  R     reference genome corresponds to the phenotypically recessive parent
-                                  miss  reference genome does not match the sequence of either parent
-
-  -m, --mutant-pool STR         indicate the bulk established from phenotypically individuals from the
-                                segregating population [default: R]
-                                Available options:
-                                  D   for a dominant mutation
-                                  R   for a recessive mutation
-
-  -R, --region REGION           region of the genome to explore (-R chrName:Startpos-Endpos)
-  -t, --transl-table INT        translation table [default: 1]
-
-Output Options:
-  -o, --output FILE             write output to FILE [standard output]
-  -O, --output-type TYPE        txt: tab separated, csv: comma separated [default: txt]
-
-Filter Options:
-  -C, --max-depth INT           maximum read depth in the D and R bulks for a position to be considered [default: inf]
-  -c, --min-depth INT           minimum read depth in the D and R bulks for a position to be considered [default: 0]
-  -Q, --max-ratio INT           maximum allele frequency in the D bulk [default: 100]
-  -q, --min-ratio INT           minimum allele frequency in the D bulk [default: 0]
-                                Note: you can set different -q and -Q values to enforce that markers are heterozygous
-                                in the D bulk, by only considering those whose allele frequency in the interval [-q, -Q].
-                                Requires --het-filter
-                  
-  --EMS                         ignore SNPs not caused by EMS (keeps G/C-to-A/T transition mutations)
-  -I, --skip-indels             ignore indels
-  --parental-filter             ignore variants shared with parental strain (requires one of: Pr, Pd,
-                                Wr or Wd, specified with -d)
-  --het-filter                  selects markers that are heterozygous in the D pool, either because the allele frequencies
-                                are in the [-q, -Q] interval or because their GT is \"0/1\" in the vcf input
-  --no-filter                   disable all filters                         
-  """
-  arg = docopt(annotate_doc, argv=None, help=True, version=v_annotate)
-  arg['pipe'] = sys.stdin.isatty()
-  arg['version'] = v_annotate
-  arg['mbs'] = True
-  arg = check_args(annotate_doc, arg)
-  df = create_df(arg)
-  output = arg['--output']
-  fsal = False
-  arg['fsal'] = False
-  if output != None:
-    fsal = open(arg['--output'], 'w')
-  arg['fsal'] = fsal
-  
-  if arg['--input']:
-    inp = arg['inp']
-  else:
-    inp = sys.stdin
-
-  for line in inp:
-    if line.startswith('#'):
-      read_header2(arg,line)
-    else:
-      line = filter_region(line,arg)
-      if line != None:
-        #fields, pools, genotype = vcf_line_parser2(line, arg)
-        fields, pools, genotypes = vcf_line_parser3(line, arg) #nueva linea HC
-        if (fields, pools, genotypes) != (0, 0, 0):
-           normalized, sorted = normalize2(pools, arg, genotypes)
-           if normalized != False:
-             if arg['--no-filter'] == False:
-               flag = filter_mbs(arg, pools, genotypes, normalized, sorted)
-             else:
-               flag = True
-             if flag == True:
-               calcs = mbs_calc(arg, pools, genotypes, normalized, sorted) # antes era al_count
-               if calcs != None:
-                 alleles = [ allele for allele in pools['R'].keys()]
-                 bases = [alleles[normalized[0]], alleles[normalized[1]]] 
-#                first = new_line(fsal, arg, first, fields[:2] + bases, calcs)
-                 #df = new_df_line(df,arg,fields[:2], al_count,calcs)
-                 if normalized == {0:0, 1:1}:
-                       reorder = [0]
-                 else:
-                       reorder = [1]
-                 df = new_df_line(df,arg,fields[:2], bases, calcs,reorder)
-  if df.empty:
-     print('Warning: There is no variants to analyse. Please reduce filtering.', file=sys.stderr)
-     sys.exit()
-  load_reference(df,arg)
-  df = df.reset_index()
-  load_gff(arg)
-  write_annotate_header(arg)
   for idx, row in df.iterrows():
     if len(row['DOM']) > 1 or len(row['REC']) > 1:
        is_indel(row, arg)

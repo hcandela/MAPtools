@@ -69,15 +69,10 @@ def check_args(__doc__,arg:dict):
 				print('Error: The input file {} does not exist'.format(inp_f), file=sys.stderr)
 				sys.exit()
 		arg['inp'] = f
-	if arg['--output-type'] in {'csv','txt'}:
-		if arg['--output-type'] == 'csv':
-			arg['spacer'] = ','
-		elif arg['--output-type'] == 'txt':
-			arg['spacer'] = '\t'
-		arg['--output-type'] = '.'+arg['--output-type']
-	else:
-		print('Error: select a valid output format.', file=sys.stderr)
-		sys.exit()
+
+	arg['spacer'] = '\t'
+	arg['--output-type'] = '.txt'
+
 	if arg['--output'] != None:
 		wd = os.getcwd()
 		outdir_list = arg['--output'].split('/')[:-1]
@@ -278,7 +273,6 @@ def mbs_calc(arg, pools, normalized, sorted):
 			ratio1 = b/(a+b)
 			ratio2 = d/(c+d)
 			ratio3 = max(c,d)/(c+d)
-			boost = 1/(arg['lim'] + abs(1 - 1/ratio3))
 			stat = LogFisher(a,b,c,d)
 			pva = pvalor(a,b,c,d)
 			pva10 = (log(pva)/log(10))
@@ -288,9 +282,9 @@ def mbs_calc(arg, pools, normalized, sorted):
 			g = Gstatic(a,b,c,d)
 			delta = ratio1 - ratio2
 			if sorted == True:
-				return [a, b, c, d, ratio1, ratio2, ratio3, stat, boost, pva, pva10, delta, ed, g]
+				return [a, b, c, d, ratio1, ratio2, ratio3, stat, pva, pva10, delta, ed, g]
 			else:
-				return [a, b, c, d, ratio1, ratio2, ratio3, stat, boost, pva, pva10, abs(delta), ed, g]
+				return [a, b, c, d, ratio1, ratio2, ratio3, stat, pva, pva10, abs(delta), ed, g]
 
 	elif 'R' in inf_s:
 		a = pools['R'][alleles[normalized[0]]]
@@ -298,12 +292,10 @@ def mbs_calc(arg, pools, normalized, sorted):
 		if a + b > 0 :
 			if sorted == True:
 				ratio1 = b/(a+b)
-				boost = 1/(arg['lim'] + abs(1 - 1/max(ratio1, 1-ratio1)))
-				return [a, b, ratio1, boost]
+				return [a, b, ratio1]
 			else:
 				ratio3 = max(a,b)/(a+b)
-				boost = 1/(arg['lim'] + abs(1 - 1/ratio3))
-				return [a, b, ratio3, boost]
+				return [a, b, ratio3]
 
 def qtl_calc(arg, pools, normalized, sorted):
 	data = arg['--data']
@@ -337,17 +329,14 @@ def choose_header(arg):
 	if 'mbs' in arg.keys():
 		if len(inf_s) == 1 or 'D' not in inf_s:
 			if arg['--ref-genotype'] == 'miss' and 'Pr' not in inf_s and 'Pd' not in inf_s:
-				header = ['#CHROM','POS','DOM','REC','DPdom_2','DPrec_2','MAX_SNPidx2','BOOST']
+				header = ['#CHROM','POS','DOM','REC','DPdom_2','DPrec_2','MAX_SNPidx2']
 			else:
-				header = ['#CHROM','POS','DOM','REC','DPdom_2','DPrec_2','SNPidx2','BOOST']
+				header = ['#CHROM','POS','DOM','REC','DPdom_2','DPrec_2','SNPidx2']
 		elif ('D' in inf_s and 'R' in inf_s) and arg['--ref-genotype'] != 'miss' or 'Pr' in inf_s or 'Pd' in inf_s:
-			header = ['#CHROM','POS','DOM','REC','DPdom_1','DPrec_1','DPdom_2','DPrec_2','SNPidx1','SNPidx2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE','DELTA','ED','G']
+			header = ['#CHROM','POS','DOM','REC','DPdom_1','DPrec_1','DPdom_2','DPrec_2','SNPidx1','SNPidx2','MAX_SNPidx2','FISHER','PVALUE','log10PVALUE','DELTA','ED','G']
 		elif 'D' in inf_s and 'R' in inf_s and arg['--ref-genotype'] == 'miss' and 'Pd' not in inf_s and 'Pr' not in inf_s:
-			header = ['#CHROM','POS','DOM','REC','DPdom_1','DPrec_1','DPdom_2','DPrec_2','SNPidx1','SNPidx2','MAX_SNPidx2','FISHER','BOOST','PVALUE','log10PVALUE','DELTA','ED','G']
+			header = ['#CHROM','POS','DOM','REC','DPdom_1','DPrec_1','DPdom_2','DPrec_2','SNPidx1','SNPidx2','MAX_SNPidx2','FISHER','PVALUE','log10PVALUE','DELTA','ED','G']
 	elif 'qtl' in arg.keys():
-		#if arg['--ref-genotype'] == 'miss' and 'Pr' not in inf_s and 'Pd' not in inf_s:
-		#	header = ['#CHROM','POS','REF','ALT','DPref_1','DPalt_1','DPref_2','DPalt_2','ED','G','PVALUE','log10PVALUE']
-		#if arg['--ref-genotype'] != 'miss' or 'Pr' in inf_s or 'Pd' in inf_s:
 		header = ['#CHROM','POS','HIGH','LOW','DPhigh_1','DPlow_1','DPhigh_2','DPlow_2','SNPidx1','SNPidx2','FISHER','PVALUE','log10PVALUE','DELTA','ED','G']
 	arg['header'] = header
 
