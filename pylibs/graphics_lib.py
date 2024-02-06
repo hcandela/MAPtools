@@ -794,7 +794,7 @@ def AF_manhattan_plot(df, arg, g_type):
         if i > 0:
             ax[i].axes.get_yaxis().set_visible(False)
     #fig.tight_layout()
-    fig.subplots_adjust(wspace=sets['wspace'])
+    fig.subplots_adjust(wspace=sets['wspace'],bottom=sets['bottom'])
     filename = rt + typ
     filename = check_save(arg, filename)
     f_name.append(filename)
@@ -882,7 +882,7 @@ def AFCombinedManhattanPlot(df, arg):
         if i > 0:
             ax[i].axes.get_yaxis().set_visible(False)
     #fig.tight_layout()
-    fig.subplots_adjust(wspace=sets['wspace'])
+    fig.subplots_adjust(wspace=sets['wspace'], bottom=sets['bottom'])
     filename = rt + typ
     filename = check_save(arg, filename)
     f_name.append(filename)
@@ -967,7 +967,7 @@ def pval_manhattan_plot(df, arg):
         if i > 0:
             ax[i].axes.get_yaxis().set_visible(False)
     #fig.tight_layout()
-    fig.subplots_adjust(wspace=sets['wspace'])
+    fig.subplots_adjust(wspace=sets['wspace'],bottom=sets['bottom'])
     filename = rt + typ
     filename = check_save(arg, filename)
     f_name.append(filename)
@@ -1556,7 +1556,7 @@ def EDmanhattanPlot(df, arg):
         ax[0].set_yticks(ticks=[0, 0.5, 1, 1.5])
         ax[0].set_yticklabels(labels=[0, 0.5, 1, 1.5], fontsize=sets['yticksSIZE'])
     #plt.tight_layout()
-    fig.subplots_adjust(wspace=sets['wspace'])
+    fig.subplots_adjust(wspace=sets['wspace'], bottom=sets['bottom'])
     filename= rt + typ
     filename=check_save(arg, filename)
     f_name.append(filename)
@@ -1677,7 +1677,7 @@ def GmanhattanPlot(df, arg):
         if i > 0:
             ax[i].axes.get_yaxis().set_visible(False)
     #fig.tight_layout()
-    fig.subplots_adjust(wspace=sets['wspace'])
+    fig.subplots_adjust(wspace=sets['wspace'], bottom=sets['bottom'])
     filename= rt + typ
     filename=check_save(arg, filename)
     f_name.append(filename)

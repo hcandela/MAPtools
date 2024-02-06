@@ -31,7 +31,8 @@
         "axSpinesWIDTH":1.5,
         "ticksSpinesWIDTH":1.5,
         "ticksSpinesLENGTH":6,
-        "wspace":0
+        "wspace":0,
+        "bottom":0.2
                     },
     "vertical": {
         "figwidth":10,
