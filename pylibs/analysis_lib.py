@@ -886,7 +886,7 @@ def codon_coords(pos, start, end, strand, phase):
 		rest = (pos - start - phase) % 3
 		return (pos-rest, pos-rest+2)
 	elif strand == '-' :
-		rest = (end - pos - phase) % 3
+		rest = (end - pos + phase) % 3
 		return (pos+rest-2, pos+rest)
 				
 def  find_row(rows, pos, start, end):
