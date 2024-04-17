@@ -75,6 +75,10 @@ bcftools mpileup -f reference_genome.fasta --annotate FORMAT/AD dominant_bulk.ba
 ```
 With the `-v` flag present, the `variants.vcf` file will only save data for the variant positions. Non-variant positions are also discarded by MAPtools, but larger VCF files increase the processing time.
 
+As an alternative, you may also choose to store the output as a binary BCF file (rather than VCF) by setting the `-O b` option:
+```
+bcftools mpileup -f reference_genome.fasta --annotate FORMAT/AD dominant_bulk.bam recesive_bulk.bam parent.bam | bcftools call -m -v `-O b` -o variants.bcf
+
 
 #### 4. Running MAPtools
 Once your `variants.vcf` file is ready, you can go ahead and run MAPtools. For additional details, please also check the Tutorial section below.
@@ -85,6 +89,10 @@ Following on with our example, we run the `mbs` command of MAPtools, as follows:
 ```
 Here, we use ``--data`` to specify the samples that are available for the analysis, **in the same order** as they were processed while making the VCF file. In our case, these samples are designated as D (the bulk of phenotypically dominant individuals), R (the bulk of phenotypically recessive individuals) and Pd (resequencing of the parent of the mapping population showing the dominant phenotype). We also use ``-m R`` to specify that the mutation is recesive.
 
+If you previously chose to store your output as a BCF file (rather than as a VCF file), you can take advantage of the fact that MAPtools can also receive its input from a stream to make the BCF-to-VCF conversion:
+```
+bcftools view variants.bcf | ./maptools.py mbs --data D,R,Pd -m R -o mbs.txt
+```
 
 #### 5. Plotting the results
 Next, run the ``plot`` command of MAPtools to automatically generate plots using the output of the previous command (i.e. the `mbs.txt` file in the example):
@@ -153,7 +161,7 @@ bwa mem INDEX ERR4463153_1.fastq.gz ERR4463153_2.fastq.gz -o ERR4463153.sam
 samtools sort -o ERR4463153.bam ERR4463153.sam
 ```
 
-In this particular experiment, each bulk has been sequenced twice. For this reason, we merge the BAM files for the ERR4463155 and ERR4463156 samples, both of which with white fruits:
+In this particular experiment, each bulk has been sequenced twice. For this reason, we merge the BAM files for the ERR4463155 and ERR4463156 samples, both with white fruits:
 
 ```
 samtools merge -o white.bam ERR4463155.bam ERR4463156.bam
@@ -163,7 +171,7 @@ samtools merge -o white.bam ERR4463155.bam ERR4463156.bam
 samtools index white.bam
 ```
 
-Similarly, merge the BAM files for the ERR4463153 and ERR4463154 samples, both of which with red fruits:
+Similarly, merge the BAM files for the ERR4463153 and ERR4463154 samples, both with red fruits:
 
 ```
 samtools merge -o red.bam ERR4463153.bam ERR4463154.bam
@@ -174,6 +182,7 @@ samtools index red.bam
 ```
 
 #### 3. Perform the variant calling using BCFtools or GATK
+The resulting VCF or BCF files of this step only need to contain the variant sites. Non-variant sites will be discarded by MAPtools later on, but larger files will increase the processing time.
 
 3.1 With BCFtools:
 
@@ -183,7 +192,8 @@ Use the `mpileup` and `call` commands of BCFtools to prepare a single VCF file c
 bcftools mpileup -f Fragaria_vesca_v4.0.a1.fasta --annotate FORMAT/AD white.bam red.bam | bcftools call -mv -o variants.vcf
 ```
 
-You might need to index the genome with ``samtools faidx``
+You might need to index the genome with ``samtools faidx``.
+
 
 3.2 With GATK:
 
@@ -213,6 +223,7 @@ Use the ``qtl`` command to process the ``variants.vcf`` file produced in the pre
 ./maptools.py qtl --data L,H -i variants.vcf -o qtl.txt -I
 ```
 
+
 4.2 Generate plots with the ``plot`` command:
 
 Use the ``plot`` command to automatically generate plots using the output of the previous command, which in this case was saved to the ``qtl.txt`` file:
@@ -232,6 +243,12 @@ In the above example, we used the following options:
 ``--ci95`` marks the 95% confidence interval in delta plots
 ``-O`` specifies the output file format (default is pdf)
 ``-o`` specifies the output folder
+
+
+#### 5. What you should get:
+
+If you managed to follow all the steps of this tutorial, the resulting delta SNP-index plots will uncover a QTL on chromosome 1. For more information, please read the original manuscript of MAPtools, as well as the original analysis by Castillejo *et al*. (2020).
+
 
 ### Analysis of MBS data
 
@@ -375,6 +392,10 @@ In the above example, we used the following options:
 ``-f`` reference genome file
 ``-R`` chromosome and interval to analyze
 ``-o`` specifies the output file
+
+#### 4. What you should get:
+In this tutorial, we have analyzed one (out of 3) allelic mutants described in the original paper. If you followed all the steps of this tutorial, the plots should uncover a bias in the allele frequencies of chromosome 8. If you analyze the reads for the other 2 mutants described in the original paper, you will find lesions in the same gene! For more information, please read our MAPtools paper and the original study by Viñegra de la Torre *et al*. (2022).
+
 
 ## **Citation**
 
