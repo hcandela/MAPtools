@@ -78,7 +78,7 @@ With the `-v` flag present, the `variants.vcf` file will only save data for the 
 As an alternative, you may also choose to store the output as a binary BCF file (rather than VCF) by setting the `-O b` option:
 ```
 bcftools mpileup -f reference_genome.fasta --annotate FORMAT/AD dominant_bulk.bam recesive_bulk.bam parent.bam | bcftools call -m -v `-O b` -o variants.bcf
-
+```
 
 #### 4. Running MAPtools
 Once your `variants.vcf` file is ready, you can go ahead and run MAPtools. For additional details, please also check the Tutorial section below.
