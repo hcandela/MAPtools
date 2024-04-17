@@ -47,6 +47,64 @@ MAPtools has been tested in pipelines involving the following software:
 * **SAMtools** and **BCFtools** version **1.16**
 * **GATK** version **4.0.5.1**
 
+## Workflow overview
+
+A typical MBS or QTL-seq analysis comprises several steps, including: 
+
+#### 1. Quality trimming of the reads
+As a first step, you may want to process the FASTQ files containing the reads with programs such as [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic) or [Cutadapt](https://cutadapt.readthedocs.io/en/stable/) to trim adaptor sequences and discard low-quality bases.
+
+#### 2. Indexing the reference genome and read mapping
+The next step is to align the reads of each sample to the reference genome sequence. We have tested MAPtools in pipelines involving the [Bowtie2](https://bowtie-bio.sourceforge.net/bowtie2/index.shtml) and [BWA](https://github.com/lh3/bwa) read mappers. However, it should also work with any other read mapper, provided that it outputs files in standard SAM or BAM formats. SAM files must be converted into sorted BAM files using [Samtools](http://www.htslib.org/download/). 
+
+In the example, a reference genome is first indexed using `bowtie2-build`:
+```
+bowtie2-build reference_genome.fa INDEX
+```
+The reads are then aligned to the reference genome using `bowtie2`, and the output is directly converted to sorted BAM format using `samtools sort`:
+```
+bowtie2 -x INDEX --no-mixed --no-discordant --no-unal -1 reads_forward.fq.gz -2 reads_reverse.fq.gz | samtools sort -o aligned_reads.bam -
+```
+
+#### 3. Variant calling
+The alignment files (in BAM format) are then processed altogether using variant calling software to identify variant sites. We have tested MAPtools in pipelines involving [GATK](https://gatk.broadinstitute.org/hc/en-us) and [BCFtools](http://www.htslib.org/download/), but it should also work with any other variant calling software that can output uncompressed VCF format files containing an AD (allelic depth) field for each sample.
+
+In our example, three different BAM files from a mapping-by-sequencing experiment are processed using a pipeline involving `bcftools mpileup` and `bcftools call` to generate a single VCF file (`variants.vcf`):
+```
+bcftools mpileup -f reference_genome.fasta --annotate FORMAT/AD dominant_bulk.bam recesive_bulk.bam parent.bam | bcftools call -m -v -o variants.vcf
+```
+With the `-v` flag present, the `variants.vcf` file will only save data for the variant positions. Non-variant positions are also discarded by MAPtools, but larger VCF files increase the processing time.
+
+
+#### 4. Running MAPtools
+Once your `variants.vcf` file is ready, you can go ahead and run MAPtools. For additional details, please also check the Tutorial section below.
+
+Following on with our example, we run the `mbs` command of MAPtools, as follows:
+```
+./maptools.py mbs --data D,R,Pd -m R -o mbs.txt -i variants.vcf
+```
+Here, we use ``--data`` to specify the samples that are available for the analysis, **in the same order** as they were processed while making the VCF file. In our case, these samples are designated as D (the bulk of phenotypically dominant individuals), R (the bulk of phenotypically recessive individuals) and Pd (resequencing of the parent of the mapping population showing the dominant phenotype). We also use ``-m R`` to specify that the mutation is recesive.
+
+
+#### 5. Plotting the results
+Next, run the ``plot`` command of MAPtools to automatically generate plots using the output of the previous command (i.e. the `mbs.txt` file in the example):
+```
+./maptools.py plot -i mbs.txt -a -o graphics_mbs/
+```
+For an explanation of the options available, please see the Tutorial section below.
+
+#### 6. Selecting a candidate region
+Visually inspect the generated plots to define a broad candidate region in which your mutation is most likely to reside.
+
+#### 7. Annotating the variants
+Finally, you can run the ``annotate`` command of MAPtools to automatically assess the effect of all variants present in your candidate interval. For a candidate region located on chromosome 2 between nucleotide positions 5 Mbp and 10 Mbp:
+```
+./maptools.py annotate -i mbs.txt -g reference_genome.gff3 -f reference_genome.fasta -R chr8:5000000-10000000 -o annotate.txt
+```
+where we use the `-g` and `-f` flags to supply a GFF3 file containing the annotation and a FASTA file containing the sequence of the reference genome, respectively. 
+
+
+
 ## Tutorial
 
 We provide a step-by-step protocol to reproduce the analyses presented in Figure 1 of the MAPtools article. In this figure, we re-analyze publicly available QTL-seq data from Castillejo *et al*. (2020) and MBS data from Viñegra de la Torre *et al*. (2022).
@@ -172,7 +230,7 @@ In the above example, we used the following options:
 ``-a`` generates all possible plots
 ``--bonferroni`` adds Bonferroni threshold to p-value plots
 ``--ci95`` marks the 95% confidence interval in delta plots
-``-o`` specifies the output file format (default is pdf)
+``-O`` specifies the output file format (default is pdf)
 ``-o`` specifies the output folder
 
 ### Analysis of MBS data
@@ -191,7 +249,7 @@ Index the reference genome using bowtie2-build:
 bowtie2-build Arabis_alpina.MPIPZ.version_5.1.chr.all.fasta.gz INDEX
 ```
 
-Map the reads to the reference genome using bowtie2. Repeat this step for each available sample:
+Map the paired-end reads to the reference genome using bowtie2. Repeat this step for each available sample:
 
 ```
 bowtie2 -x INDEX --no-mixed --no-discordant --no-unal -1 SRR15564670_1.fastq.gz -2 SRR15564670_2.fastq.gz  -S SRR15564670.sam
