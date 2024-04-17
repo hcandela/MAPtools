@@ -2,6 +2,15 @@
 
 MAPtools is a set of command-line tools for the analysis and visualization of mapping-by-sequencing (MBS) and QTL-seq data. A typical pipeline involves: (1) aligning the reads of an MBS or QTL-seq experiment using a read mapper, such as Bowtie2 or BWA, (2) processing the alignment files with variant calling software, such as BCFtools or GATK, and (3) analyzing the resulting VCF (Variant Call Format) files with the commands of MAPtools.
 
+## Contributing
+
+If you would like to contribute to MAPtools, please contact us at hcandela@umh.es.
+All contributions are welcome and appreciated!
+
+## License
+
+MAPtools is distributed under the GPL v3.0 License. See LICENSE for more information
+
 ## Features
 
 MAPtools v1.00 includes the following commands:
@@ -26,15 +35,6 @@ MAPtools' dependencies can be installed with pip:
 ```
 pip install docopt numpy scipy pandas biopython matplotlib
 ```
-
-## Contributing
-
-If you would like to contribute to MAPtools, please contact us at hcandela@umh.es.
-All contributions are welcome and appreciated!
-
-## License
-
-MAPtools is distributed under the GPL v3.0 License. See LICENSE for more information
 
 ## Getting started
 
