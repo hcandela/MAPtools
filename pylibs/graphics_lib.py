@@ -108,18 +108,20 @@ def test_plot(arg, __doc__):
             break
     plt.rcParams['font.family'] = font
     global fields
+    arg['--input'] = os.path.abspath(arg['--input'])
     inp_f = arg['--input']
     if not inp_f:
         print(__doc__, end='\n', file=sys.stderr)
         sys.exit()
     try:
-        f = open(inp_f, 'r')
+        f = open(os.path.abspath(arg['--input']), 'r')
     except FileNotFoundError:
         print('Error: The input file {} does not exist'.format(inp_f), file=sys.stderr)
         sys.exit()
     wd = os.getcwd()
     try:
-        os.makedirs(wd+'/'+arg['--outdir'])
+        absolut_path = os.path.abspath(arg['--outdir'])
+        os.makedirs(absolut_path)
     except FileExistsError:
         print('Warning: the output directory already exists', file=sys.stderr)
         pass
@@ -394,7 +396,8 @@ def check_merge(arg,__doc__):
     if not inp_f:
         print(__doc__,end='\n', file=sys.stderr)
         sys.exit()
-
+    arg['--input'] = os.path.abspath(arg['--input'])
+    inp_f = os.path.abspath(arg['--input'])
     try:
         f = open(arg['--input'], 'r')
     except FileNotFoundError:
@@ -408,15 +411,16 @@ def check_merge(arg,__doc__):
         wd = os.getcwd()
         outdir_list = arg['--output'].split('/')[:-1]
         outdir = '/'.join(outdir_list)+'/'
+        absolut_path = os.path.abspath(outdir)
         try:
-            os.makedirs(wd+'/'+outdir)
+            os.makedirs(absolut_path)
         except FileExistsError:
             print('Warning: the output directory already exists', file=sys.stderr)
             pass
         arg['filename'] = arg['--output'].split('/')[-1]
-        arg['outdir'] = wd+'/'+outdir
+        arg['outdir'] = absolut_path
     
-        arg['--output'] = arg['outdir']+arg['filename']
+        arg['--output'] = arg['outdir'] + '/'+ arg['filename']
         if arg['--output'] != None:
             arg['--output'] = check_save_an(arg, arg['filename'])
         else:
@@ -2448,8 +2452,7 @@ def create_caption(arg, res_tit):
     return f
 
 def create_subfolder(arg, sf):
-    wd = os.getcwd()
-    arg['sub_folder'] = wd+'/'+arg['--outdir']+'/'+sf
+    arg['sub_folder'] = os.path.abspath(arg['--outdir'])+'/'+sf
     try:
         os.makedirs(arg['sub_folder'])
     except FileExistsError:

@@ -55,6 +55,7 @@ def check_args(__doc__,arg:dict):
 		print(__doc__, end='\n', file=sys.stderr)
 		sys.exit()
 	if arg['--input'] != None:# and 'mbs' in arg.keys() or 'qtl' in arg.keys():
+		arg['--input'] = os.path.abspath(arg['--input'])
 		inp_f = arg['--input']
 		if arg['--input'].split('.')[-1] == 'gz':
 			try:			
@@ -77,15 +78,16 @@ def check_args(__doc__,arg:dict):
 		wd = os.getcwd()
 		outdir_list = arg['--output'].split('/')[:-1]
 		outdir = '/'.join(outdir_list) +'/'
+		absolut_path = os.path.abspath(outdir)
 		try:
-			os.makedirs(wd+'/'+outdir)
+			os.makedirs(absolut_path)
 		except FileExistsError:
 			print('Warning: the output directory already exists', file=sys.stderr)
 			pass
 		arg['filename'] = arg['--output'].split('/')[-1]
-		arg['outdir']=wd+'/'+outdir
+		arg['outdir']=absolut_path
 
-		arg['--output'] = arg['outdir'] + arg['filename']
+		arg['--output'] = arg['outdir'] + '/'+ arg['filename']
 		arg['--output'] = check_save_an(arg, arg['filename'])
 	#Data split, when Wr or Wd is present
 	if 'mbs' in arg.keys():
@@ -118,13 +120,13 @@ def check_save_an(arg:dict, file_name:str):
 		while True:
 			expand += 1
 			nw_file_name = file_name.split(typ)[0] + '_' + str(expand) + typ
-			if os.path.isfile(arg['outdir']+nw_file_name):
+			if os.path.isfile(arg['outdir']+'/'+nw_file_name):
 				continue
 			else:
-				file_name = arg['outdir']+ nw_file_name
+				file_name = arg['outdir']+'/'+nw_file_name
 				return file_name
 	else:
-		return arg['outdir']+file_name
+		return arg['outdir']+'/'+file_name
 
 def check_mbs_args(arg:dict):
 	"""Check mbs options
@@ -750,6 +752,7 @@ def check_annotate_args(arg):
 	wd = os.getcwd()
 
 	if arg['--input'] != None:
+		arg['--input'] = os.path.abspath(arg['--input'])
 		inp_f = arg['--input']
 		if arg['--input'].split('.')[-1] == 'gz':
 			informat = arg['--input'].split('.')[-2]
@@ -776,10 +779,10 @@ def check_annotate_args(arg):
 		sys.exit()
 	try:
 		if arg['--gff'].split('.')[-1] == 'gz':
-			gff = gzip.open(wd+'/'+arg['--gff'],'rt')
+			gff = gzip.open(os.path.abspath(arg['--gff']),'rt')
 		else:
-			gff = open(wd+'/'+arg['--gff'],'r')
-		arg['--gff'] = wd+'/'+arg['--gff']
+			gff = open(os.path.abspath(arg['--gff']),'r')
+		arg['--gff'] = os.path.abspath(arg['--gff'])
 		arg['--gff'] = gff
 	except FileNotFoundError:
 		print('The gff file does not exist.', file=sys.stderr)
@@ -790,10 +793,10 @@ def check_annotate_args(arg):
 		sys.exit()
 	try:
 		if arg['--fasta-reference'].split('.')[-1] == 'gz':
-			ref = gzip.open(wd+'/'+arg['--fasta-reference'],'rt')
+			ref = gzip.open(os.path.abspath(arg['--fasta-reference']),'rt')
 		else:
-			ref = open(wd+'/'+arg['--fasta-reference'],'r')
-		arg['--fasta-reference'] = wd+'/'+arg['--fasta-reference']
+			ref = open(os.path.abspath(arg['--fasta-reference']),'r')
+		arg['--fasta-reference'] = os.path.abspath(arg['--fasta-reference'])
 		ref.close()
 	except FileNotFoundError:
 		print('The reference file does not exist.', file=sys.stderr)
