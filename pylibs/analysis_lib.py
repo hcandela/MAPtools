@@ -76,8 +76,10 @@ def check_args(__doc__,arg:dict):
 
 	if arg['--output'] != None:
 		wd = os.getcwd()
-		outdir_list = arg['--output'].split('/')[:-1]
-		outdir = '/'.join(outdir_list) +'/'
+		#outdir_list = arg['--output'].split('/')[:-1]
+		#print(outdir_list)
+		#outdir = '/'.join(outdir_list) +'/'
+		outdir = os.path.dirname(arg['--output']) or os.getcwd()
 		absolut_path = os.path.abspath(outdir)
 		try:
 			os.makedirs(absolut_path)

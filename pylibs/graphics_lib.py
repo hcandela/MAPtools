@@ -108,6 +108,9 @@ def test_plot(arg, __doc__):
             break
     plt.rcParams['font.family'] = font
     global fields
+    if not arg['--input']:
+        print(__doc__, end='\n', file=sys.stderr)
+        sys.exit()
     arg['--input'] = os.path.abspath(arg['--input'])
     inp_f = arg['--input']
     if not inp_f:
@@ -280,7 +283,7 @@ def checkPlottingOptions(arg,df):
                 d = df[df['#CHROM'] == ch]
                 if len(d) < RANG:
                     res.append(False)
-                    print(f'Warning: there is not enough markers in {ch} to calculate ED100', file=sys.stderr)
+                    print(f'Warning: there are not enough markers in {ch} to calculate ED100', file=sys.stderr)
                 else:
                     res.append(True)
             if True in res:
@@ -408,9 +411,7 @@ def check_merge(arg,__doc__):
     arg['--output-type'] = '.txt'
 
     if arg['--output'] != None:
-        wd = os.getcwd()
-        outdir_list = arg['--output'].split('/')[:-1]
-        outdir = '/'.join(outdir_list)+'/'
+        outdir = os.path.dirname(arg['--output']) or os.getcwd()
         absolut_path = os.path.abspath(outdir)
         try:
             os.makedirs(absolut_path)
@@ -671,7 +672,7 @@ def EDmonoPlot(df, arg):
         plt.tight_layout()
         plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
         plt.close()
-
+        del d
         cap = list()
         if arg['--captions']:
             f = create_caption(arg, rtch)
@@ -731,6 +732,7 @@ def GmonoPlot(df, arg):
             if arg['--distance-avg'] != False:
                 cap.append(arg['lines'][26].format(arg['color_names']['mvg'], str(arg['--distance-avg'])))
             write_caption(f,cap,arg)
+        del d
 
 
 def AF_manhattan_plot(df, arg, g_type):
@@ -797,6 +799,7 @@ def AF_manhattan_plot(df, arg, g_type):
             ax[1].remove()
         if i > 0:
             ax[i].axes.get_yaxis().set_visible(False)
+        del d
     #fig.tight_layout()
     fig.subplots_adjust(wspace=sets['wspace'],bottom=sets['bottom'])
     filename = rt + typ
@@ -885,6 +888,7 @@ def AFCombinedManhattanPlot(df, arg):
             ax[1].remove()
         if i > 0:
             ax[i].axes.get_yaxis().set_visible(False)
+        del d
     #fig.tight_layout()
     fig.subplots_adjust(wspace=sets['wspace'], bottom=sets['bottom'])
     filename = rt + typ
@@ -970,6 +974,7 @@ def pval_manhattan_plot(df, arg):
             ax[1].remove()
         if i > 0:
             ax[i].axes.get_yaxis().set_visible(False)
+        del d
     #fig.tight_layout()
     fig.subplots_adjust(wspace=sets['wspace'],bottom=sets['bottom'])
     filename = rt + typ
@@ -1036,6 +1041,7 @@ def pval_mono_graph(df, arg):
         plt.tight_layout()
         plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
         plt.close()
+        del d
 
         if arg['--captions']:
             f = create_caption(arg, rtch)
@@ -1168,6 +1174,7 @@ def AF1_AF2_mono_graph(df, arg):
                 cap.append(arg['lines'][l2].format(arg['color_names']['SNPidx2'], str(arg['--distance-avg'])))
                 cap.append(arg['lines'][l1].format(arg['color_names']['SNPidx1'], str(arg['--distance-avg'])))
             write_caption(f,cap,arg)
+        del d
 
 
 def chooseOptionsAFPlots(arg, multi, g_type, ticks_y, lim_y, ylab):
@@ -1364,6 +1371,7 @@ def AF_mono_graph(df, arg, g_type):
             if arg['--ci95'] and g_type == 'DELTA' and (arg['--moving-avg'] != False or arg['--distance-avg'] != False):
                 cap.append(arg['lines'][22].format(str(arg['n_markers'])))
             write_caption(f, cap, arg)
+        del d
 
 def pval_multi_Vertical_graph(df, arg):
     sets = arg['sets']['vertical']
@@ -1435,6 +1443,7 @@ def pval_multi_Vertical_graph(df, arg):
         if arg['--bonferroni'] and not d.empty:
             cap.append(arg['lines'][15].format(str(arg['n_markers'])))
         write_caption(f,cap,arg)
+    del d
 
 
 def ED_multi_Vertical_graph(df, arg):
@@ -1490,6 +1499,7 @@ def ED_multi_Vertical_graph(df, arg):
         f_name.append(filename)
         plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
         plt.close()
+        del d
     cap = list()
     if arg['--captions']:
         f = create_caption(arg,rt)
@@ -1550,7 +1560,6 @@ def EDmanhattanPlot(df, arg):
                     spine.set_linewidth(sets['axSpinesWIDTH'])
                 ax2.axes.get_yaxis().set_visible(True)
                 ax2.set_ylabel(ylabel='ED $\mathregular{100^4}$  $\mathregular{x10^8}$ ', fontsize=sets['xlabSIZE'], rotation=90, labelpad=sets['xlabSIZE'])
-
         ax[i].spines['top'].set_visible(False)
         ax[i].spines['right'].set_visible(False)
         if len(chrom) == 1:
@@ -1559,6 +1568,7 @@ def EDmanhattanPlot(df, arg):
             ax[i].axes.get_yaxis().set_visible(False)
         ax[0].set_yticks(ticks=[0, 0.5, 1, 1.5])
         ax[0].set_yticklabels(labels=[0, 0.5, 1, 1.5], fontsize=sets['yticksSIZE'])
+        del d
     #plt.tight_layout()
     fig.subplots_adjust(wspace=sets['wspace'], bottom=sets['bottom'])
     filename= rt + typ
@@ -1628,6 +1638,7 @@ def G_multi_Vertical_graph(df, arg):
         f_name.append(filename)
         plt.savefig(arg['sub_folder']+filename, dpi=arg['DPI'], transparent=True)
         plt.close()
+        del d
     cap = list()
     if arg['--captions']:
         f = create_caption(arg,rt)
@@ -1680,6 +1691,7 @@ def GmanhattanPlot(df, arg):
             ax[1].remove()
         if i > 0:
             ax[i].axes.get_yaxis().set_visible(False)
+        del d
     #fig.tight_layout()
     fig.subplots_adjust(wspace=sets['wspace'], bottom=sets['bottom'])
     filename= rt + typ
@@ -1771,6 +1783,7 @@ def AF_multi_Vertical_graph(df, arg, g_type):
                 ax[i].ticklabel_format(axis='x', style='scientific', scilimits=(6, 6), useMathText=True)
                 ax[i].xaxis.get_offset_text().set_fontsize(sets['xSCIoffsetSIZE'])
                 ax[i].set_xlabel(xlabel='Genomic position (bp)', fontsize=sets['xlabSIZE'], labelpad=sets['xlabDIST'])
+            del d
         fig.tight_layout(pad=sets['pad'])
         fig.subplots_adjust(hspace=sets['hspace'])
         filename= rt + typ
@@ -1865,6 +1878,7 @@ def AF12_multi_Vertical_graph(df, arg):
                 ax[i].ticklabel_format(axis='x', style='scientific', scilimits=(6, 6), useMathText=True)
                 ax[i].xaxis.get_offset_text().set_fontsize(sets['xSCIoffsetSIZE'])
                 ax[i].set_xlabel(xlabel='Genomic position (bp)', fontsize=sets['xlabSIZE'],labelpad=sets['xlabDIST'])
+            del d
         plt.tight_layout(pad=sets['pad'])
         fig.subplots_adjust(hspace=sets['hspace'])
         filename=rt1+typ
@@ -2175,6 +2189,7 @@ def combinedPlot(df, arg):
                                         arg['lines'][15].format(str(arg['n_markers'])) if arg['--bonferroni'] else ''
                                         ))
             write_caption(f,cap, arg)
+            del d
 
 
 def calc_ci(d, arg, ax):
