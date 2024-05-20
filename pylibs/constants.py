@@ -126,7 +126,7 @@ variable_descriptions={
    'DPhigh_2':'##DPhigh_2=<ID=*, Number=1, Type=Integer, Description=\"Allelic depth of high allele in bulk 2.\">\n',\
    'DPlow_2':'##DPalt_2=<ID=*, Number=1, Type=Integer, Description=\"Allelic depth of low allele in bulk 2.\">\n',\
    'SNPidx1':'##SNPidx1=<ID=*, Number=1, Type=Float, Description=\"Allele frequency of bulk 1.\">\n',\
-   'SNPidx2':'##SNPidx2=<ID=*, Number=1, Type=Float, Description=\"Allele frequency of bulk 1.\">\n',\
+   'SNPidx2':'##SNPidx2=<ID=*, Number=1, Type=Float, Description=\"Allele frequency of bulk 2.\">\n',\
    'MAX_SNPidx2':'##MAX_SNPidx2=<ID=*, Number=1, Type=Float, Description=\"Maximum allele frecuency ratio of target bulk.\">\n',\
    'FISHER':'##FISHER=<ID=*, Number=1, Type=Float, Description=\"Two-tailed Fisher exact test.\">\n',\
    'BOOST':'##BOOST=<ID=*, Number=1, Type=Float, Description=\"Scarcity-values, calculated from the allele frecuency values of the recessive bulk.\">\n',\

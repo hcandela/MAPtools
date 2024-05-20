@@ -1698,10 +1698,11 @@ def getAnalysisArgs(arg:dict,line:str):
 			if arg_i == '-m' or arg_i == '--mutant-pool':
 				arg_idx =argvs.index(arg_i)
 				arg['--mutant-pool'] = argvs[arg_idx + 1]
-			else:
-				arg['--mutant-pool'] = 'R'
 		else:
 			arg['--mutant-pool'] = 'D'
+
+	if '-m' not in argvs and '--mutant-pool' not in argvs:
+		arg['--mutant-pool'] = 'R'
 	if 'mbs' in arg.keys():
 		if 'R' in arg['--data'] and 'D' in arg['--data']:
 			arg['header'] = ['#CHROM','POS','DOM','REC', 'DPdom_1','DPrec_1','DPdom_2','DPrec_2','TYPE','ID','PARENT','STRAND',\
