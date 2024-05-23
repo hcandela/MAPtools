@@ -114,7 +114,7 @@ Next, run the ``plot`` command again to generate plots using the file produced b
 Visually inspect the generated plots to define a broad candidate region in which your mutation is most likely to reside.
 
 #### 8. Annotating the variants
-Finally, you can run the ``annotate`` command of MAPtools to automatically assess the effect of all variants present in your candidate interval. For a candidate region located on chromosome 2 between nucleotide positions 5 Mbp and 10 Mbp:
+Next, you can run the ``annotate`` command of MAPtools to automatically assess the effect of all variants present in your candidate interval. For a candidate region located on chromosome 2 between nucleotide positions 5 Mbp and 10 Mbp, you could run:
 ```
 ./maptools.py annotate -i mbs.txt -g reference_genome.gff3 -f reference_genome.fasta -R chr8:5000000-10000000 -o annotate.txt
 ```
@@ -122,6 +122,51 @@ Here, the `-g` flag supplies a GFF3 file containing the annotation and the `-f` 
 
 Please note that you cannot use the output of ``merge`` as the input for ``annotate``, as the allele information is lost in this file.
 
+#### 9. Interpreting the results
+The results of `annotate` will be saved to a text file co forntaining detailed information on the variants identified and their putative effects. The table below corresponds to our re-analysis of a broad candidate interval on chromosome A05 of *Brassica rapa*, defined for the *nhm3-1* mutant using the data presented in Huang et al (2022). The meaning of each field (column) is explained in detail in the header of the file:
+* `CHROM`: Chromosome name
+* `POS`: Position in the chromosome
+* `DOM`: Dominant allele
+* `REC`: Recessive allele
+* `DPdom_1`: Allelic depth of dominant allele in bulk 1
+* `DPrec_1`: Allelic depth of dominant allele in bulk 1
+* `TYPE`: Type of element in which the mutation occurs
+* `ID`: ID of mutated element
+* `PARENT`: The gene or mRNA containig the mutated element
+* `STRAND`: Genome strand cointaining the element (+, -, .)
+* `CODON_change`: Target codon before and after mutation (AGA > AAA)
+* `AA_change`: Aminoacid before and after mutation (S > F)
+* `INFO`: Additional information (e.g. type and effect of the variant, identity of and distance to flanking elements, etc.)
+
+#CHROM|POS|DOM|REC|DPdom_1|DPrec_1|TYPE|ID|PARENT|STRAND|CODON_change|AA_change|INFO
+---|---|---|---|---|---|---|---|---|---|---|---|---
+A05|3013269|G|A|1|11|CDS|.|transcript:A05p007480.1_BraROA.1|+|GAA > AAA|E > K|effect=Nonsynonymous:missense;variant_type=substitution
+A05|3160465|G|A|2|18|CDS|.|transcript:A05p007800.1_BraROA.1|+|AGA > AAA|R > K|effect=Nonsynonymous:missense;variant_type=substitution
+A05|3185324|G|A|3|22|intergenic|.|.|.|.|.|right=gene:A05p007860.1_BraROA:6312;left=gene:A05p007850.1_BraROA:4983;variant_type=substitution
+A05|3895591|G|A|1|13|intergenic|.|.|.|.|.|right=gene:A05p009380.1_BraROA:10963;left=gene:A05g501080.1_BraROA:4585;variant_type=substitution
+A05|5135583|G|A|2|13|intron|.|transcript:A05p011720.1_BraROA.1|+|.|.|left=A05p011720.1_BraROA.1-E1:54;right=A05p011720.1_BraROA.1-E2:160;variant_type=substitution
+A05|5275869|G|A|1|13|CDS|.|transcript:A05p012170.1_BraROA.1|+|GGA > GAA|G > E|effect=Nonsynonymous:missense;variant_type=substitution
+A05|5311618|G|A|1|8|intergenic|.|.|.|.|.|right=gene:A05p012240.1_BraROA:2444;left=gene:A05p012230.1_BraROA:5429;variant_type=substitution
+A05|5497028|C|T|2|2|intergenic|.|.|.|.|.|right=gene:A05p012640.1_BraROA:8121;left=gene:A05g501540.1_BraROA:968;variant_type=substitution
+A05|5497030|C|T|2|2|intergenic|.|.|.|.|.|right=gene:A05p012640.1_BraROA:8119;left=gene:A05g501540.1_BraROA:970;variant_type=substitution
+A05|5779169|G|A|0|12|intergenic|.|.|.|.|.|right=gene:A05p013290.1_BraROA:4701;left=gene:A05p013270.1_BraROA:1798;variant_type=substitution
+A05|6548683|G|A|0|12|CDS|.|transcript:A05p014890.1_BraROA.1|-|ACC > ACT|T > T|effect=Synonymous:.;variant_type=substitution
+A05|6687254|G|A|0|27|CDS|.|transcript:A05p015130.1_BraROA.1|+|GGA > GAA|G > E|effect=Nonsynonymous:missense;variant_type=substitution
+A05|7227610|G|A|0|31|CDS|.|transcript:A05p016250.1_BraROA.1|+|GGT > GAT|G > D|effect=Nonsynonymous:missense;variant_type=substitution
+A05|7360122|G|A|0|21|intergenic|.|.|.|.|.|right=gene:A05g502330.1_BraROA:17917;left=gene:A05p016520.1_BraROA:10025;variant_type=substitution
+A05|7631545|G|A|3|25|intergenic|.|.|.|.|.|right=gene:A05p017070.1_BraROA:7088;left=gene:A05p017060.1_BraROA:323;variant_type=substitution
+A05|7876818|G|A|0|13|intergenic|.|.|.|.|.|right=gene:A05p017450.1_BraROA:4313;left=gene:A05p017430.1_BraROA:1609;variant_type=substitution
+A05|8294186|G|A|3|14|intergenic|.|.|.|.|.|right=gene:A05p018170.1_BraROA:5235;left=gene:A05p017500.1_BraROA:3564;variant_type=substitution
+A05|8307063|G|A|1|10|CDS|.|transcript:A05p018190.1_BraROA.1|-|CTT > TTT|L > F|effect=Nonsynonymous:missense;variant_type=substitution
+A05|9061149|G|A|1|31|intergenic|.|.|.|.|.|right=gene:A05g503000.1_BraROA:3544;left=gene:A05p019260.1_BraROA:4449;variant_type=substitution
+A05|9650878|G|A|3|23|intergenic|.|.|.|.|.|right=gene:A05p020420.1_BraROA:5423;left=gene:A05p020400.1_BraROA:7195;variant_type=substitution
+A05|9783762|G|A|0|24|intergenic|.|.|.|.|.|right=gene:A05p020680.1_BraROA:970;left=gene:A05p020670.1_BraROA:298;variant_type=substitution
+
+The *nhm3-1* corresponds to the G-to-A transition mutation located at nucleotide position 5,275,869 on chromosome A05, for which all 27 reads corresponded to the recessive allele (A). See Huang *et al*. (2022) for additional details:
+
+> Huang *et al*. (2022). *BrKAO2* mutations disrupt leafy head formation in Chinese cabbage (*Brassica rapa* L. ssp. *pekinensis*). *Theor Appl Genet* **135:** 2453-2468
+
+##
 
 ## Tutorial
 
