@@ -101,16 +101,26 @@ Next, run the ``plot`` command of MAPtools to automatically generate plots using
 ```
 For an explanation of the options available, please see the Tutorial section below.
 
-#### 6. Selecting a candidate region
+#### 6. Optional: Re-analyzing the data with ``merge`` (recommended only for datasets with low sequencing depth and abundant polymorphisms)
+If your dataset contains many polymorphic sites with low sequencing depth, re-processing the `mbs.txt` output file with the ``merge`` command can help to identify genomic regions linked to your trait of interest:
+```
+./maptools.py merge -i mbs.txt -o mbs_merged.txt -w 15
+```
+Here, `-w 15` instructs the program to combine the allele counts of 15 adjacent markers. 
+
+Next, run the ``plot`` command again to generate plots using the file produced by ``merge`` as the input (i.e. `mbs_merged.txt`)
+
+#### 7. Selecting a candidate region
 Visually inspect the generated plots to define a broad candidate region in which your mutation is most likely to reside.
 
-#### 7. Annotating the variants
+#### 8. Annotating the variants
 Finally, you can run the ``annotate`` command of MAPtools to automatically assess the effect of all variants present in your candidate interval. For a candidate region located on chromosome 2 between nucleotide positions 5 Mbp and 10 Mbp:
 ```
 ./maptools.py annotate -i mbs.txt -g reference_genome.gff3 -f reference_genome.fasta -R chr8:5000000-10000000 -o annotate.txt
 ```
-where we use the `-g` and `-f` flags to supply a GFF3 file containing the annotation and a FASTA file containing the sequence of the reference genome, respectively. 
+Here, the `-g` flag supplies a GFF3 file containing the annotation and the `-f` flag provides a FASTA file containing the reference genome sequence. 
 
+Please note that you cannot use the output of ``merge`` as the input for ``annotate``, as the allele information is lost in this file.
 
 
 ## Tutorial
