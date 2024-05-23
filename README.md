@@ -123,13 +123,13 @@ Here, the `-g` flag supplies a GFF3 file containing the annotation and the `-f` 
 Please note that you cannot use the output of ``merge`` as the input for ``annotate``, as the allele information is lost in this file.
 
 #### 9. Interpreting the results
-The results of `annotate` will be saved to a text file co forntaining detailed information on the variants identified and their putative effects. The table below corresponds to our re-analysis of a broad candidate interval on chromosome A05 of *Brassica rapa*, defined for the *nhm3-1* mutant using the data presented in Huang et al (2022). The meaning of each field (column) is explained in detail in the header of the file:
+The results of `annotate` will be saved to a text file containing detailed information on the variants identified and their putative effects. The table below corresponds to our re-analysis of a broad candidate interval on chromosome A05 of *Brassica rapa*, defined for the *nhm3-1* mutant using the data presented in Huang et al (2022). The meaning of each field (column) is explained in detail in the header of the file:
 * `CHROM`: Chromosome name
 * `POS`: Position in the chromosome
 * `DOM`: Dominant allele
 * `REC`: Recessive allele
 * `DPdom_1`: Allelic depth of dominant allele in bulk 1
-* `DPrec_1`: Allelic depth of dominant allele in bulk 1
+* `DPrec_1`: Allelic depth of recessive allele in bulk 1
 * `TYPE`: Type of element in which the mutation occurs
 * `ID`: ID of mutated element
 * `PARENT`: The gene or mRNA containig the mutated element
