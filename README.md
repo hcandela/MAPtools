@@ -87,7 +87,7 @@ Following on with our example, we run the `mbs` command of MAPtools, as follows:
 ```
 ./maptools.py mbs --data D,R,Pd -m R -o mbs.txt -i variants.vcf
 ```
-Here, we use ``--data`` to specify the samples that are available for the analysis, **in the same order** as they were processed while making the VCF file. In our case, these samples are designated as D (the bulk of phenotypically dominant individuals), R (the bulk of phenotypically recessive individuals) and Pd (resequencing of the parent of the mapping population showing the dominant phenotype). We also use ``-m R`` to specify that the mutation is recesive.
+Here, we use ``--data`` to specify the samples that are available for the analysis, **in the same order** as they were processed while making the VCF file. In our case, these samples are designated as D (the bulk of phenotypically dominant individuals), R (the bulk of phenotypically recessive individuals) and Pd (resequencing of the parent of the mapping population showing the dominant phenotype). We also use ``-m R`` to specify that the mutation is recessive.
 
 If you previously chose to store your output as a BCF file (rather than as a VCF file), you can take advantage of the fact that MAPtools can also receive its input from a stream to make the BCF-to-VCF conversion:
 ```
