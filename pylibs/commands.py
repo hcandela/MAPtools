@@ -397,6 +397,6 @@ Contact: hcandela@umh.es
 If you find MAPtools useful, please include the following citation in your scientific publications:
 
 Martínez-Guardiola, C., Parreño, R. and Candela, H. (2024). MAPtools: command-line tools for mapping-by-sequencing
-and QTL-Seq analysis and visualization. Plant Methods 20, 107 (2024). https://doi.org/10.1186/s13007-024-01222-2                    
+and QTL-Seq analysis and visualization. Plant Methods 20, 107. https://doi.org/10.1186/s13007-024-01222-2                    
   """
   print(cite_doc, file=sys.stderr)
