@@ -456,5 +456,6 @@ In this tutorial, we have analyzed one (out of 3) allelic mutants described in t
 
 If you find this software useful, please cite:
 
-César Martínez-Guardiola, Ricardo Parreño, Héctor Candela (2023).
-MAPtools: Command-Line Tools for Mapping-by-Sequencing and QTL-Seq Analysis and Visualization. Submitted.
+César Martínez-Guardiola, Ricardo Parreño, Héctor Candela (2024).
+MAPtools: command-line tools for mapping-by-sequencing and QTL-Seq analysis and visualization. *Plant Methods* **20,** 107 (2024). 
+https://doi.org/10.1186/s13007-024-01222-2
